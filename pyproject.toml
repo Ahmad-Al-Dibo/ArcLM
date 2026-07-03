@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [
-  { name = "Ahmad Al Diboo", link="https://www.linkedin.com/in/ahmadaldibo" }
+  { name = "Ahmad Al Dibo"}
 ]
 keywords = [
   "language-model",
@@ -49,6 +49,11 @@ dev = [
 web = [
   "flask>=3,<4",
 ]
+preprocess = [
+  "beautifulsoup4>=4.12,<5",
+  "PyYAML>=6,<7",
+  "tqdm>=4.66,<5",
+]
 
 [project.urls]
 Homepage = "https://github.com/ahmad-al-dibo/arclm"
@@ -57,7 +62,7 @@ Source = "https://github.com/ahmad-al-dibo/arclm"
 Issues = "https://github.com/ahmad-al-dibo/arclm/issues"
 
 [tool.setuptools]
-packages = ["arclm", "arclm.logics", "arclm.loaders"]
+packages = ["arclm", "arclm.logics", "arclm.loaders", "arclm.preprocess", "arclm.tokenizers", "arclm.training"]
 
 [tool.setuptools.dynamic]
 version = { attr = "arclm._version.__version__" }

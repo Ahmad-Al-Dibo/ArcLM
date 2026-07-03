@@ -12,6 +12,10 @@
   - `transformers>=4.38,<6`
 - Optional web dependency:
   - `flask>=3,<4`
+- Optional preprocessing dependencies:
+  - `beautifulsoup4>=4.12,<5`
+  - `PyYAML>=6,<7`
+  - `tqdm>=4.66,<5`
 - Development dependencies:
   - `pytest>=8`
   - `build>=1.2,<2`
@@ -23,6 +27,8 @@
   - Build backend: `setuptools.build_meta`.
   - Version source: `arclm._version.__version__`.
   - License: Apache License 2.0.
+  - Explicit package list includes `arclm.logics`, `arclm.loaders`,
+    `arclm.preprocess`, `arclm.tokenizers`, and `arclm.training`.
 - Dependency verification:
   - Date checked from shell: `2026-06`.
   - Latest PyPI versions observed in that check:
@@ -86,6 +92,15 @@ Flexible preprocessing dataflow:
    transformation, optional tokenization, splitting, and batch mapping.
 3. The processed text or token samples can be passed into training workflows.
 
+Dataset preprocessing pipeline dataflow:
+
+1. A caller loads JSONL rows through `arclm.preprocess.PreprocessPipeline`.
+2. Text is normalized, optionally redacted, filtered for quality/language,
+   deduplicated, and written as cleaned JSONL.
+3. JSON and/or HTML reports summarize kept rows, dropped rows, and reasons.
+4. Cleaned rows can feed `DataProcessor` or be converted into text files for
+   `train_model()`.
+
 Optional Flask API flow:
 
 1. `app.py` reads `MODEL_PATH`, defaulting to `models/arclm.pth`.
@@ -111,9 +126,16 @@ Verifiable goals:
 - DataProcessor transforms JSONL/TXT data into prompt text, tokenizes, filters,
   cleans, and splits samples.
 - High-level `train_model()` writes a checkpoint and JSONL metrics.
+- `arclm.tokenizers.TokenizerFactory` selects tokenizer implementations and
+  keeps `create_tokenizer()` behavior compatible.
+- `arclm.training` exports inheritable base classes and the unified training
+  pipeline implementation.
+- `arclm.preprocess.PreprocessPipeline` filters, redacts, deduplicates, writes
+  cleaned JSONL, and emits reports.
 - `examples/full_feature_guide.py` runs end-to-end with generated tiny local
   data and covers preprocessing, training, fine-tuning, inference, diagnostics,
   loaders, config persistence, and local tracking.
+- `examples/preprocess_dataset.py` runs a tiny JSONL preprocessing workflow.
 
 [ARCHITECTURE]
 
@@ -121,8 +143,11 @@ Verifiable goals:
 - `arclm/_version.py`: package version.
 - `arclm/config.py`: training and model configuration dataclass.
 - `arclm/config_loader.py`: JSON/YAML config loading and saving helpers.
-- `arclm/tokenizer.py`: word tokenizer and SentencePiece tokenizer, including
-  `user_defined_symbols` support for fine-tuning and instruction prompts.
+- `arclm/tokenizer.py`: word tokenizer, SentencePiece tokenizer, and
+  `TokenizerFactory`, including `user_defined_symbols` support for fine-tuning
+  and instruction prompts.
+- `arclm/tokenizers/`: preferred tokenizer package exports for tokenizer
+  selection and implementations.
 - `arclm/data.py`: data reading, tokenizer reuse, split creation, dataloader
   preparation.
 - `arclm/data_processor.py`: flexible JSON/JSONL/CSV/TXT/custom dataset loading,
@@ -133,8 +158,13 @@ Verifiable goals:
 - `arclm/trainer.py`: training loop, validation, checkpoint persistence, layer
   freezing.
 - `arclm/pipeline.py`: supported high-level and lower-level training pipeline.
-- `arclm/pipeline_v2.py`: alternate unified pipeline surface retained in the
-  package exports.
+- `arclm/training/`: developer-customizable training package.
+  - `base.py`: inheritable base classes for model loaders, model adapters, and
+    training pipelines.
+  - `unified.py`: unified pipeline, pre-trained model loader, model adapter,
+    and stopping criteria.
+- `arclm/pipeline_v2.py`: compatibility shim that re-exports unified pipeline
+  classes from `arclm.training`.
 - `arclm/inference.py`: checkpoint loading and inference wrapper.
 - `arclm/generator.py`: autoregressive token generation.
 - `arclm/logging.py`: queue-backed asynchronous training event logger.
@@ -153,8 +183,12 @@ Verifiable goals:
   - `safetensors_loader.py`: safetensors loader when dependency is installed.
   - `hf_loader.py`: Hugging Face causal LM loader.
   - `adapters.py`: conversion from normalized checkpoint to ArcLM model bundle.
+- `arclm/preprocess/`: preprocessing workflow package with config, pipeline,
+  cleaning, filtering, reporting, and statistics helpers.
 - `examples/`: executable examples for preparation, pretraining, fine-tuning,
-  external loading, and broad feature walkthroughs.
+  preprocessing, external loading, and broad feature walkthroughs.
+  - `preprocess_dataset.py`: JSONL cleaning/filtering/deduplication/redaction
+    and report example.
 - `docs/USAGE.md`: short usage guide.
 - `docs/FULL_FEATURE_GUIDE.md`: complete documentation for current public
   workflows and features.
@@ -180,8 +214,8 @@ Architecture rules:
   latest observed PyPI releases for several dependencies now require Python
   `>=3.10` or `>=3.12`. Choose whether to preserve broad compatibility with
   older dependency resolutions or raise the package Python baseline.
-- `pipeline_v2.py` overlaps with `pipeline.py`; keep it documented as an
-  alternate exported surface until it is either consolidated or removed.
+- `arclm/pipeline_v2.py` is a compatibility shim for old imports. New code
+  should import unified training classes from `arclm.training`.
 - `checkpoint_is_compatible_for_tuining` contains a spelling error in the public
   export. Renaming it would be a breaking API change unless an alias is kept.
 - `app.py` is an optional local API demo and is not covered by the current test

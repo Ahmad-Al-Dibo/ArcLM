@@ -33,6 +33,7 @@ __all__ = [
     "get_tokenizer_from_config",
     "Tokenizer",
     "SentencePieceTokenizer",
+    "TokenizerFactory",
     
     # Metrics & Evaluation (P4-3)
     "calculate_metrics",
@@ -71,16 +72,16 @@ def __getattr__(name):
         from .config import create_config
         return create_config
     elif name == "UnifiedPipeline":
-        from .pipeline_v2 import UnifiedPipeline
+        from .training import UnifiedPipeline
         return UnifiedPipeline
     elif name == "StoppingCriteria":
-        from .pipeline_v2 import StoppingCriteria
+        from .training import StoppingCriteria
         return StoppingCriteria
     elif name == "PreTrainedModelLoader":
-        from .pipeline_v2 import PreTrainedModelLoader
+        from .training import PreTrainedModelLoader
         return PreTrainedModelLoader
     elif name == "ModelAdapter":
-        from .pipeline_v2 import ModelAdapter
+        from .training import ModelAdapter
         return ModelAdapter
     elif name == "train_model":
         from .pipeline import train_model
@@ -101,17 +102,20 @@ def __getattr__(name):
         from .data_processor import DataProcessor
         return DataProcessor
     elif name == "create_tokenizer":
-        from .tokenizer import create_tokenizer
+        from .tokenizers import create_tokenizer
         return create_tokenizer
     elif name == "get_tokenizer_from_config":
-        from .tokenizer import get_tokenizer_from_config
+        from .tokenizers import get_tokenizer_from_config
         return get_tokenizer_from_config
     elif name == "Tokenizer":
-        from .tokenizer import Tokenizer
+        from .tokenizers import Tokenizer
         return Tokenizer
     elif name == "SentencePieceTokenizer":
-        from .tokenizer import SentencePieceTokenizer
+        from .tokenizers import SentencePieceTokenizer
         return SentencePieceTokenizer
+    elif name == "TokenizerFactory":
+        from .tokenizers import TokenizerFactory
+        return TokenizerFactory
     elif name == "calculate_metrics":
         from .diagnostics import calculate_metrics
         return calculate_metrics

@@ -3,13 +3,13 @@
 Common commands:
 
     python setup.py --version
-    python setup.py release --version 0.1.1
-    python setup.py release --version 0.1.1 --readme README.md --upload
-    python setup.py release --version 0.1.1 --repository testpypi --upload
+    python setup.py release --version 0.3.2
+    python setup.py release --version 0.3.2 --readme README.md --upload
+    python setup.py release --version 0.3.2 --repository testpypi --upload
 
     # for new releases: 
 
-        python setup.py release --version 0.1.1 --tag --push
+        python setup.py release --version 0.3.2 --tag --push
 """
 
 from __future__ import annotations
@@ -82,7 +82,7 @@ class ReleaseCommand(Command):
 
     description = "build and optionally upload a new ArcLM release"
     user_options = [
-        ("version=", None, "new package version, for example 0.1.1"),
+        ("version=", None, "new package version, for example 0.3.2"),
         ("readme=", None, "readme file to use in pyproject.toml"),
         ("repository=", None, "twine repository name or URL, default: pypi"),
         ("upload", None, "upload dist files with twine"),

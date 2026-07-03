@@ -478,6 +478,55 @@ class SentencePieceTokenizer:
 # TOKENIZER FACTORY (P4-2: Multi-Tokenizer Support)
 # ============================================================================
 
+class TokenizerFactory:
+    """Single selection point for tokenizer implementations."""
+
+    _registry = {}
+
+    @classmethod
+    def register(cls, tokenizer_type, tokenizer_class):
+        """Register a tokenizer class by type name."""
+        cls._registry[tokenizer_type.lower().strip()] = tokenizer_class
+
+    @classmethod
+    def create(cls, tokenizer_type="word", **kwargs):
+        """Create a tokenizer by type name."""
+        tokenizer_type = tokenizer_type.lower().strip()
+        if tokenizer_type not in cls._registry:
+            supported = "', '".join(sorted(cls._registry))
+            raise ValueError(
+                f"Unknown tokenizer type: {tokenizer_type}. "
+                f"Supported: '{supported}'"
+            )
+        return cls._registry[tokenizer_type](**kwargs)
+
+    @classmethod
+    def from_config(cls, config):
+        """Create a tokenizer from a Config-like object."""
+        tokenizer_type = getattr(config, 'tokenizer_type', 'word')
+        max_vocab = getattr(config, 'vocab_size', None) or getattr(config, 'max_vocab', 50000)
+
+        if tokenizer_type == "sentencepiece":
+            model_type = getattr(config, 'sentencepiece_model_type', 'bpe')
+            character_coverage = getattr(config, 'sentencepiece_character_coverage', 1.0)
+            return cls.create(
+                "sentencepiece",
+                max_vocab=max_vocab,
+                model_type=model_type,
+                character_coverage=character_coverage,
+                user_defined_symbols=getattr(config, "user_defined_symbols", None),
+            )
+
+        return cls.create(
+            "word",
+            max_vocab=max_vocab,
+            user_defined_symbols=getattr(config, "user_defined_symbols", None),
+        )
+
+
+TokenizerFactory.register("word", Tokenizer)
+TokenizerFactory.register("sentencepiece", SentencePieceTokenizer)
+
 def create_tokenizer(tokenizer_type="word", **kwargs):
     """
     Factory function to create tokenizer instances.
@@ -493,17 +542,7 @@ def create_tokenizer(tokenizer_type="word", **kwargs):
         >>> tok = create_tokenizer("word", max_vocab=10000)
         >>> tok = create_tokenizer("sentencepiece", model_type="bpe")
     """
-    tokenizer_type = tokenizer_type.lower().strip()
-    
-    if tokenizer_type == "word":
-        return Tokenizer(**kwargs)
-    elif tokenizer_type == "sentencepiece":
-        return SentencePieceTokenizer(**kwargs)
-    else:
-        raise ValueError(
-            f"Unknown tokenizer type: {tokenizer_type}. "
-            f"Supported: 'word', 'sentencepiece'"
-        )
+    return TokenizerFactory.create(tokenizer_type, **kwargs)
 
 
 def get_tokenizer_from_config(config):
@@ -516,24 +555,6 @@ def get_tokenizer_from_config(config):
     Returns:
         Tokenizer instance ready to use
     """
-    tokenizer_type = getattr(config, 'tokenizer_type', 'word')
-    max_vocab = getattr(config, 'vocab_size', None) or getattr(config, 'max_vocab', 50000)
-    
-    if tokenizer_type == "sentencepiece":
-        model_type = getattr(config, 'sentencepiece_model_type', 'bpe')
-        character_coverage = getattr(config, 'sentencepiece_character_coverage', 1.0)
-        return create_tokenizer(
-            "sentencepiece",
-            max_vocab=max_vocab,
-            model_type=model_type,
-            character_coverage=character_coverage,
-            user_defined_symbols=getattr(config, "user_defined_symbols", None),
-        )
-    else:
-        return create_tokenizer(
-            "word",
-            max_vocab=max_vocab,
-            user_defined_symbols=getattr(config, "user_defined_symbols", None),
-        )
+    return TokenizerFactory.from_config(config)
 
 

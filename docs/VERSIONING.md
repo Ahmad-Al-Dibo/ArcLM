@@ -32,7 +32,7 @@ Before the public API is stable, keep using `0.x.y`.
 The current ArcLM library version is:
 
 ```text
-0.1.0
+0.3.1
 ```
 
 You can check it with:
@@ -41,12 +41,20 @@ You can check it with:
 python -c "import arclm; print(arclm.__version__)"
 ```
 
+## Next Version
+
+For the next patch release after `0.3.1`, use:
+
+```text
+0.3.2
+```
+
 ## Release Flow
 
 The easiest release command is:
 
 ```bash
-python setup.py release --version 0.1.1
+python setup.py release --version 0.3.2
 ```
 
 That command updates `arclm/_version.py`, keeps `pyproject.toml` pointed at
@@ -57,10 +65,10 @@ Useful examples:
 
 ```bash
 python setup.py --version
-python setup.py release --version 0.1.1 --readme README.md
-python setup.py release --version 0.1.1 --repository testpypi --upload
-python setup.py release --version 0.1.1 --repository pypi --upload
-python setup.py release --version 0.1.1 --tag --push --upload
+python setup.py release --version 0.3.2 --readme README.md
+python setup.py release --version 0.3.2 --repository testpypi --upload
+python setup.py release --version 0.3.2 --repository pypi --upload
+python setup.py release --version 0.3.2 --tag --push --upload
 ```
 
 Manual flow:
@@ -77,10 +85,10 @@ Example:
 git status
 pytest
 git add arclm/_version.py pyproject.toml docs/VERSIONING.md
-git commit -m "Release ArcLM 0.1.0"
-git tag -a v0.1.0 -m "ArcLM 0.1.0"
+git commit -m "Release ArcLM 0.3.2"
+git tag -a v0.3.2 -m "ArcLM 0.3.2"
 git push origin first-pd-version
-git push origin v0.1.0
+git push origin v0.3.2
 ```
 
 The Git tag is how GitHub knows the official release commit.

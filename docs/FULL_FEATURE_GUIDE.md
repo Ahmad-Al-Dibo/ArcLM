@@ -34,6 +34,12 @@ For the optional Flask API:
 pip install -e .[web]
 ```
 
+For dataset preprocessing helpers:
+
+```bash
+pip install -e .[preprocess]
+```
+
 Run the test suite:
 
 ```bash
@@ -60,6 +66,12 @@ It creates tiny files under `runs/full_feature_guide/`, then demonstrates:
 - `load_external_model`;
 - config save/load;
 - local experiment tracking.
+
+For the dedicated JSONL preprocessing pipeline example:
+
+```bash
+python examples/preprocess_dataset.py
+```
 
 ## Special Tokens
 
@@ -169,6 +181,72 @@ def load_custom(path):
 
 dataset = DataProcessor.load("custom.data", loader=load_custom)
 ```
+
+## Preprocess Pipeline
+
+`arclm.preprocess` is a JSONL-first pipeline for cleaning datasets before they
+reach training. It can normalize HTML/text, redact emails/phones/IPs, apply
+basic quality filters, detect duplicates, and write JSON/HTML reports.
+
+```python
+from arclm.preprocess import PreprocessConfig, PreprocessPipeline
+
+config = PreprocessConfig(
+    text_field="text",
+    output_field="text",
+    min_chars=20,
+    min_words=4,
+    drop_emails=True,
+    redact_pii=True,
+    near_dedup=False,
+    report_json=True,
+    report_html=True,
+)
+
+report = PreprocessPipeline(config).run(
+    "data/raw.jsonl",
+    "data/cleaned.jsonl",
+    "reports/preprocess",
+)
+
+print(report["written"])
+print(report["reasons"])
+```
+
+The CLI accepts a YAML config:
+
+```bash
+python -m arclm.preprocess.cli data/raw.jsonl --output data/cleaned.jsonl --report-dir reports/preprocess
+```
+
+For richer HTML stripping and YAML support, install:
+
+```bash
+pip install -e .[preprocess]
+```
+
+After preprocessing, convert the cleaned JSONL text rows into the text file or
+`DataProcessor` workflow used by `train_model()`.
+
+## Tokenizers And Training Packages
+
+Common imports remain available from `arclm`, but the folder-based APIs are the
+preferred place for tokenizer selection and inheritable training extensions.
+
+```python
+from arclm.tokenizers import TokenizerFactory
+from arclm.training import BaseModelLoader, BaseTrainingPipeline, UnifiedPipeline
+
+tokenizer = TokenizerFactory.create("word", max_vocab=2000)
+
+class MyTrainingPipeline(UnifiedPipeline):
+    pass
+```
+
+`TokenizerFactory.register(name, cls)` can add a custom tokenizer class. New
+training extensions should inherit from `BaseTrainingPipeline`,
+`BaseModelLoader`, or `BaseModelAdapter` when they replace pipeline behavior.
+`arclm.pipeline_v2` remains only as a compatibility shim.
 
 ## High-Level Training
 
@@ -506,6 +584,8 @@ python app.py
 ## Example Scripts
 
 - `examples/full_feature_guide.py`: broad end-to-end local demo.
+- `examples/preprocess_dataset.py`: JSONL preprocessing, filtering,
+  deduplication, redaction, and report demo.
 - `examples/prepare_data.py`: convert raw TXT/JSONL into training files.
 - `examples/train_pretrain.py`: CLI pretraining example.
 - `examples/train_finetune.py`: CLI fine-tuning example.

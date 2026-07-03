@@ -66,7 +66,15 @@ from .pipeline import (
     train_model,
     TrainingResult,
 )
-from .pipeline_v2 import ModelAdapter, PreTrainedModelLoader, StoppingCriteria, UnifiedPipeline
+from .training import (
+    BaseModelAdapter,
+    BaseModelLoader,
+    BaseTrainingPipeline,
+    ModelAdapter,
+    PreTrainedModelLoader,
+    StoppingCriteria,
+    UnifiedPipeline,
+)
 from .regularization import (
     EarlyStopping,
     GeneralizationMonitor,
@@ -76,7 +84,13 @@ from .regularization import (
     LearningRateScheduler,
     MixupAugmentation,
 )
-from .tokenizer import SentencePieceTokenizer, Tokenizer, create_tokenizer, get_tokenizer_from_config
+from .tokenizers import (
+    SentencePieceTokenizer,
+    Tokenizer,
+    TokenizerFactory,
+    create_tokenizer,
+    get_tokenizer_from_config,
+)
 from .trainer import Trainer
 from .utils import format_duration
 
@@ -179,6 +193,7 @@ __all__ = [
     "create_config",
     "Tokenizer",
     "SentencePieceTokenizer",
+    "TokenizerFactory",
     "create_tokenizer",
     "get_tokenizer_from_config",
     "TextDataset",
@@ -210,6 +225,9 @@ __all__ = [
     "PreTrainedModelLoader",
     "ModelAdapter",
     "StoppingCriteria",
+    "BaseTrainingPipeline",
+    "BaseModelLoader",
+    "BaseModelAdapter",
     "LoadedCheckpoint",
     "LoadPlan",
     "AdaptedModelBundle",
@@ -272,5 +290,13 @@ def list_available_models():
     return sorted(path.stem for path in models_dir.glob("*.pth") if path.is_file())
 
 
-def load_model_checkpoint(path: str, device_type: str):
-    return torch.load(path, map_location=torch.device(device_type))
+def load_training_checkpoint(path: str, device_type: str):
+    """Load a trusted training checkpoint.
+
+    Only use checkpoints created by ArcLM or another trusted source.
+    """
+    return torch.load(
+        path,
+        map_location=torch.device(device_type),
+        weights_only=False,
+    )

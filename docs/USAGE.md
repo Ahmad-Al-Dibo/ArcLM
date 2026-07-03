@@ -179,8 +179,56 @@ processed = dataset.transform(
 )
 ```
 
+Use `arclm.preprocess` when you need JSONL cleaning, filtering, deduplication,
+PII redaction, and reports before converting data into training text:
+
+```python
+from arclm.preprocess import PreprocessConfig, PreprocessPipeline
+
+config = PreprocessConfig(
+    min_chars=20,
+    min_words=4,
+    drop_emails=True,
+    redact_pii=True,
+    near_dedup=False,
+)
+
+report = PreprocessPipeline(config).run(
+    "data/raw.jsonl",
+    "data/cleaned.jsonl",
+    "reports/preprocess",
+)
+
+print(report["written"])
+```
+
+Install the optional parser/reporting dependencies when needed:
+
+```bash
+pip install -e .[preprocess]
+```
+
+## Folder-Based Imports
+
+The root `arclm` package keeps the common public API. New extension-oriented
+code can also import from the feature packages:
+
+```python
+from arclm.tokenizers import TokenizerFactory
+from arclm.training import BaseTrainingPipeline, UnifiedPipeline
+
+tokenizer = TokenizerFactory.create("word", max_vocab=2000)
+
+class CustomPipeline(UnifiedPipeline):
+    pass
+```
+
+`arclm.pipeline_v2` remains available for older imports, but new code should
+prefer `arclm.training`.
+
 ```bash
 python examples/prepare_data.py raw.txt qa.jsonl --output-dir data
+python examples/preprocess_dataset.py
 python examples/full_feature_guide.py
 python examples/train_pretrain.py --data data/pretrain.txt
 python examples/train_finetune.py --checkpoint models/arclm_pretrained.pth
