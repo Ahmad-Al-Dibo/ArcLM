@@ -16,7 +16,7 @@ that file.
 Current repository version:
 
 ```text
-0.3.1
+0.4.0
 ```
 
 Check it with:
@@ -39,10 +39,9 @@ MAJOR.MINOR.PATCH
 
 While ArcLM remains pre-1.0, prefer `0.x.y`.
 
-## Current Unreleased Public Changes
+## ArcLM 0.4.0 Public Changes
 
-The working tree currently includes public changes that should be mentioned in
-the next release notes:
+ArcLM 0.4.0 includes these public changes:
 
 - `train_sft()` public API for Hugging Face SFT.
 - `SFTTrainingResult`.
@@ -52,21 +51,18 @@ the next release notes:
 - Native `Trainer` support for dict batches with `mask`.
 - `tokenizer_from_checkpoint()`.
 
-These are feature additions, so the next release should be at least a minor
-version unless the maintainer intentionally keeps them in a patch release.
-
 ## Suggested Next Version
 
-For a feature release after `0.3.1`, use:
+For a bug-fix or docs release after `0.4.0`, use:
 
 ```text
-0.4.0
+0.4.1
 ```
 
-For a docs-only or bug-fix release, use:
+For the next feature release after `0.4.0`, use:
 
 ```text
-0.3.2
+0.5.0
 ```
 
 ## Release Command
@@ -74,28 +70,39 @@ For a docs-only or bug-fix release, use:
 The release helper is:
 
 ```bash
-python setup.py release --version 0.4.0
+python setup.py release --bump patch
 ```
 
 It updates `arclm/_version.py`, keeps `pyproject.toml` pointed at
 `README.md`, runs tests, builds distributions, and checks them with Twine.
 It does not upload unless `--upload` is passed.
 
+PyPI does not allow replacing files for an already published version. To
+update the package on PyPI, publish a new version such as `0.4.1`; do not
+delete the old release. The helper checks known PyPI repositories before
+uploading and stops early if the target version already exists or is older
+than the latest published version. If a version was uploaded and then deleted,
+PyPI still refuses that same filename later; publish a new version instead.
+
 Examples:
 
 ```bash
 python setup.py --version
-python setup.py release --version 0.4.0 --readme README.md
-python setup.py release --version 0.4.0 --repository testpypi --upload
-python setup.py release --version 0.4.0 --tag --push --upload
+python setup.py release --bump patch --readme README.md
+python setup.py release --bump patch --repository testpypi --upload
+python setup.py release --version 0.4.1 --upload
+python setup.py release --bump minor --tag --push --upload
 ```
+
+Use `--skip-existing` only when you intentionally want Twine to skip already
+published files. It does not update an existing PyPI version.
 
 ## Manual Release Checklist
 
 1. Confirm the README and docs match the code.
 2. Run `python -m pytest tests`.
 3. Run `git diff --check`.
-4. Update `arclm/_version.py`.
+4. Choose a new version number.
 5. Update release notes or changelog if one exists.
 6. Commit the release.
 7. Tag the release.
