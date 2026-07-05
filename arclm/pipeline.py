@@ -314,6 +314,22 @@ def _tokenizer_from_loaded_checkpoint(checkpoint):
     return None
 
 
+def tokenizer_from_checkpoint(checkpoint_or_source):
+    """Restore an ArcLM tokenizer from a loaded checkpoint or checkpoint path."""
+    checkpoint = checkpoint_or_source
+    if not hasattr(checkpoint, "tokenizer_metadata"):
+        checkpoint = load_external_model(checkpoint_or_source)
+
+    tokenizer = _tokenizer_from_loaded_checkpoint(checkpoint)
+    if tokenizer is None:
+        raise ValueError(
+            "Checkpoint does not contain restorable ArcLM tokenizer metadata. "
+            "Use a checkpoint saved by train_model()/Trainer.save(), or pass an "
+            "explicit tokenizer built for the target data."
+        )
+    return tokenizer
+
+
 def checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_size, tokenizer=None):
     """Check whether a checkpoint can be reused for the current run."""
     checkpoint_config = checkpoint.get("config", {})

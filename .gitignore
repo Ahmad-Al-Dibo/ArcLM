@@ -15,6 +15,7 @@ models/*
 
 data/*
 !data/data.txt
+!data/sft.jsonl
 
 *.pth
 *.pt
@@ -27,5 +28,6 @@ dataset/
 datasets/
 experiments/
 output/
+examples/qwen3_0_6b_sft/output/
 .env
 .env

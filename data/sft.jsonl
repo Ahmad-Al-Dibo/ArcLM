@@ -1,0 +1,3 @@
+{"instruction":"Explain ArcLM in one sentence.","output":"ArcLM is a compact PyTorch library for local language-model training, fine-tuning, loading, and inference."}
+{"messages":[{"role":"user","content":"What does assistant-only masking do?"},{"role":"assistant","content":"It computes training loss only on assistant response tokens while ignoring prompt and padding labels."}]}
+{"conversations":[{"from":"human","value":"Name one current ArcLM limitation."},{"from":"gpt","value":"Built-in LoRA and PEFT training are not implemented yet."}]}

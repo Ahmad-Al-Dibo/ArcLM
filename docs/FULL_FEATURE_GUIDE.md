@@ -1,260 +1,69 @@
 # ArcLM Full Feature Guide
 
-This guide documents the current ArcLM library surface with practical examples.
-It is written for local experimentation: small causal language models, local
-datasets, checkpoint reuse, inspection, diagnostics, and simple deployment.
+This guide explains the current ArcLM framework surface. It is longer than
+`USAGE.md` and is meant to help contributors and users understand how the pieces
+fit together.
 
 ## What ArcLM Is
 
-ArcLM is a compact PyTorch library for:
+ArcLM is a compact PyTorch language-model framework for:
 
-- training small causal language models from local text;
+- training small native ArcLM causal language models;
 - fine-tuning or continuing compatible ArcLM checkpoints;
-- preparing instruction/chat/pretraining datasets;
-- preserving tokenizer metadata inside checkpoints;
-- inspecting local/Hugging Face-style model sources before loading;
-- adapting raw PyTorch, safetensors, ArcLM, and Hugging Face sources;
-- generating text from saved checkpoints;
-- logging, diagnostics, and experiment tracking.
+- supervised fine-tuning Hugging Face causal LMs through `train_sft()`;
+- optional PEFT LoRA adapters for Hugging Face SFT;
+- assistant-only loss masking for instruction tuning;
+- dataset loading, formatting, preprocessing, diagnostics, and tracking;
+- external checkpoint inspection and adaptation.
 
-It is not a distributed trainer and it does not try to hide model compatibility
-rules. Tokenizer and architecture compatibility still matter.
+ArcLM is not a distributed training framework. It does not implement DPO, RLHF,
+PPO, reward modeling, native ArcLM LoRA layers, or multi-node training.
 
-## Installation
-
-For local development from this repository:
+## Install
 
 ```bash
+pip install -e .
 pip install -e .[dev]
-```
-
-For the optional Flask API:
-
-```bash
-pip install -e .[web]
-```
-
-For dataset preprocessing helpers:
-
-```bash
 pip install -e .[preprocess]
+pip install -e .[peft]
 ```
 
-Run the test suite:
+Runtime dependencies are `torch`, `numpy`, `sentencepiece`, and
+`transformers>=4.51`. The `peft` extra is only needed for
+`train_sft(..., use_lora=True)`.
 
-```bash
-python -m pytest tests
-```
+## Architecture Overview
 
-## Complete Runnable Example
+Main packages:
 
-The broadest runnable example is:
+- `arclm.config`: `Config`, `create_config`, and tuning presets.
+- `arclm.tokenizer` / `arclm.tokenizers`: word and SentencePiece tokenizers.
+- `arclm.data`: token loading, splitting, and `prepare_data`.
+- `arclm.dataset`: sliding-window `TextDataset` and DataLoader helper.
+- `arclm.model`: native `ArcLM` / `MiniGPT` model.
+- `arclm.trainer`: native training loop with tuple and masked dict batches.
+- `arclm.pipeline`: `train_model`, checkpoint helpers, model/trainer builders.
+- `arclm.sft`: Hugging Face SFT backend and `train_sft`.
+- `arclm.loaders`: external source loaders and SmartLoader.
+- `arclm.inference` / `arclm.generator`: checkpoint loading and generation.
+- `arclm.preprocess`: JSONL cleaning, redaction, deduplication, reports.
+- `arclm.diagnostics`: metrics, top-k predictions, coverage, benchmarks.
+- `arclm.tracking`: local experiment logging.
+- `arclm.training`: extension base classes and `UnifiedPipeline`.
 
-```bash
-python examples/full_feature_guide.py
-```
+## Training Modes
 
-It creates tiny files under `runs/full_feature_guide/`, then demonstrates:
+| Mode | API | Data | Checkpoint |
+| --- | --- | --- | --- |
+| Pretraining | `train_model(mode="pretrain")` | plain text | native ArcLM |
+| Next-token fine-tuning | `train_model(mode="finetune")` | formatted text | native ArcLM/adapted source |
+| Continued training | `train_model(mode="continue_training")` | plain text | compatible native ArcLM |
+| Hugging Face SFT | `train_sft(backend="huggingface")` | structured SFT JSON/JSONL/CSV | HF model or LoRA adapter |
+| Native ArcLM instruction tuning | `InstructionDataset` + `Trainer` | instruction/response lists | native ArcLM |
 
-- JSONL instruction-data preprocessing with `DataProcessor`;
-- high-level pretraining with `train_model`;
-- fine-tuning from the saved checkpoint;
-- inference with `load_model`;
-- top-k diagnostics;
-- lower-level `Config`/`prepare_data`/`build_model`/`build_trainer`;
-- `SmartLoader.inspect`;
-- `load_external_model`;
-- config save/load;
-- local experiment tracking.
+Preference training is not implemented.
 
-For the dedicated JSONL preprocessing pipeline example:
-
-```bash
-python examples/preprocess_dataset.py
-```
-
-## Special Tokens
-
-Use one shared token list for pretraining, fine-tuning, and inference prompts:
-
-```python
-SPECIAL_TOKENS = [
-    "<|qa_start|>",
-    "<|res_start|>",
-    "<|end|>",
-    "<|pad|>",
-]
-```
-
-Pass it during pretraining:
-
-```python
-from arclm import train_model
-
-result = train_model(
-    mode="pretrain",
-    data="data/data.txt",
-    output="models/arclm_pretrained.pth",
-    tokenizer_type="word",
-    user_defined_symbols=SPECIAL_TOKENS,
-    max_vocab=2000,
-    embed_dim=64,
-    num_blocks=2,
-    block_size=32,
-    batch_size=8,
-    num_epochs=3,
-)
-```
-
-For `word` tokenizers, ArcLM reserves `user_defined_symbols` as real vocabulary
-items even if they are rare. For `sentencepiece`, ArcLM passes them to
-SentencePiece training and stores them in tokenizer metadata.
-
-Use `encode_text()` for raw strings:
-
-```python
-ids = result.tokenizer.encode_text("<|qa_start|> wat is minigpt? <|res_start|>")
-```
-
-Use `encode()` only when you already have a token list:
-
-```python
-ids = result.tokenizer.encode(["<|qa_start|>", "wat", "is", "minigpt?"])
-```
-
-Important: for fine-tuning, start from a checkpoint that already contains the
-special tokens you want. Adding new tokens later changes the vocabulary and
-usually requires resizing/retraining embeddings and the output head.
-
-## Data Processing
-
-`DataProcessor` loads JSON, JSONL, CSV, TXT, or custom sources into an in-memory
-`ProcessedDataset`.
-
-```python
-from arclm import DataProcessor
-
-dataset = DataProcessor.load("data/qa.jsonl")
-
-processed = (
-    dataset.clean()
-    .filter(lambda row: bool(row.get("question")))
-    .transform(
-        format="instruction",
-        mapping={
-            "instruction": "question",
-            "input": "context",
-            "output": "answer",
-        },
-        template="<|qa_start|> {instruction}\n{input}\n<|res_start|> {output} <|end|>",
-    )
-)
-
-splits = processed.split(train=0.8, validation=0.1, test=0.1, seed=42)
-```
-
-Write transformed samples to a text file for `train_model`:
-
-```python
-from pathlib import Path
-
-Path("data/finetune.txt").write_text(
-    "\n".join(sample["text"] for sample in processed.samples),
-    encoding="utf-8",
-)
-```
-
-Optional tokenization:
-
-```python
-tokenized = processed.tokenize(result.tokenizer)
-print(tokenized.samples[0]["tokens"])
-```
-
-Custom loader:
-
-```python
-from arclm import DataProcessor
-
-def load_custom(path):
-    yield {"text": path.read_text(encoding="utf-8")}
-
-dataset = DataProcessor.load("custom.data", loader=load_custom)
-```
-
-## Preprocess Pipeline
-
-`arclm.preprocess` is a JSONL-first pipeline for cleaning datasets before they
-reach training. It can normalize HTML/text, redact emails/phones/IPs, apply
-basic quality filters, detect duplicates, and write JSON/HTML reports.
-
-```python
-from arclm.preprocess import PreprocessConfig, PreprocessPipeline
-
-config = PreprocessConfig(
-    text_field="text",
-    output_field="text",
-    min_chars=20,
-    min_words=4,
-    drop_emails=True,
-    redact_pii=True,
-    near_dedup=False,
-    report_json=True,
-    report_html=True,
-)
-
-report = PreprocessPipeline(config).run(
-    "data/raw.jsonl",
-    "data/cleaned.jsonl",
-    "reports/preprocess",
-)
-
-print(report["written"])
-print(report["reasons"])
-```
-
-The CLI accepts a YAML config:
-
-```bash
-python -m arclm.preprocess.cli data/raw.jsonl --output data/cleaned.jsonl --report-dir reports/preprocess
-```
-
-For richer HTML stripping and YAML support, install:
-
-```bash
-pip install -e .[preprocess]
-```
-
-After preprocessing, convert the cleaned JSONL text rows into the text file or
-`DataProcessor` workflow used by `train_model()`.
-
-## Tokenizers And Training Packages
-
-Common imports remain available from `arclm`, but the folder-based APIs are the
-preferred place for tokenizer selection and inheritable training extensions.
-
-```python
-from arclm.tokenizers import TokenizerFactory
-from arclm.training import BaseModelLoader, BaseTrainingPipeline, UnifiedPipeline
-
-tokenizer = TokenizerFactory.create("word", max_vocab=2000)
-
-class MyTrainingPipeline(UnifiedPipeline):
-    pass
-```
-
-`TokenizerFactory.register(name, cls)` can add a custom tokenizer class. New
-training extensions should inherit from `BaseTrainingPipeline`,
-`BaseModelLoader`, or `BaseModelAdapter` when they replace pipeline behavior.
-`arclm.pipeline_v2` remains only as a compatibility shim.
-
-## High-Level Training
-
-`train_model()` owns the whole flow: data loading, tokenizer creation/reuse,
-model creation/adaptation, trainer creation, training, metrics, and checkpoint
-saving.
-
-Pretraining:
+## Native Pretraining
 
 ```python
 from arclm import train_model
@@ -264,7 +73,6 @@ result = train_model(
     data="data/data.txt",
     output="models/arclm_pretrained.pth",
     tokenizer_type="sentencepiece",
-    user_defined_symbols=SPECIAL_TOKENS,
     max_vocab=8000,
     embed_dim=128,
     num_blocks=4,
@@ -273,19 +81,22 @@ result = train_model(
     num_epochs=5,
     learning_rate=3e-4,
     validation_split=0.1,
-    checkpoint_batch_interval=100,
 )
 ```
 
-Fine-tuning:
+The result contains `mode`, `model_path`, `config`, `history`, `vocab_size`,
+`tokenizer`, and optional `checkpoint_source`.
+
+## Native Fine-tuning
 
 ```python
+from arclm import train_model
+
 result = train_model(
     mode="finetune",
     checkpoint="models/arclm_pretrained.pth",
     data="data/finetune.txt",
     output="models/arclm_finetuned.pth",
-    user_defined_symbols=SPECIAL_TOKENS,
     num_epochs=2,
     learning_rate=2e-5,
     freeze_backbone=True,
@@ -293,198 +104,218 @@ result = train_model(
 )
 ```
 
-Continue training:
+This uses next-token loss over all labels. It is useful when your file already
+contains the exact prompt/answer text you want the native model to learn.
+
+## Continued Training
 
 ```python
-result = train_model(
+continued = train_model(
     mode="continue_training",
     checkpoint="models/arclm_pretrained.pth",
-    data="data/data.txt",
+    data="data/more_pretraining.txt",
     output="models/arclm_continued.pth",
     num_epochs=5,
 )
 ```
 
-For native ArcLM checkpoints, tokenizer compatibility is checked before
-fine-tuning/continuing so token IDs are not silently corrupted.
+Continued training requires a compatible tokenizer and model shape.
 
-## Lower-Level Training
+## Hugging Face SFT And LoRA
 
-Use lower-level pieces when you need explicit control over the model, trainer,
-callbacks, or diagnostics.
+`train_sft()` is the public ArcLM SFT API for Hugging Face causal LMs.
 
 ```python
-import torch
-from arclm import (
-    Config,
-    build_model,
-    build_trainer,
-    create_checkpoint_callback,
-    prepare_data,
-)
+from arclm import train_sft
 
-config = Config(
-    data_path="data/data.txt",
-    model_path="models/arclm_low_level.pth",
-    tokenizer_type="word",
-    user_defined_symbols=SPECIAL_TOKENS,
-    max_vocab=2000,
-    embed_dim=64,
-    num_blocks=2,
-    block_size=32,
-    batch_size=8,
-    num_epochs=3,
-    validation_split=0.1,
-    checkpoint_batch_interval=100,
-    device="cuda" if torch.cuda.is_available() else "cpu",
-)
-
-data = prepare_data(config)
-config.vocab_size = data.vocab_size
-
-model = build_model(config, data.vocab_size)
-trainer = build_trainer(model, config)
-
-trainer.train(
-    data.train_loader,
-    config.num_epochs,
-    val_loader=data.val_loader,
-    checkpoint_callback=create_checkpoint_callback(config, data.tokenizer, data.vocab_size),
-    checkpoint_batch_interval=config.checkpoint_batch_interval,
-)
-
-trainer.save(
-    config,
-    vocab=data.tokenizer.vocab,
-    stoi=data.tokenizer.stoi,
-    itos=data.tokenizer.itos,
-    tokenizer_metadata=data.tokenizer.to_checkpoint(),
+result = train_sft(
+    model="Qwen/Qwen3-0.6B",
+    dataset="examples/qwen3_0_6b_sft/data/sample_sft.jsonl",
+    output_dir="examples/qwen3_0_6b_sft/output/qwen3_0_6b_sft_lora",
+    backend="huggingface",
+    assistant_only_loss=True,
+    use_lora=True,
+    batch_size=1,
+    gradient_accumulation_steps=8,
+    learning_rate=2e-4,
+    num_epochs=1,
+    max_length=1024,
+    dtype="auto",
+    device_map="auto",
 )
 ```
 
-## Inference
+Important behavior:
 
-Load a saved ArcLM checkpoint:
+- `backend="huggingface"` is the only implemented `train_sft` backend.
+- `assistant_only_loss=True` ignores system/user labels and trains only on assistant answer tokens.
+- `use_lora=True` requires PEFT and saves a LoRA adapter.
+- `use_lora=False` saves a full Hugging Face model.
+- Qwen3 chat templates are supported; the example tries `enable_thinking=False`.
+
+Complete workflow:
+
+```text
+examples/qwen3_0_6b_sft/README.md
+```
+
+## Native Assistant-only SFT
+
+For native ArcLM checkpoints:
+
+```python
+from torch.utils.data import DataLoader
+from arclm import InstructionDataset, build_trainer
+
+dataset = InstructionDataset(
+    instructions=["What is ArcLM?"],
+    responses=["ArcLM is a compact PyTorch language-model framework."],
+    tokenizer=tokenizer,
+    block_size=128,
+)
+
+trainer = build_trainer(model, config)
+trainer.train(DataLoader(dataset, batch_size=1), epochs=1)
+```
+
+`InstructionDataset` returns:
+
+- `x`: input IDs
+- `y`: next-token labels
+- `mask`: label positions that contribute to loss
+
+The mask is shifted to label positions so assistant response labels are active.
+
+## Masks
+
+ArcLM has three mask concepts:
+
+- Causal mask: internal to native `SelfAttention`, prevents future-token attention.
+- Loss mask: `InstructionDataset`/`Trainer` and `train_sft` label construction.
+- Attention mask: used by Hugging Face `train_sft`; not an input to native `ArcLM.forward()` yet.
+
+## Data Formats
+
+Plain text for next-token training:
+
+```text
+ArcLM trains causal language models.
+```
+
+OpenAI-style SFT:
+
+```json
+{"messages":[{"role":"system","content":"Be helpful."},{"role":"user","content":"What is SFT?"},{"role":"assistant","content":"SFT trains on instruction-response examples."}]}
+```
+
+Instruction/output SFT:
+
+```json
+{"instruction":"Summarize ArcLM.","output":"ArcLM is a compact local language-model framework."}
+```
+
+ShareGPT-style:
+
+```json
+{"conversations":[{"from":"human","value":"What is ArcLM?"},{"from":"gpt","value":"A compact LM framework."}]}
+```
+
+## Tokenizers
+
+Native ArcLM supports:
+
+- `Tokenizer`: simple word-level tokenizer.
+- `SentencePieceTokenizer`: subword tokenizer with BPE or unigram model types.
+- `TokenizerFactory`: register and create tokenizers by name.
+
+Use `encode_text()` for raw strings and `encode()` only for pre-tokenized token
+lists. Save tokenizer metadata with native checkpoints.
+
+## Checkpoints
+
+Native `Trainer.save()` writes:
+
+- `model_state_dict`
+- `optimizer_state_dict`
+- config
+- vocab/stoi/itos
+- tokenizer metadata
+- block size and vocab size
+- current epoch, batch, global step
+- train history and best validation state
+
+Restore a tokenizer:
+
+```python
+from arclm import tokenizer_from_checkpoint
+
+tokenizer = tokenizer_from_checkpoint("models/arclm_pretrained.pth")
+```
+
+## Inference
 
 ```python
 from arclm import load_model
 
 loaded = load_model("models/arclm_finetuned.pth")
-
-prompt = "<|qa_start|> Wat is MiniGPT? <|res_start|>"
-print(loaded.predict(prompt, max_new_tokens=50, top_p=0.9))
+print(loaded.predict("ArcLM is", max_new_tokens=50, top_p=0.9))
 ```
 
-Cached prediction helper:
+`LoadedModel` provides `model`, `generator`, `config`, `device`, and
+`predict(...)`.
 
-```python
-from arclm import predict
+## External Loading
 
-text = predict(
-    "<|qa_start|> Wat is MiniGPT? <|res_start|>",
-    model_path="models/arclm_finetuned.pth",
-    max_new_tokens=50,
-)
-```
+`load_external_model()` normalizes sources into `LoadedCheckpoint`.
 
-Generation options:
+Supported:
 
-- `max_new_tokens`: maximum generated tokens;
-- `temperature`: lower is more conservative;
-- `repetition_penalty`: penalizes repeated tokens;
-- `top_k`: keep only the top K logits;
-- `top_p`: nucleus sampling threshold.
+- native ArcLM checkpoints;
+- raw PyTorch state dicts;
+- `.safetensors` with optional package installed;
+- Hugging Face folders/model IDs with `transformers`.
 
-## SmartLoader
-
-`SmartLoader` inspects before loading. It can detect local model folders,
-checkpoint files, Hugging Face-style folders, tokenizer files, weight formats,
-adapter files, optimizer/scheduler state, and trainer state.
+Use `SmartLoader.inspect()` before loading large or unknown sources.
 
 ```python
 from arclm import SmartLoader
 
-plan = SmartLoader.inspect(
-    "models/arclm_pretrained.pth",
-    auto_detect=True,
-    precision="fp32",
-    load_optimizer=False,
-)
-
-print(plan.report)
+plan = SmartLoader.inspect("models/arclm_pretrained.pth")
 print(plan.to_dict())
 ```
 
-Manual mode:
+## Preprocessing
+
+`arclm.preprocess` can:
+
+- strip HTML;
+- normalize text;
+- redact emails, phones, IPs;
+- filter low-quality rows;
+- exact and near deduplicate;
+- write JSON and HTML reports.
 
 ```python
-plan = SmartLoader.inspect(
-    "Qwen/Qwen2.5-7B-Instruct",
-    auto_detect=False,
-    model_type="qwen",
-    tokenizer="auto",
-    weight_format="safetensors",
-    precision="bf16",
-    load_as="full_model",
+from arclm.preprocess import PreprocessConfig, PreprocessPipeline
+
+report = PreprocessPipeline(PreprocessConfig()).run(
+    "data/raw.jsonl",
+    "data/cleaned.jsonl",
+    "reports/preprocess",
 )
 ```
-
-Load with inspection metadata attached:
-
-```python
-loaded = SmartLoader.load(
-    "models/arclm_pretrained.pth",
-    load_optimizer=False,
-)
-
-print(loaded.metadata["load_report"])
-```
-
-Register a custom inspector:
-
-```python
-from arclm.loaders import ModelInspector, register_model_inspector
-
-class MyInspector(ModelInspector):
-    def can_inspect(self, source):
-        return str(source).endswith(".myformat")
-
-    def inspect(self, source):
-        plan = super().inspect(source)
-        plan.source_type = "myformat"
-        plan.weight_format = "myformat"
-        return plan
-
-register_model_inspector(MyInspector())
-```
-
-## External Model Loading
-
-The loader registry normalizes supported sources into `LoadedCheckpoint`.
-
-```python
-from arclm import adapt_for_training, load_external_model
-
-loaded = load_external_model("external/model.pth")
-bundle = adapt_for_training(loaded)
-
-print(loaded.source_type)
-print(bundle.config)
-```
-
-Supported sources:
-
-- ArcLM checkpoints saved by `Trainer.save`;
-- raw PyTorch state dicts: `.pth`, `.pt`, `.bin`, `.ckpt`;
-- safetensors files when `safetensors` is installed;
-- Hugging Face model folders or model IDs when `transformers` is installed.
-
-Hugging Face loading can download and instantiate large models. Use
-`SmartLoader.inspect()` first when you only want to understand a source.
 
 ## Diagnostics
 
-Top-k next-token predictions:
+Useful helpers:
+
+- `predict_top_k`
+- `format_top_k_predictions`
+- `calculate_metrics`
+- `calculate_perplexity`
+- `export_metrics_to_json`
+- `format_tokenizer_coverage_report`
+- `run_long_context_evaluation`
 
 ```python
 from arclm import predict_top_k, format_top_k_predictions
@@ -499,72 +330,23 @@ predictions = predict_top_k(
     k=5,
     tokenizer=loaded.generator.tokenizer,
 )
-
 print(format_top_k_predictions("machine learning", predictions))
 ```
 
-Tokenizer coverage:
+## Tracking
 
-```python
-coverage = data.tokenizer.analyze_coverage(data.tokens)
-from arclm import format_tokenizer_coverage_report
-
-print(format_tokenizer_coverage_report(coverage))
-```
-
-Training diagnostics:
-
-```python
-from arclm import build_training_diagnostics_report
-
-print(build_training_diagnostics_report(model, data, config))
-```
-
-Evaluation metrics:
-
-```python
-from arclm import calculate_metrics, export_metrics_to_json
-
-metrics = calculate_metrics(model, data.val_loader, config, device=config.device)
-export_metrics_to_json(metrics, "reports/metrics.json")
-```
-
-## Config Files
-
-```python
-from arclm import Config
-from arclm.config_loader import save_config_json, load_config_json
-
-config = Config(embed_dim=64, block_size=32)
-save_config_json(config, "configs/small.json")
-loaded_config = load_config_json("configs/small.json")
-```
-
-YAML is supported when PyYAML is installed:
-
-```python
-from arclm.config_loader import save_config_yaml, load_config_yaml
-```
-
-## Experiment Tracking
-
-Local tracking requires no external service:
+Local experiment tracking:
 
 ```python
 from arclm.tracking import create_experiment
 
-tracker = create_experiment(
-    "baseline",
-    experiment_dir="experiments",
-    tags={"tokenizer": "word"},
-)
+tracker = create_experiment("baseline", experiment_dir="experiments")
 tracker.log_config(config)
 tracker.log_metrics({"loss": 2.5}, step=1)
-tracker.log_artifact("models/arclm_pretrained.pth")
 tracker.end()
 ```
 
-Optional backends exist for MLflow and Weights & Biases if installed.
+Optional MLflow and Weights & Biases backends are used only if installed.
 
 ## Flask API
 
@@ -583,46 +365,36 @@ python app.py
 
 ## Example Scripts
 
-- `examples/full_feature_guide.py`: broad end-to-end local demo.
-- `examples/preprocess_dataset.py`: JSONL preprocessing, filtering,
-  deduplication, redaction, and report demo.
-- `examples/prepare_data.py`: convert raw TXT/JSONL into training files.
-- `examples/train_pretrain.py`: CLI pretraining example.
-- `examples/train_finetune.py`: CLI fine-tuning example.
-- `examples/load_external_and_finetune.py`: external source fine-tuning.
-- `examples/test/test-train.py`: compact pretraining smoke example.
-- `examples/test/test-finetuing.py`: compact fine-tuning smoke example.
-- `examples/test/test-usage.py`: compact inference smoke example.
+- `examples/train_pretrain.py`: native pretraining.
+- `examples/train_finetune.py`: next-token native checkpoint fine-tuning.
+- `examples/train_sft_local.py`: native ArcLM assistant-masked SFT.
+- `examples/train_sft_hf.py`: older Hugging Face-to-ArcLM adaptation SFT.
+- `examples/qwen3_0_6b_sft/`: complete Qwen3 base/SFT/load/benchmark workflow.
+- `examples/full_feature_guide.py`: broad local demo.
+- `examples/preprocess_dataset.py`: preprocessing report demo.
+- `examples/library_workflow.py`: small native workflow.
 
-## Common Problems
+## Troubleshooting
 
 `Special tokens become <UNK>`
 
-Pass the same `user_defined_symbols` during pretraining, and use `encode_text`
-for raw strings. Fine-tuning cannot safely add new tokens to an old checkpoint
-without changing model shapes.
+Use the same `user_defined_symbols` when training and fine-tuning. Use
+`encode_text()` for raw strings.
 
-`Fine-tuning says tokenizer is incompatible`
+`Tokenizer is incompatible`
 
-Use the checkpoint tokenizer. Do not rebuild a tokenizer with a different
-vocabulary unless you intentionally adapt or retrain the model head.
+Reuse the checkpoint tokenizer or train a new compatible model head.
 
-`SentencePiece output looks different from word-tokenizer output`
+`Missing PEFT`
 
-SentencePiece uses subword pieces and its own spacing markers internally.
-Use `decode_string()` for text and keep tokenizer metadata in checkpoints.
+Install `pip install -e .[peft]`, or call `train_sft(..., use_lora=False)`.
 
-`Hugging Face loading is slow or uses too much memory`
+`Qwen training is slow on CPU`
 
-`load_external_model()` instantiates the model. Use `SmartLoader.inspect()`
-first when you only need to inspect files or metadata.
+Qwen3-0.6B can load on CPU but training is slow. Use a CUDA GPU for the full
+example, or test the API with a smaller Hugging Face model.
 
-`No checkpoint is written during training`
+`CLI train fails`
 
-The high-level `train_model()` always saves at the end. Automatic intermediate
-saves require `checkpoint_interval` or `checkpoint_batch_interval`.
-
-`Validation metrics are missing`
-
-Set `validation_split > 0.0` and ensure the dataset is large enough to create a
-validation loader.
+The package CLI train/eval code is stale. Use `train_model()`, `train_sft()`,
+or the maintained example scripts.

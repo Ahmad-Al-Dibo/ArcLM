@@ -63,6 +63,7 @@ from .pipeline import (
     create_epoch_checkpoint_callback,
     load_compatible_checkpoint,
     save_training_checkpoint,
+    tokenizer_from_checkpoint,
     train_model,
     TrainingResult,
 )
@@ -84,6 +85,7 @@ from .regularization import (
     LearningRateScheduler,
     MixupAugmentation,
 )
+from .sft import SFTTrainingResult, train_sft
 from .tokenizers import (
     SentencePieceTokenizer,
     Tokenizer,
@@ -215,12 +217,15 @@ __all__ = [
     "build_trainer",
     "train_model",
     "TrainingResult",
+    "train_sft",
+    "SFTTrainingResult",
     "checkpoint_is_compatible_for_continue_training",
     "checkpoint_is_compatible_for_tuining",
     "create_checkpoint_callback",
     "create_epoch_checkpoint_callback",
     "load_compatible_checkpoint",
     "save_training_checkpoint",
+    "tokenizer_from_checkpoint",
     "UnifiedPipeline",
     "PreTrainedModelLoader",
     "ModelAdapter",

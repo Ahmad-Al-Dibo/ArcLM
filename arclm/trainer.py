@@ -10,6 +10,7 @@ import os
 import tempfile
 import warnings
 import torch
+import torch.nn.functional as F
 from pathlib import Path
 from .config import Config
 from .logging import AsyncTrainingLogger
@@ -180,18 +181,12 @@ class Trainer:
             total_batches = loader_batches if loader_batches is not None else "?"
             batches_seen = 0
             
-            for batch_idx, (x, y) in enumerate(loader, start=1):
+            for batch_idx, batch in enumerate(loader, start=1):
                 batches_seen = batch_idx
-                x = x.to(self.device)
-                y = y.to(self.device)
+                x, y, loss_mask = self.unpack_batch(batch)
                 
                 logits = self.model(x)
-                B, T, V = logits.shape
-                
-                loss = self.criterion(
-                    logits.view(B * T, V),
-                    y.view(B * T)
-                )
+                loss = self.compute_loss(logits, y, loss_mask)
                 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -371,22 +366,21 @@ class Trainer:
         validation_start = time.time()
         
         with torch.no_grad():
-            for batch_idx, (x, y) in enumerate(val_loader, start=1):
-                x = x.to(self.device)
-                y = y.to(self.device)
+            for batch_idx, batch in enumerate(val_loader, start=1):
+                x, y, loss_mask = self.unpack_batch(batch)
                 
                 logits = self.model(x)
-                B, T, V = logits.shape
-                
-                loss = self.criterion(
-                    logits.view(B * T, V),
-                    y.view(B * T)
-                )
+                loss = self.compute_loss(logits, y, loss_mask)
                 
                 total_loss += loss.item()
                 predictions = logits.argmax(dim=-1)
-                correct_tokens += (predictions == y).sum().item()
-                total_tokens += y.numel()
+                if loss_mask is not None:
+                    active = loss_mask.bool()
+                    correct_tokens += ((predictions == y) & active).sum().item()
+                    total_tokens += int(active.sum().item())
+                else:
+                    correct_tokens += (predictions == y).sum().item()
+                    total_tokens += y.numel()
 
                 if log_interval and batch_idx % log_interval == 0:
                     elapsed = time.time() - validation_start
@@ -412,6 +406,53 @@ class Trainer:
             "perplexity": math.exp(min(avg_loss, 20)),
             "token_accuracy": correct_tokens / total_tokens if total_tokens else 0.0,
         }
+
+    def unpack_batch(self, batch):
+        """Normalize tuple and dict dataloader batches."""
+        if isinstance(batch, dict):
+            try:
+                x = batch["x"].to(self.device)
+                y = batch["y"].to(self.device)
+            except KeyError as exc:
+                raise ValueError("Dictionary batches must contain 'x' and 'y'.") from exc
+            loss_mask = batch.get("mask")
+            if loss_mask is not None:
+                loss_mask = loss_mask.to(self.device)
+            return x, y, loss_mask
+
+        x, y = batch
+        return x.to(self.device), y.to(self.device), None
+
+    def compute_loss(self, logits, y, loss_mask=None):
+        """Compute next-token loss, optionally over masked label positions only."""
+        B, T, V = logits.shape
+        if loss_mask is None:
+            return self.criterion(
+                logits.reshape(B * T, V),
+                y.reshape(B * T),
+            )
+
+        if tuple(loss_mask.shape) != tuple(y.shape):
+            raise ValueError(
+                "Loss mask shape must match labels: "
+                f"mask={tuple(loss_mask.shape)}, labels={tuple(y.shape)}."
+            )
+
+        loss_per_token = F.cross_entropy(
+            logits.reshape(B * T, V),
+            y.reshape(B * T),
+            reduction="none",
+        ).reshape(B, T)
+        loss_mask = loss_mask.to(dtype=loss_per_token.dtype)
+        return (loss_per_token * loss_mask).sum() / loss_mask.sum().clamp_min(1.0)
+
+    def _unpack_batch(self, batch):
+        """Backward-compatible alias for unpack_batch()."""
+        return self.unpack_batch(batch)
+
+    def _compute_loss(self, logits, y, loss_mask=None):
+        """Backward-compatible alias for compute_loss()."""
+        return self.compute_loss(logits, y, loss_mask)
     
     def _check_early_stopping(self, val_loss, patience, min_delta=0.0):
         """Check if we should stop early based on validation loss

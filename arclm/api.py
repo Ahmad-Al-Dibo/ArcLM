@@ -22,6 +22,9 @@ __all__ = [
     "PreTrainedModelLoader",
     "ModelAdapter",
     "train_model",
+    "train_sft",
+    "SFTTrainingResult",
+    "tokenizer_from_checkpoint",
     "load_external_model",
     "adapt_for_training",
     "SmartLoader",
@@ -86,6 +89,15 @@ def __getattr__(name):
     elif name == "train_model":
         from .pipeline import train_model
         return train_model
+    elif name == "train_sft":
+        from .sft import train_sft
+        return train_sft
+    elif name == "SFTTrainingResult":
+        from .sft import SFTTrainingResult
+        return SFTTrainingResult
+    elif name == "tokenizer_from_checkpoint":
+        from .pipeline import tokenizer_from_checkpoint
+        return tokenizer_from_checkpoint
     elif name == "load_external_model":
         from .loaders import load_external_model
         return load_external_model

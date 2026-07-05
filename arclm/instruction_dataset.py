@@ -28,7 +28,7 @@ class InstructionDataset(Dataset):
             full_text = f"{self.instruction_prefix}\n{instr}\n{self.response_prefix}\n{resp}"
             encoded = tokenizer.encode_text(full_text)
             
-            # Compute mask: 1 for response tokens only
+            # Token-level response mask. __getitem__ shifts it to label positions.
             instr_encoded = tokenizer.encode_text(f"{self.instruction_prefix}\n{instr}\n{self.response_prefix}\n")
             instr_len = len(instr_encoded)
             
@@ -51,7 +51,8 @@ class InstructionDataset(Dataset):
         
         x = torch.tensor(tokens, dtype=torch.long)
         y = torch.tensor(tokens[1:] + [0], dtype=torch.long)  # Shift for next-token
-        mask_tensor = torch.tensor(mask, dtype=torch.float32)
+        label_mask = mask[1:] + [0.0]
+        mask_tensor = torch.tensor(label_mask, dtype=torch.float32)
         
         return {'x': x, 'y': y, 'mask': mask_tensor}
 
