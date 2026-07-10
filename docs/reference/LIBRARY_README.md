@@ -3,6 +3,10 @@
 This reference lists the current public API and the intended use of each major
 module. For runnable workflows, see `../USAGE.md`.
 
+ArcLM 0.5.0 supports native ArcLM checkpoints and Hugging Face SFT workflows.
+Hosted provider clients such as OpenAI, Anthropic, Google Gemini, and Ollama
+are outside this release.
+
 ## Top-level Imports
 
 The root package exports the main user-facing surface:
@@ -101,6 +105,13 @@ tokens, train/validation splits, tokenizer, encoded IDs, and DataLoaders.
 - tuple/list batches: `(x, y)`
 - dict batches: `{"x": x, "y": y, "mask": optional_loss_mask}`
 
+Shape contract:
+
+- `x`: token IDs shaped `[batch, time]`
+- `y`: next-token labels shaped `[batch, time]`
+- `mask`: optional float/bool loss mask shaped `[batch, time]`
+- `model(x)`: logits shaped `[batch, time, vocab]`
+
 Important methods:
 
 - `train`
@@ -112,6 +123,27 @@ Important methods:
 - `save`
 - `load`
 - `get_train_history`
+
+Extension points:
+
+- override `compute_loss(...)` for custom objectives that still use ArcLM-shaped logits;
+- override `unpack_batch(...)` for a different batch structure;
+- write a manual loop around `unpack_batch(...)` and `compute_loss(...)` for custom schedulers, gradient accumulation, or extra logging;
+- pass `checkpoint_callback`, `checkpoint_epoch_interval`, or `checkpoint_batch_interval` to `train(...)` for custom checkpoint timing.
+
+When saving native checkpoints, include tokenizer metadata:
+
+```python
+trainer.save(
+    config,
+    vocab=tokenizer.vocab,
+    stoi=tokenizer.stoi,
+    itos=tokenizer.itos,
+    tokenizer_metadata=tokenizer.to_checkpoint(),
+)
+```
+
+See `../CUSTOM_TRAINER.md` for complete low-level examples.
 
 ## `train_model`
 
@@ -292,6 +324,35 @@ Optional MLflow and W&B integration are used only when available.
 `train_model()` for native ArcLM workflows and `train_sft()` for Hugging Face
 SFT.
 
+## Repository Example Scripts
+
+Maintained public examples live in `examples/` as numbered scripts:
+
+- `01_quickstart.py`
+- `02_tokenization.py`
+- `03_data_processing.py`
+- `04_pretraining.py`
+- `05_continue_training.py`
+- `06_finetuning.py`
+- `07_native_sft.py`
+- `08_huggingface_sft.py`
+- `09_lora_sft.py`
+- `10_preprocess_pipeline.py`
+- `11_inference.py`
+- `12_smart_loader.py`
+- `13_diagnostics.py`
+- `14_custom_trainer.py`
+- `15_custom_hf_sft_loop.py`
+
+Advanced root-level scripts are practical workflows:
+
+- `train.py`: full Qwen medical SFT workflow using `FreedomIntelligence/medical-o1-reasoning-SFT`, `Qwen/Qwen3-0.6B`, optional LoRA, gradient accumulation, token-length analysis, and periodic Hugging Face checkpoint folders.
+- `test.py`: matching inference script that loads a LoRA adapter, a full Hugging Face model directory, or the latest checkpoint directory.
+
+The shortest public API for Hugging Face SFT is `train_sft()`. The root
+`train.py` script uses advanced helpers from `arclm.sft` to expose a more
+complete application workflow with periodic checkpoint folders.
+
 ## Logic Helpers
 
 `arclm.logics` contains educational propositional logic classes:
@@ -312,5 +373,6 @@ They are unrelated to language-model training.
 - No preference training: DPO/RLHF/PPO/reward modeling are not implemented.
 - No native ArcLM LoRA layers.
 - Native `ArcLM.forward()` does not accept `attention_mask`.
-- CLI `train` and `eval` are stale; use Python APIs.
+- Hosted provider clients are not implemented.
+- Python APIs are the canonical workflows.
 - Hugging Face adaptation into native ArcLM is best-effort, based on matching tensor names and shapes.

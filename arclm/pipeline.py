@@ -4,7 +4,7 @@ Model construction and training pipeline helpers.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 import time
 
 import torch
@@ -111,7 +111,7 @@ class TrainingResult:
     config: Config
     history: Dict[str, Any]
     vocab_size: int
-    tokenizer: Optional[Tokenizer, SentencePieceTokenizer] = None
+    tokenizer: Optional[Union[Tokenizer, SentencePieceTokenizer]] = None
     checkpoint_source: Optional[str] = None
 
 

@@ -58,7 +58,7 @@ class GPTBlock(nn.Module):
 
 
 class ArcLM(nn.Module):
-    """Compact causal language model."""
+    """Compact GPT-style causal language model."""
     
     def __init__(self, vocab_size, embed_dim=64, block_size=8, num_blocks=2, dropout=0.0):
         super().__init__()
@@ -96,3 +96,5 @@ class ArcLM(nn.Module):
 
 # Backward-compatible alias for older code and checkpoints.
 MiniGPT = ArcLM
+
+

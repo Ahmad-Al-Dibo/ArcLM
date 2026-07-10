@@ -1,4 +1,10 @@
-"""ArcLM - compact PyTorch language-model training and fine-tuning."""
+"""Public ArcLM package interface.
+
+ArcLM is a compact PyTorch toolkit for native causal language-model training,
+checkpoint loading, dataset preparation, diagnostics, and Hugging Face SFT.
+"""
+
+from pathlib import Path
 
 import torch
 
@@ -27,7 +33,6 @@ from .diagnostics import (
     run_long_context_evaluation,
     score_concept_relationships,
 )
-
 from .generator import Generator
 from .inference import DEFAULT_MODEL_PATH, LoadedModel, load_model, predict
 from .instruction_dataset import InstructionDataset, create_instruction_dataloader
@@ -43,6 +48,22 @@ from .loaders import (
     register_model_inspector,
     validate_tokenizer_compatibility,
 )
+from .external_inference import (
+    ExternalLoadedModel,
+    ExternalModelConfig,
+    GenerationConfig,
+    ModelSaveConfig,
+    ModelSourceInfo,
+    continue_native_training,
+    fine_tune_external_model,
+    fine_tune_native_model,
+    inspect_model_source,
+    load_any_model,
+    load_external_for_inference,
+    predict_external,
+    save_loaded_model,
+    train_native_model,
+)
 from .logics import (
     And,
     Biconditional,
@@ -55,6 +76,7 @@ from .logics import (
 )
 from .model import ArcLM, MiniGPT
 from .pipeline import (
+    TrainingResult,
     build_model,
     build_trainer,
     checkpoint_is_compatible_for_continue_training,
@@ -65,16 +87,6 @@ from .pipeline import (
     save_training_checkpoint,
     tokenizer_from_checkpoint,
     train_model,
-    TrainingResult,
-)
-from .training import (
-    BaseModelAdapter,
-    BaseModelLoader,
-    BaseTrainingPipeline,
-    ModelAdapter,
-    PreTrainedModelLoader,
-    StoppingCriteria,
-    UnifiedPipeline,
 )
 from .regularization import (
     EarlyStopping,
@@ -94,99 +106,18 @@ from .tokenizers import (
     get_tokenizer_from_config,
 )
 from .trainer import Trainer
+from .training import (
+    BaseModelAdapter,
+    BaseModelLoader,
+    BaseTrainingPipeline,
+    ModelAdapter,
+    PreTrainedModelLoader,
+    StoppingCriteria,
+    UnifiedPipeline,
+)
 from .utils import format_duration
 
-__author__ = "Ahmad_Al_Dibo"
-
-
-"""
-Add this to the education documentation:
-
-| Task                  | Input                                     | Label (Target Output)           |
-| --------------------- | ----------------------------------------- | ------------------------------- |
-| Translation           | "Hello"                                   | "Bonjour"                       |
-| Summarization         | Long article                              | Short summary                   |
-| Question Answering    | "What is AI?"                             | "Artificial intelligence is..." |
-| Chatbot               | User prompt                               | Assistant response              |
-| Code Generation       | "Write a Python function to sort a list." | Correct Python code             |
-| Instruction Following | "Explain photosynthesis."                 | High-quality explanation        |
-
-
-
-"""
-
-
-__types_of_supervised_fine_tuning = [
-    "What is Supervised Fine-Tuning (SFT)?",
-    "How Supervised Fine-Tuning Works",
-    {
-        "Core Concepts": [
-            "Adapting to the Task at Hand",
-            "The Role of Labeled Data",
-            "Fine-Tuning the Model",
-        ]
-    },
-    {
-        "Types of Supervised Fine-Tuning": [
-            "Full Fine-Tuning",
-            "Parameter-Efficient Fine-Tuning (PEFT)",
-            "Instruction Fine-Tuning",
-        ]
-    },
-    {
-        "Supervised Fine-Tuning Process": [
-            "Step 1: Task Definition and Model Selection",
-            "Step 2: Data Preparation",
-            "Step 3: Dataset Tokenization",
-            "Step 4: Fine-Tuning the Language Model",
-            "Step 5: Hyperparameter Tuning",
-            "Step 6: Evaluation and Deployment",
-        ]
-    },
-    {
-        "Common Fine-Tuning Techniques": [
-            "Hyperparameter Adjustment",
-            "Transfer Learning",
-            "Multi-Task Training",
-            "Few-Shot Adaptation",
-            "Task-Specific Optimization",
-            "Low-Rank Adaptation (LoRA)",
-            "Other Parameter-Efficient Methods",
-        ]
-    },
-    {
-        "Advanced Alignment Methods": [
-            "Reward-Based Learning",
-            "Proximal Policy Optimization (PPO)",
-            "Comparative Ranking",
-        ]
-    },
-    {
-        "Benefits of Supervised Fine-Tuning": [
-            "Improved Performance",
-            "Efficiency with Limited Data",
-            "Versatility and Flexibility",
-            "Cost Efficiency",
-            "Customization",
-            "Reduced Overfitting",
-        ]
-    },
-    {
-        "Challenges of Supervised Fine-Tuning": [
-            "Overfitting",
-            "Hyperparameter Tuning",
-            "Data Quality Issues",
-            "Catastrophic Forgetting",
-            "Inconsistent Performance",
-            "Time and Resource Intensive",
-            "Requires Expertise",
-            "Risk of Overwriting Pre-trained Knowledge",
-            "Difficulty Selecting the Right Objective",
-            "Difficulty Selecting the Right Training Data",
-        ]
-    },
-]
-
+__author__ = "Ahmad Al Dibo"
 
 __all__ = [
     "ArcLM",
@@ -219,6 +150,20 @@ __all__ = [
     "TrainingResult",
     "train_sft",
     "SFTTrainingResult",
+    "ExternalModelConfig",
+    "ExternalLoadedModel",
+    "GenerationConfig",
+    "ModelSaveConfig",
+    "ModelSourceInfo",
+    "inspect_model_source",
+    "load_any_model",
+    "load_external_for_inference",
+    "predict_external",
+    "fine_tune_external_model",
+    "train_native_model",
+    "fine_tune_native_model",
+    "continue_native_training",
+    "save_loaded_model",
     "checkpoint_is_compatible_for_continue_training",
     "checkpoint_is_compatible_for_tuining",
     "create_checkpoint_callback",
@@ -238,7 +183,6 @@ __all__ = [
     "AdaptedModelBundle",
     "ModelInspector",
     "SmartLoader",
-    "inspect_model_source",
     "register_model_inspector",
     "load_external_model",
     "adapt_for_training",
@@ -279,29 +223,53 @@ __all__ = [
     "Implication",
     "Biconditional",
     "model_check",
+    "disable_debug",
+    "enable_debug",
+    "get_device",
+    "get_version",
+    "list_available_models",
+    "load_training_checkpoint",
+    "report_environment",
 ]
 
 
 def get_version():
+    """Return the installed ArcLM version."""
     return __version__
 
 
-def list_available_models():
-    from pathlib import Path
+def get_device():
+    """Return the preferred local torch device."""
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    models_dir = Path("models")
-    if not models_dir.exists():
+
+def list_available_models(models_dir: str | Path = "models"):
+    """List local ``.pth`` checkpoints in a models directory."""
+    path = Path(models_dir)
+    if not path.exists():
         return []
-    return sorted(path.stem for path in models_dir.glob("*.pth") if path.is_file())
+    return sorted(item.stem for item in path.glob("*.pth") if item.is_file())
 
 
-def load_training_checkpoint(path: str, device_type: str):
-    """Load a trusted training checkpoint.
+def load_training_checkpoint(path: str | Path, device_type: str = "cpu"):
+    """Load a trusted ArcLM/PyTorch training checkpoint.
 
-    Only use checkpoints created by ArcLM or another trusted source.
+    Only load checkpoints from trusted sources. PyTorch checkpoint files can
+    execute code during deserialization.
     """
     return torch.load(
         path,
         map_location=torch.device(device_type),
         weights_only=False,
+    )
+
+
+def report_environment(models_dir: str | Path = "models") -> str:
+    """Return a short human-readable runtime report."""
+    device = get_device()
+    device_note = "CUDA available" if device.type == "cuda" else "CUDA not available"
+    models = list_available_models(models_dir)
+    return (
+        f"ArcLM {__version__} | device={device.type} ({device_note}) | "
+        f"local_checkpoints={models}"
     )

@@ -3,21 +3,22 @@
 Common commands:
 
     python setup.py --version
-    python setup.py release --bump patch
-    python setup.py release --bump patch --upload
-    python setup.py release --version 0.4.1 --readme README.md --upload
-    python setup.py release --version 0.4.1 --repository testpypi --upload
+    python setup.py release --version 0.5.0
+    python setup.py release --version 0.5.0 --upload
+    python setup.py release --version 0.5.0 --readme README.md --upload
+    python setup.py release --version 0.5.0 --repository testpypi --upload
 
     # for tagged releases:
 
-        python setup.py release --bump patch --tag --push --upload
+        python setup.py release --version 0.5.0 --tag --push --upload
 
 PyPI does not allow replacing files for an already published version.
-To update a published package, upload a new version such as 0.4.1.
+If a file for a version already exists on PyPI, choose an unpublished version.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import shutil
@@ -30,6 +31,34 @@ from typing import Optional
 
 from setuptools import Command, setup
 
+
+SUPPORTED_PYTHON = (3, 9), (3, 13)
+
+
+def validate_python_version() -> None:
+    if not (sys.version_info >= SUPPORTED_PYTHON[0] and sys.version_info < SUPPORTED_PYTHON[1]):
+        min_ver = ".".join(str(v) for v in SUPPORTED_PYTHON[0])
+        max_ver = ".".join(str(v) for v in (SUPPORTED_PYTHON[1][0], SUPPORTED_PYTHON[1][1] - 1))
+        raise RuntimeError(
+            f"ArcLM requires Python >= {min_ver} and < {SUPPORTED_PYTHON[1][0]}.{SUPPORTED_PYTHON[1][1]}."
+            f" Current interpreter is {sys.version_info.major}.{sys.version_info.minor}."
+        )
+
+
+def validate_torch_installation() -> None:
+    if importlib.util.find_spec("torch") is None:
+        raise RuntimeError(
+            "ArcLM requires torch to run tests and build. "
+            "Install a supported torch wheel in your environment before running setup.py release."
+        )
+    if importlib.util.find_spec("torch.utils") is None:
+        raise RuntimeError(
+            "The installed torch package is incomplete or broken. "
+            "Reinstall torch>=2.1,<3 with a valid wheel provider."
+        )
+
+
+validate_python_version()
 
 ROOT = Path(__file__).resolve().parent
 VERSION_FILE = ROOT / "arclm" / "_version.py"
@@ -199,7 +228,7 @@ class ReleaseCommand(Command):
 
     description = "build and optionally upload a new ArcLM release"
     user_options = [
-        ("version=", None, "new package version, for example 0.4.1"),
+        ("version=", None, "package version, for example 0.5.0"),
         ("bump=", None, "bump current version: patch, minor, or major"),
         ("readme=", None, "readme file to use in pyproject.toml"),
         ("repository=", None, "twine repository name or URL, default: pypi"),

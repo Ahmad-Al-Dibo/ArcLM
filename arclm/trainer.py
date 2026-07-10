@@ -15,6 +15,16 @@ from pathlib import Path
 from .config import Config
 from .logging import AsyncTrainingLogger
 
+from .logics import (
+    Symbol,
+    And,
+    Or,
+    Not,
+    Implication,
+    Biconditional,
+    model_check
+)
+
 
 class Trainer:
     """Model trainer with save/load functionality and generalization monitoring"""
@@ -101,7 +111,8 @@ class Trainer:
             )
             return
 
-        checkpoint_epoch_interval = self._resolve_checkpoint_interval(
+
+        checkpoint_epoch_interval = self._resolve_checkpoint_interval( 
             checkpoint_epoch_interval,
             getattr(self.config, "checkpoint_interval", None),
         )
@@ -125,21 +136,7 @@ class Trainer:
         ):
             checkpoint_callback = self._default_checkpoint_callback
 
-        if checkpoint_epoch_interval == 0 and checkpoint_batch_interval == 0:
-            warnings.warn(
-                "No checkpoint interval is configured. Automatic model saving is disabled; "
-                "set checkpoint_interval for epochs or checkpoint_batch_interval for batches.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-        if early_stopping_patience is None:
-            warnings.warn(
-                "Early stopping is disabled because early_stopping_patience is not set.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        elif val_loader is None:
+        if early_stopping_patience is not None and val_loader is None:
             warnings.warn(
                 "early_stopping_patience was set, but no val_loader was provided; "
                 "early stopping will be ignored.",

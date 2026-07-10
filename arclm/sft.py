@@ -607,3 +607,30 @@ def _set_seed(seed: int):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+# Public aliases for advanced users who need to build custom Hugging Face SFT
+# loops while reusing ArcLM's dataset, collator, dtype, device, and LoRA helpers.
+HuggingFaceSFTDataset = _HuggingFaceSFTDataset
+SFTDataCollator = _SFTDataCollator
+apply_lora = _apply_lora
+ensure_padding_token = _ensure_padding_token
+load_sft_records = _load_sft_records
+model_input_device = _model_input_device
+normalize_device_map = _normalize_device_map
+resolve_dtype = _resolve_dtype
+set_seed = _set_seed
+
+__all__ = [
+    "SFTTrainingResult",
+    "train_sft",
+    "HuggingFaceSFTDataset",
+    "SFTDataCollator",
+    "apply_lora",
+    "ensure_padding_token",
+    "load_sft_records",
+    "model_input_device",
+    "normalize_device_map",
+    "resolve_dtype",
+    "set_seed",
+]
