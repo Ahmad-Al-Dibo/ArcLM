@@ -230,6 +230,8 @@ __all__ = [
     "list_available_models",
     "load_training_checkpoint",
     "report_environment",
+    "create_simple_interface_app",
+    "run_simple_interface",
 ]
 
 
@@ -273,3 +275,17 @@ def report_environment(models_dir: str | Path = "models") -> str:
         f"ArcLM {__version__} | device={device.type} ({device_note}) | "
         f"local_checkpoints={models}"
     )
+
+
+def create_simple_interface_app():
+    """Create the optional Flask app for ArcLM's simple web interface."""
+    from .simple_interface import create_simple_interface_app as _create_app
+
+    return _create_app()
+
+
+def run_simple_interface(*args, **kwargs):
+    """Run ArcLM's optional simple web interface."""
+    from .simple_interface import run_simple_interface as _run_interface
+
+    return _run_interface(*args, **kwargs)

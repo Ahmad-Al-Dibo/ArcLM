@@ -71,6 +71,14 @@ def test_manual_mode_uses_explicit_settings(tmp_path):
     assert plan.load_as == "full_model"
 
 
+def test_huggingface_uri_alias_inspects_as_model_id():
+    info = inspect_model_source("hf://gpt2")
+
+    assert info.source_type == "hf_full_model"
+    assert info.resolved_source == "gpt2"
+    assert info.load_as == "full_model"
+
+
 def test_custom_inspector_can_extend_detection(tmp_path):
     source = tmp_path / "custom.model"
     source.write_text("x", encoding="utf-8")

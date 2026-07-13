@@ -208,6 +208,33 @@ response = predict_external(
 print(response)
 ```
 
+## Web Inference UI
+
+Run the Flask app to use external or native models from a browser:
+
+```bash
+pip install -e ".[web,hf]"
+MODEL_SOURCE=gpt2 python app.py
+```
+
+`MODEL_SOURCE` can be a Hugging Face model ID, an `hf://owner/model` alias, a
+downloaded Hugging Face model folder, a PEFT LoRA adapter folder, or a native
+ArcLM checkpoint:
+
+```bash
+MODEL_SOURCE=hf://Qwen/Qwen2.5-0.5B-Instruct python app.py
+MODEL_SOURCE=models/downloaded_hf_model python app.py
+MODEL_SOURCE=models/my_lora_adapter BASE_MODEL=Qwen/Qwen2.5-0.5B-Instruct python app.py
+MODEL_SOURCE=models/arclm.pth python app.py
+```
+
+Then open `http://localhost:5000`. The same server also exposes:
+
+- `POST /model/inspect` to inspect a source without loading weights.
+- `POST /model/load` to load or reload a selected model.
+- `POST /generate` for full text generation.
+- `POST /predict` for one-token-style clients.
+
 ## Move Model to Device
 
 ```python

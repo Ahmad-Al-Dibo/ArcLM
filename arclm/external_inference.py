@@ -386,8 +386,9 @@ def inspect_model_source(source: PathLike, **kwargs: Any) -> ModelSourceInfo:
         plan = _legacy_inspect_model_source(source, **kwargs)
         return _source_info_from_legacy_plan(plan)
 
-    source_path, checkpoint_folders = _resolve_latest_loadable_source(source)
-    info = _inspect_resolved_source(source, source_path)
+    normalized_source = _normalize_model_source_uri(source)
+    source_path, checkpoint_folders = _resolve_latest_loadable_source(normalized_source)
+    info = _inspect_resolved_source(source, source_path, normalized_source=normalized_source)
     info.detected_checkpoint_folders = checkpoint_folders
     return info
 
@@ -550,7 +551,20 @@ def _external_config_from_kwargs(source: PathLike, kwargs: Dict[str, Any]) -> Ex
     unknown = set(kwargs) - (config_fields - {"source"})
     if unknown:
         raise ValueError("Unknown load option(s): " + ", ".join(sorted(unknown)))
-    return ExternalModelConfig(source=source, **kwargs)
+    return ExternalModelConfig(source=_normalize_model_source_uri(source), **kwargs)
+
+
+def _normalize_model_source_uri(source: PathLike) -> PathLike:
+    """Accept friendly Hugging Face URI aliases while preserving local paths."""
+
+    if isinstance(source, Path):
+        return source
+    text = str(source).strip()
+    lowered = text.lower()
+    for prefix in ("hf://", "huggingface://"):
+        if lowered.startswith(prefix):
+            return text[len(prefix) :].strip("/")
+    return text
 
 
 def _split_load_and_generation_kwargs(kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -668,8 +682,13 @@ def _extract_step_number(name: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
-def _inspect_resolved_source(original_source: PathLike, resolved_path: Path) -> ModelSourceInfo:
+def _inspect_resolved_source(
+    original_source: PathLike,
+    resolved_path: Path,
+    normalized_source: Optional[PathLike] = None,
+) -> ModelSourceInfo:
     source_str = str(original_source)
+    normalized_str = str(normalized_source or original_source)
     resolved_str = str(resolved_path)
 
     if resolved_path.exists():
@@ -683,16 +702,16 @@ def _inspect_resolved_source(original_source: PathLike, resolved_path: Path) -> 
             warnings=[f"Model source exists but is neither a file nor a directory: {resolved_path}."],
         )
 
-    if _looks_like_hf_model_id(source_str):
+    if _looks_like_hf_model_id(normalized_str):
         return ModelSourceInfo(
             source=source_str,
-            resolved_source=source_str,
+            resolved_source=normalized_str,
             source_type="hf_full_model",
             tokenizer_files_exist=True,
             config_json_exists=True,
             model_weights_exist=True,
             recommended_loading_strategy="load with transformers AutoTokenizer and AutoModelForCausalLM",
-            model_type=_infer_model_type_from_name(source_str),
+            model_type=_infer_model_type_from_name(normalized_str),
             weight_format="auto",
             load_as="full_model",
         )

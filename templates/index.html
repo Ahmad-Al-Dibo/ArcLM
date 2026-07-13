@@ -1,27 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ArcLM Chat</title>
+<title>ArcLM Web Inference</title>
 
 <style>
 * {
     box-sizing: border-box;
 }
 
+:root {
+    color-scheme: light;
+    --bg: #f5f6f4;
+    --panel: #ffffff;
+    --text: #18212b;
+    --muted: #637083;
+    --line: #cfd6df;
+    --accent: #1e6657;
+    --accent-strong: #164d42;
+    --warn: #8a4b11;
+    --error: #a12828;
+}
+
 body {
-    max-width: 900px;
-    margin: auto;
-    padding: 24px;
+    margin: 0;
     font-family: Arial, sans-serif;
-    color: #1f2933;
-    background: #f6f7f9;
+    color: var(--text);
+    background: var(--bg);
 }
 
 main {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    padding: 24px;
     display: grid;
+    gap: 18px;
+}
+
+header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
     gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px;
 }
 
 h1 {
@@ -29,31 +52,103 @@ h1 {
     font-size: 28px;
 }
 
+.status {
+    min-height: 24px;
+    color: var(--muted);
+    font-size: 14px;
+    text-align: right;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 18px;
+}
+
+.panel {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+}
+
+.panel-body {
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+}
+
+.field {
+    display: grid;
+    gap: 6px;
+}
+
+label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+input,
+select,
 textarea {
     width: 100%;
-    min-height: 150px;
-    padding: 12px;
-    border: 1px solid #c7ccd3;
+    border: 1px solid var(--line);
     border-radius: 6px;
+    padding: 10px 11px;
     font: inherit;
-    resize: vertical;
+    color: var(--text);
     background: #ffffff;
 }
 
+textarea {
+    min-height: 220px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 button {
-    width: fit-content;
-    padding: 10px 16px;
+    min-height: 40px;
     border: 0;
     border-radius: 6px;
+    padding: 9px 14px;
     font: inherit;
+    font-weight: 700;
     color: #ffffff;
-    background: #225c7a;
+    background: var(--accent);
     cursor: pointer;
+}
+
+button.secondary {
+    color: var(--text);
+    background: #e7ece9;
 }
 
 button:disabled {
     cursor: wait;
-    opacity: 0.7;
+    opacity: 0.65;
+}
+
+.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.check input {
+    width: 18px;
+    height: 18px;
 }
 
 .output-header {
@@ -66,29 +161,39 @@ button:disabled {
 .view-toggle {
     display: inline-flex;
     overflow: hidden;
-    border: 1px solid #c7ccd3;
+    border: 1px solid var(--line);
     border-radius: 6px;
     background: #ffffff;
 }
 
 .view-toggle button {
-    padding: 8px 12px;
+    min-height: 34px;
+    padding: 6px 10px;
     border-radius: 0;
-    color: #324250;
+    color: var(--text);
     background: transparent;
 }
 
 .view-toggle button.active {
     color: #ffffff;
-    background: #225c7a;
+    background: var(--accent-strong);
 }
 
-#output {
-    min-height: 160px;
+#output,
+#inspectOutput {
+    min-height: 180px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
     padding: 16px;
-    border: 1px solid #c7ccd3;
-    border-radius: 6px;
     background: #ffffff;
+}
+
+#inspectOutput {
+    min-height: 96px;
+    white-space: pre-wrap;
+    color: var(--muted);
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
 }
 
 .raw-output {
@@ -135,7 +240,7 @@ button:disabled {
 
 .markdown-output blockquote {
     padding-left: 12px;
-    border-left: 3px solid #8aa8b8;
+    border-left: 3px solid #98a8a1;
     color: #435666;
 }
 
@@ -151,7 +256,7 @@ button:disabled {
     overflow-x: auto;
     padding: 12px;
     border-radius: 6px;
-    background: #18232f;
+    background: #18212b;
     color: #eef6fb;
 }
 
@@ -160,36 +265,326 @@ button:disabled {
     background: transparent;
     color: inherit;
 }
+
+.error {
+    color: var(--error);
+}
+
+.warn {
+    color: var(--warn);
+}
+
+@media (max-width: 820px) {
+    main {
+        padding: 16px;
+    }
+
+    header,
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .status {
+        text-align: left;
+    }
+}
 </style>
 </head>
 
 <body>
 <main>
-    <h1>ArcLM Chat</h1>
+    <header>
+        <h1>ArcLM Web Inference</h1>
+        <div id="status" class="status">Ready</div>
+    </header>
 
-    <textarea id="prompt" placeholder="Typ je prompt..."></textarea>
+    <section class="grid">
+        <div class="panel">
+            <div class="panel-body">
+                <div class="field">
+                    <label for="modelSource">Model source</label>
+                    <input id="modelSource" type="text" value="{{ default_model_source }}" spellcheck="false">
+                </div>
 
-    <button id="submit" type="button" onclick="sendPrompt()">Generate</button>
+                <div class="row">
+                    <div class="field">
+                        <label for="baseModel">Base model</label>
+                        <input id="baseModel" type="text" spellcheck="false">
+                    </div>
+                    <div class="field">
+                        <label for="tokenizerPath">Tokenizer path</label>
+                        <input id="tokenizerPath" type="text" spellcheck="false">
+                    </div>
+                </div>
 
-    <div class="output-header">
-        <strong>Output</strong>
-        <div class="view-toggle">
-            <button id="previewButton" class="active" type="button" onclick="setOutputView('preview')">Preview</button>
-            <button id="rawButton" type="button" onclick="setOutputView('raw')">Markdown</button>
+                <div class="actions">
+                    <button id="inspectButton" class="secondary" type="button" onclick="inspectModel()">Inspect</button>
+                    <button id="loadButton" class="secondary" type="button" onclick="loadModel()">Load</button>
+                </div>
+
+                <div class="field">
+                    <label for="savePath">Save path</label>
+                    <input id="savePath" type="text" value="{{ default_model_save_path }}" spellcheck="false">
+                </div>
+
+                <div class="row">
+                    <div class="field">
+                        <label for="saveMode">Save mode</label>
+                        <select id="saveMode">
+                            <option value="auto">Auto</option>
+                            <option value="full_model">Full model</option>
+                            <option value="merged_model">Merged LoRA</option>
+                            <option value="adapter_only">Adapter only</option>
+                            <option value="native_arclm">Native ArcLM</option>
+                        </select>
+                    </div>
+                    <label class="check" for="overwriteSave">
+                        <input id="overwriteSave" type="checkbox">
+                        Overwrite
+                    </label>
+                </div>
+
+                <div class="actions">
+                    <button id="saveButton" class="secondary" type="button" onclick="saveModel()">Save local</button>
+                </div>
+
+                <div id="inspectOutput"></div>
+
+                <div class="field">
+                    <label for="prompt">Prompt</label>
+                    <textarea id="prompt" spellcheck="true"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button id="submit" type="button" onclick="sendPrompt()">Generate</button>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div id="output" class="markdown-output"></div>
+        <aside class="panel">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="field">
+                        <label for="device">Device</label>
+                        <select id="device">
+                            <option value="">Auto</option>
+                            <option value="cpu">CPU</option>
+                            <option value="cuda">CUDA</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="dtype">Dtype</label>
+                        <select id="dtype">
+                            <option value="auto">Auto</option>
+                            <option value="float32">float32</option>
+                            <option value="float16">float16</option>
+                            <option value="bfloat16">bfloat16</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="deviceMap">Device map</label>
+                    <input id="deviceMap" type="text" placeholder="auto" spellcheck="false">
+                </div>
+
+                <div class="row">
+                    <label class="check" for="load4bit">
+                        <input id="load4bit" type="checkbox">
+                        4-bit
+                    </label>
+                    <label class="check" for="load8bit">
+                        <input id="load8bit" type="checkbox">
+                        8-bit
+                    </label>
+                </div>
+
+                <div class="field">
+                    <label for="maxTokens">Max tokens</label>
+                    <input id="maxTokens" type="number" min="1" max="4096" value="100">
+                </div>
+
+                <div class="row">
+                    <div class="field">
+                        <label for="temperature">Temperature</label>
+                        <input id="temperature" type="number" min="0" max="2" step="0.05" value="0.8">
+                    </div>
+                    <div class="field">
+                        <label for="topP">Top p</label>
+                        <input id="topP" type="number" min="0.05" max="1" step="0.05" value="0.9">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="repetitionPenalty">Repetition penalty</label>
+                    <input id="repetitionPenalty" type="number" min="1" max="3" step="0.05" value="1.1">
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <section>
+        <div class="output-header">
+            <strong>Output</strong>
+            <div class="view-toggle">
+                <button id="previewButton" class="active" type="button" onclick="setOutputView('preview')">Preview</button>
+                <button id="rawButton" type="button" onclick="setOutputView('raw')">Markdown</button>
+            </div>
+        </div>
+        <div id="output" class="markdown-output"></div>
+    </section>
 </main>
 
 <script>
 let latestOutput = "";
 let outputView = "preview";
 
+document.addEventListener("DOMContentLoaded", refreshStatus);
+
+function modelPayload() {
+    const payload = {
+        model_source: document.getElementById("modelSource").value.trim(),
+        base_model: document.getElementById("baseModel").value.trim(),
+        tokenizer_path: document.getElementById("tokenizerPath").value.trim(),
+        device: document.getElementById("device").value,
+        device_map: document.getElementById("deviceMap").value.trim(),
+        dtype: document.getElementById("dtype").value,
+        load_in_4bit: document.getElementById("load4bit").checked,
+        load_in_8bit: document.getElementById("load8bit").checked,
+        trust_remote_code: true
+    };
+
+    Object.keys(payload).forEach(function(key) {
+        if (payload[key] === "") {
+            delete payload[key];
+        }
+    });
+
+    return payload;
+}
+
+function generationPayload() {
+    return {
+        prompt: document.getElementById("prompt").value,
+        max_new_tokens: Number(document.getElementById("maxTokens").value || 100),
+        temperature: Number(document.getElementById("temperature").value || 0.8),
+        top_p: Number(document.getElementById("topP").value || 0.9),
+        repetition_penalty: Number(document.getElementById("repetitionPenalty").value || 1.1)
+    };
+}
+
+function savePayload() {
+    return {
+        save_path: document.getElementById("savePath").value.trim(),
+        save_mode: document.getElementById("saveMode").value,
+        save_layout: "model_id",
+        overwrite: document.getElementById("overwriteSave").checked
+    };
+}
+
+async function refreshStatus() {
+    try {
+        const response = await fetch("/health");
+        const data = await response.json();
+        const loaded = data.loaded ? "loaded" : "not loaded";
+        setStatus(data.model_source + " - " + loaded);
+    } catch (err) {
+        setStatus("Server unavailable", true);
+    }
+}
+
+async function inspectModel() {
+    const button = document.getElementById("inspectButton");
+    const output = document.getElementById("inspectOutput");
+
+    try {
+        button.disabled = true;
+        output.textContent = "Inspecting...";
+        const response = await fetch("/model/inspect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(modelPayload())
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || "Inspect failed");
+        }
+        output.textContent = data.report;
+        output.className = data.source_info.warnings.length ? "warn" : "";
+        setStatus(data.source_info.source_type);
+    } catch (err) {
+        output.textContent = err.message;
+        output.className = "error";
+        setStatus("Inspect failed", true);
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function loadModel() {
+    const button = document.getElementById("loadButton");
+    try {
+        button.disabled = true;
+        setStatus("Loading...");
+        const response = await fetch("/model/load", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(Object.assign(modelPayload(), { reload: true })) // this return somthink like this: {"model_source": "path/to/model", "reload": true}
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || "Load failed");
+        }
+        setStatus(data.model_source + " - loaded");
+        if (data.source_info) {
+            document.getElementById("inspectOutput").textContent =
+                data.source_info.source_type + " on " + data.device;
+        }
+    } catch (err) {
+        setStatus("Load failed", true);
+        document.getElementById("inspectOutput").textContent = err.message;
+        document.getElementById("inspectOutput").className = "error";
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function saveModel() {
+    const button = document.getElementById("saveButton");
+    const output = document.getElementById("inspectOutput");
+
+    try {
+        button.disabled = true;
+        output.className = "";
+        output.textContent = "Saving...";
+        setStatus("Saving...");
+        const response = await fetch("/model/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(Object.assign(modelPayload(), savePayload()))
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || "Save failed");
+        }
+        if (data.saved_path) {
+            document.getElementById("modelSource").value = data.saved_path;
+        }
+        output.textContent = "Saved to: " + (data.saved_path || data.save_path);
+        setStatus("Saved local");
+    } catch (err) {
+        output.textContent = err.message;
+        output.className = "error";
+        setStatus("Save failed", true);
+    } finally {
+        button.disabled = false;
+    }
+}
+
 async function sendPrompt() {
     const button = document.getElementById("submit");
-
-    let prompt = document.getElementById("prompt").value;
+    const prompt = document.getElementById("prompt").value;
 
     if (!prompt.trim()) {
         return;
@@ -197,52 +592,39 @@ async function sendPrompt() {
 
     try {
         button.disabled = true;
-
-        latestOutput = prompt;
+        setStatus("Generating...");
+        latestOutput = "";
         renderOutput();
 
-        const MAX_TOKENS = 100;
+        const response = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(Object.assign(modelPayload(), generationPayload()))
+        });
+        const data = await response.json();
 
-        for (let i = 0; i < MAX_TOKENS; i++) {
-
-            const response = await fetch("/predict", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    prompt: prompt
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.error) {
-                latestOutput = "Error: " + data.error;
-                renderOutput();
-                return;
-            }
-
-            if (!data.token) {
-                break;
-            }
-
-            // Append the returned token
-            prompt += data.token;
-
-            latestOutput = prompt;
-            renderOutput();
+        if (!data.success) {
+            throw new Error(data.error || "Generate failed");
         }
 
-    } catch (err) {
-
-        latestOutput = "Fetch failed: " + err.message;
+        latestOutput = data.generated || data.result || "";
         renderOutput();
-
+        setStatus(data.model_source + " - done");
+    } catch (err) {
+        latestOutput = "Error: " + err.message;
+        renderOutput();
+        setStatus("Generate failed", true);
     } finally {
         button.disabled = false;
     }
 }
+
+function setStatus(text, isError) {
+    const status = document.getElementById("status");
+    status.textContent = text;
+    status.className = isError ? "status error" : "status";
+}
+
 function setOutputView(view) {
     outputView = view;
     document.getElementById("previewButton").classList.toggle("active", view === "preview");

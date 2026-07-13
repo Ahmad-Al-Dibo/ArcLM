@@ -7,11 +7,13 @@ Available Commands:
   - arclm train    : Train a model from scratch or fine-tune
   - arclm eval     : Evaluate model performance
   - arclm generate : Generate text from a trained model
+  - arclm --run simple-interface : Start the simple web interface
 
 Usage:
   arclm train --config config.yaml --data data.txt
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "Hello"
+  python -m arclm --run simple-interface
 """
 
 import argparse
@@ -351,6 +353,31 @@ def generate_command(args):
     return 0
 
 
+def run_command(args):
+    """Execute package-level runtime helpers."""
+    if args.run in {"simple-interface", "simple_interface"}:
+        try:
+            from arclm.simple_interface import run_simple_interface
+        except ModuleNotFoundError as exc:
+            if exc.name == "flask":
+                print(
+                    "The simple interface requires Flask. "
+                    "Install it with: pip install arclm[web]"
+                )
+                return 1
+            raise
+
+        run_simple_interface(
+            host=args.host,
+            port=args.port,
+            debug=args.debug,
+        )
+        return 0
+
+    print(f"Unknown runtime target: {args.run}")
+    return 1
+
+
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -361,10 +388,41 @@ Examples:
   arclm train --config config.yaml --data data.txt --output models/model.pth
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "The future is"
+  python -m arclm --run simple-interface
         """
     )
     
-    parser.add_argument("--version", action="version", version="arclm 0.1.0")
+    parser.add_argument("--version", action="version", version="{} ArcLM".format(__import__("arclm").__version__))
+    parser.add_argument(
+        "--run",
+        choices=["simple-interface", "simple_interface"],
+        help="Run an ArcLM runtime helper such as the simple web interface",
+    )
+    parser.add_argument(
+        "--host",
+        default=None,
+        help="Host for --run simple-interface, defaults to HOST or 0.0.0.0",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="Port for --run simple-interface, defaults to PORT or 5000",
+    )
+    debug_group = parser.add_mutually_exclusive_group()
+    debug_group.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=None,
+        help="Enable Flask debug mode for --run simple-interface",
+    )
+    debug_group.add_argument(
+        "--no-debug",
+        dest="debug",
+        action="store_false",
+        help="Disable Flask debug mode for --run simple-interface",
+    )
     
     subparsers = parser.add_subparsers(title="commands", dest="command")
     
@@ -373,6 +431,9 @@ Examples:
     create_generate_parser(subparsers)
     
     args = parser.parse_args()
+
+    if args.run:
+        return run_command(args)
     
     if not hasattr(args, "func"):
         parser.print_help()

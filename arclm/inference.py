@@ -91,6 +91,8 @@ def load_model(model_path=None, device=None, prefer_best=True):
     Load a trained ArcLM checkpoint for inference.
 
     Returns a LoadedModel object with a .predict(input_text) method.
+
+    This can not load external Hugging Face models; use load_any_model() for that.
     """
     resolved_path = Path(model_path or DEFAULT_MODEL_PATH)
     resolved_device = _resolve_device(device)
