@@ -1,38 +1,43 @@
-# ArcLM Examples
+# ArcLM Voorbeelden
 
-These examples target ArcLM 0.5.0. The numbered scripts are the maintained public examples and each focuses on one concept.
+Deze voorbeelden horen bij de speciale ArcLM-versie. Ze zijn bedoeld om studenten en developers stap voor stap te laten zien hoe de library werkt.
 
-Run from the repository root:
+Voer voorbeelden uit vanaf de projectroot:
 
 ```bash
 python examples/01_quickstart.py
 ```
 
-## Local Examples
+## Lokale Voorbeelden
 
-These create temporary data and run offline:
+Deze voorbeelden maken tijdelijke data en kunnen offline draaien:
 
-- `01_quickstart.py`: train a tiny native checkpoint.
-- `02_tokenization.py`: build and use the word tokenizer.
-- `03_data_processing.py`: load and format JSONL records.
-- `04_pretraining.py`: run native pretraining.
-- `05_continue_training.py`: continue a compatible native checkpoint.
-- `06_finetuning.py`: next-token fine-tune a checkpoint.
-- `07_native_sft.py`: native masked instruction tuning.
-- `11_inference.py`: train, load, and generate from a checkpoint.
-- `12_smart_loader.py`: inspect a local model-like folder.
-- `13_diagnostics.py`: inspect top-k predictions.
-- `14_custom_trainer.py`: override `Trainer.compute_loss`.
+- `01_quickstart.py`: train een heel klein native checkpoint.
+- `02_tokenization.py`: bouw en gebruik de word tokenizer.
+- `03_data_processing.py`: laad JSONL records en maak prompttekst.
+- `04_pretraining.py`: draai native pretraining.
+- `05_continue_training.py`: train verder vanaf een compatible checkpoint.
+- `06_finetuning.py`: fine-tune een checkpoint met next-token loss.
+- `07_native_sft.py`: native instruction tuning met response-only mask.
+- `11_inference.py`: train, laad en genereer tekst.
+- `12_smart_loader.py`: inspecteer een lokale modelmap.
+- `13_diagnostics.py`: bekijk top-k voorspellingen.
+- `14_custom_trainer.py`: overschrijf `Trainer.compute_loss`.
+- `16_ai_knowledge_base.py`: controleer een AI workflow met logic regels.
 
-## Optional Examples
+## Optionele Voorbeelden
 
-These need optional dependencies or network/model downloads:
+Deze voorbeelden hebben extra dependencies of modeldownloads nodig:
 
 - `08_huggingface_sft.py`: Hugging Face SFT smoke test.
 - `09_lora_sft.py`: Hugging Face LoRA SFT smoke test.
-- `10_preprocess_pipeline.py`: JSONL preprocessing with `arclm[preprocess]`.
-- `15_custom_hf_sft_loop.py`: custom Hugging Face SFT loop using ArcLM's public SFT helper classes.
+- `10_preprocess_pipeline.py`: JSONL preprocessing met `arclm[preprocess]`.
+- `15_custom_hf_sft_loop.py`: custom Hugging Face SFT loop met ArcLM helpers.
 
-## Advanced Workflow
+## Geavanceerde Workflow
 
-- `qwen3_0_6b_sft/`: larger Qwen SFT workflow.
+- `qwen3_0_6b_sft/`: grotere Qwen SFT workflow.
+
+## Let Op
+
+Deze voorbeelden zijn leermateriaal. Ze zijn niet bedoeld als volledige benchmark of productieconfiguratie.

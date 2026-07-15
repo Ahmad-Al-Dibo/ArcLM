@@ -61,7 +61,7 @@ def validate_torch_installation() -> None:
 validate_python_version()
 
 ROOT = Path(__file__).resolve().parent
-VERSION_FILE = ROOT / "arclm" / "_version.py"
+VERSION_FILE = ROOT / "src" / "arclm" / "_version.py"
 PYPROJECT_FILE = ROOT / "pyproject.toml"
 DEFAULT_README = "README.md"
 VERSION_PATTERN = re.compile(r'__version__\s*=\s*"([^"]+)"')
@@ -297,7 +297,7 @@ class ReleaseCommand(Command):
 
         if self.tag:
             tag_name = f"v{self.version}"
-            run(["git", "add", "arclm/_version.py", "pyproject.toml"])
+            run(["git", "add", "src/arclm/_version.py", "pyproject.toml"])
             run(["git", "commit", "-m", f"Release ArcLM {self.version}"])
             run(["git", "tag", "-a", tag_name, "-m", f"ArcLM {self.version}"])
 

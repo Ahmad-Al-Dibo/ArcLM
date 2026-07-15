@@ -1,0 +1,199 @@
+export type BackendState = "not_implemented" | "connecting" | "connected" | "disconnected" | "error";
+
+export type CapabilityStatus =
+  | "available"
+  | "locally_verified"
+  | "verified_for_correctness"
+  | "planned"
+  | "experimental"
+  | "hardware_unavailable"
+  | "dependency_missing"
+  | "not_verified"
+  | "unsupported";
+
+export type HealthResponse = {
+  status: "ok";
+  service: "arclm-web-api";
+  version: string;
+};
+
+export type GpuInfo = {
+  name: string;
+  vram_bytes: number | null;
+  compute_capability: [number, number] | null;
+};
+
+export type EnvironmentResponse = {
+  arclm_version: string;
+  python_version: string;
+  platform: string;
+  pytorch_version: string | null;
+  cuda_available: boolean;
+  cuda_runtime: string | null;
+  device_count: number;
+  available_devices: string[];
+  preferred_device: string;
+  gpus: GpuInfo[];
+  bf16_supported: boolean | null;
+};
+
+export type Capability = {
+  status: CapabilityStatus;
+  note: string;
+  evidence?: string | null;
+  hardware_requirement?: string | null;
+  optional_dependency?: string | null;
+  product_state?: string | null;
+};
+
+export type CapabilitiesResponse = {
+  training: Record<string, Capability>;
+  evaluation: Record<string, Capability>;
+  inference: Record<string, Capability>;
+  web: Record<string, Capability>;
+};
+
+export type ProjectStatusResponse = {
+  project: {
+    name: string;
+    version: string;
+  };
+  web_milestone: {
+    name: string;
+    feature: string;
+    status: string;
+  };
+  available_sections: string[];
+  completed: Array<{
+    name: string;
+    status: string;
+  }>;
+  current: {
+    name: string;
+    status: string;
+  } | null;
+  next: Array<{
+    name: string;
+    status: string;
+  }>;
+  planned_features: Array<{
+    name: string;
+    description: string;
+    milestone: string;
+    status: string;
+  }>;
+  validation: Array<{
+    name: string;
+    status: string;
+    note: string;
+  }>;
+  integrations: Array<{
+    name: string;
+    package: string;
+    package_status: string;
+    arclm_status: string;
+    note: string;
+    extra: string | null;
+  }>;
+  limitations: Array<{
+    category: string;
+    title: string;
+    description: string;
+    status: string;
+  }>;
+};
+
+export type ApiErrorResponse = {
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+export type DatasetFormat = "txt" | "csv" | "json" | "jsonl";
+
+export type DatasetFieldType =
+  | "string"
+  | "integer"
+  | "number"
+  | "boolean"
+  | "null"
+  | "object"
+  | "array"
+  | "mixed";
+
+export type DatasetWarning = {
+  code: string;
+  message: string;
+};
+
+export type DatasetSummary = {
+  dataset_id: string;
+  name: string;
+  format: DatasetFormat;
+  size_bytes: number;
+};
+
+export type DatasetListResponse = {
+  datasets: DatasetSummary[];
+  count: number;
+};
+
+export type DatasetField = {
+  name: string;
+  type: DatasetFieldType;
+  nullable: boolean;
+  observed_in_rows: number;
+  missing_count: number;
+  empty_count: number;
+};
+
+export type DatasetPreviewValue = string | number | boolean | null | Record<string, unknown> | unknown[];
+
+export type DatasetPreviewRow = {
+  row_id: string;
+  values: Record<string, DatasetPreviewValue>;
+};
+
+export type TextLengthStatistics = {
+  min: number | null;
+  max: number | null;
+  average: number | null;
+};
+
+export type DatasetStatistics = {
+  rows_scanned: number;
+  row_count: number | null;
+  row_count_scope: "exact" | "bounded_scan" | "unavailable";
+  field_count: number;
+  field_count_scope: "exact" | "bounded_scan" | "sample";
+  invalid_row_count: number;
+  duplicate_count: number;
+  duplicate_scope: "bounded_scan";
+  text_lengths: TextLengthStatistics;
+};
+
+export type DatasetInspectionMetadata = {
+  scanned_rows: number;
+  preview_rows: number;
+  scan_limit: number;
+  preview_limit: number;
+  max_field_length: number;
+  max_fields: number;
+  truncated: boolean;
+  complete: boolean;
+  schema_source: "sample" | "empty";
+};
+
+export type DatasetInspectionResponse = {
+  dataset_id: string;
+  name: string;
+  format: DatasetFormat;
+  size_bytes: number;
+  encoding: string;
+  fields: DatasetField[];
+  preview_rows: DatasetPreviewRow[];
+  statistics: DatasetStatistics;
+  metadata: DatasetInspectionMetadata;
+  warnings: DatasetWarning[];
+};

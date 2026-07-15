@@ -1,42 +1,24 @@
-from pathlib import Path
-import sys
+"""Klein voorbeeld voor de ArcLM logic helpers."""
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "arclm"))
-
-from logics import (
-    And,
-    Biconditional,
-    Implication,
-    Not,
-    Or,
-    Symbol,
-    model_check,
-)
+from arclm.logics import KnowledgeBase, Symbol
 
 
 def main():
-    p = Symbol("P")
-    q = Symbol("Q")
-    r = Symbol("R")
+    """Laat de basis van de logic module zien."""
+    clean = Symbol("clean_data")
+    tokens = Symbol("has_tokens")
+    ready = Symbol("ready")
 
-    complex_sentence = And(
-        Implication(p, q),
-        Or(Not(q), r),
+    knowledge = KnowledgeBase(
+        clean,
+        tokens,
+        (clean & tokens).implies(ready),
     )
 
-    model = {"P": True, "Q": False, "R": True}
-
-    print("Formula:", complex_sentence.formula())
-    print("Evaluation:", complex_sentence.evaluate(model))
-    print("Symbols:", sorted(complex_sentence.symbols()))
-
-    knowledge = And(Implication(p, q), p)
-    query = q
-    print("Model check (knowledge => query):", model_check(knowledge, query))
-
-    biconditional = Biconditional(p, q)
-    print("Biconditional formula:", biconditional.formula())
-    print("Biconditional evaluation:", biconditional.evaluate({"P": True, "Q": True}))
+    print("Kennis:", knowledge.formula())
+    print("Consistent:", knowledge.is_consistent())
+    print("Ready:", knowledge.ask(ready))
+    print("Uitleg:", knowledge.explain(ready).to_dict())
 
 
 if __name__ == "__main__":

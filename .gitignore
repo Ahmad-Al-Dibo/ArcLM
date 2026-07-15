@@ -35,3 +35,12 @@ examples/_outputs/
 reports/
 .env
 .env
+/.venv-training-core
+/.venv-gpu-validation
+
+web/node_modules/
+web/.next/
+web/coverage/
+web/test-results/
+web/playwright-report/
+web/tsconfig.tsbuildinfo
