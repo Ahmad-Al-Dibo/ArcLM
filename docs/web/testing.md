@@ -33,6 +33,7 @@ web/src/components/ui/design-system.test.tsx
 web/src/components/shell/application-shell.test.tsx
 web/src/lib/api/client.test.ts
 web/src/features/dashboard/dashboard.test.tsx
+web/src/features/datasets/dataset-inspector.test.tsx
 ```
 
 Coverage for Feature 1:
@@ -107,6 +108,36 @@ Coverage for Feature 6 Advanced Dashboard:
 - The safe response inspector is hidden by default, opens on request, formats
   already-loaded approved responses, and has no arbitrary endpoint input.
 
+Coverage for Web Milestone 2 / Feature 3 Dataset Inspector UI:
+
+- typed dataset API client success, empty, invalid response, and safe ID
+  encoding behavior
+- dataset catalogue loading, empty, disconnected, error, and selected states
+- safe URL selection, direct load, invalid query cleanup, and popstate handling
+- summary, exact versus bounded scope, schema, statistics, and warning display
+- bounded preview rendering for primitive, null, empty, Unicode, object, array,
+  and long values
+- row-detail dialog that uses only already-returned preview data
+- refresh behavior with retained selection, removed-dataset clearing, duplicate
+  request prevention, and stale data on failure
+- Simple mode hides technical fields
+- Advanced mode shows safe technical metadata without creating a second data
+  lifecycle
+
+Coverage for Web Milestone 2 / Feature 4 Dataset Source Manager:
+
+- typed dataset-root API client success and invalid response handling
+- empty, unavailable, disconnected, invalid, and error source-manager states
+- add valid local source
+- invalid path and duplicate source errors from the backend
+- multiple roots, enabled and disabled roots, and session-only CLI roots
+- remove confirmation that clearly says files are not deleted
+- refresh catalogue behavior
+- Simple mode path/name controls
+- Advanced mode recursive scanning and technical source metadata
+- selected dataset refresh after catalogue changes
+- root-management unavailable state for non-local access
+
 ## Production Start Smoke
 
 After `npm run build`, the production server was started with:
@@ -152,6 +183,12 @@ switch the interface mode to Advanced, and verify that runtime details,
 capabilities, validation status, integrations, limitations, diagnostics, and
 the response-inspector trigger are present. Simple mode should still hide the
 technical sections.
+
+Web Milestone 2 Feature 4 production smoke should start the backend with an
+explicit test config directory, open `/data`, add at least two temporary dataset
+folders, refresh the catalogue, disable and re-enable one source, remove one
+source, restart the backend, and confirm persisted roots return. The source
+files must remain unchanged.
 
 ## Python Regression Commands
 
@@ -201,9 +238,10 @@ Current known warning:
   suppressed.
 ## Web Milestone 2 Dataset Inspector Tests
 
-Feature 2 adds backend tests under `tests/web/datasets/`.
+Feature 2 adds backend tests under `tests/web/datasets/`. Feature 3 adds the
+frontend Dataset Inspector tests listed above and extends the API client tests.
 
-Required validation for the Dataset Inspector Backend:
+Required validation for the Dataset Inspector Backend and UI:
 
 ```bash
 cd web
@@ -225,10 +263,16 @@ Implemented coverage:
 - parse warnings
 - no absolute path leaks
 - no upload before upload security is approved
+- `/data` route consumes only read-only dataset endpoints
+- safe URL dataset selection
+- no local path rendering
+- disconnected, empty, invalid, and stale states
+- Simple and Advanced mode differences
+- production frontend route smoke with a real backend and temporary fixtures
 
 Future Data Pipeline Studio implementation features must add focused tests for:
 
-- pipeline step registry accuracy
+- approved pipeline step registry accuracy
 - before/after preview correctness
 - manifest save/load behavior
 - frontend partial-failure states

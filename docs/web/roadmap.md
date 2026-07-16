@@ -12,11 +12,12 @@ a planning and API-audit step.
 Web Milestone 1: Interface Foundation and Dashboards
 ```
 
-Web Milestone 1 is implemented and locally verified. Web Milestone 2 Feature 1
-and Feature 2 are complete: planning/API audit plus the read-only Dataset
-Inspector Backend. The Dataset Inspector UI and later Web Milestones 3-5 remain
-planned but not approved. They may only show honest `Planned` states inside the
-Web shell until explicitly approved.
+Web Milestone 1 is implemented and locally verified. Web Milestone 2 Features
+1-4 are complete: planning/API audit, the read-only Dataset Inspector Backend,
+the read-only Dataset Inspector UI, and the Dataset Source Manager. Later Data
+Pipeline Studio features and Web Milestones 3-5 remain planned but not
+approved. They may only show honest `Planned` states inside the Web shell until
+explicitly approved.
 
 ## Current Web and UI Code
 
@@ -266,27 +267,30 @@ Commands should be adapted as the web workspace and backend tests are added.
 
 ## Web Milestone 2 Feature Order
 
-Status: Feature 1 planning and Feature 2 backend implementation are complete.
-Feature 3 is the next recommended implementation feature, but it is not
+Status: Feature 1 planning, Feature 2 backend implementation, Feature 3
+Dataset Inspector UI, and Feature 4 Dataset Source Manager are complete.
+Feature 5 is the next recommended implementation feature, but it is not
 approved automatically.
 
 | Feature | Status | Scope |
 | ------- | ------ | ----- |
 | Feature 1: Data Pipeline Studio planning and API audit | Complete | Audit current data pipeline, define safe API/storage/security/event contracts |
 | Feature 2: Dataset Inspector Backend | Complete | Read-only bounded dataset inspection backend |
-| Feature 3: Dataset Inspector UI | Recommended, awaiting approval | Browser UI for real inspection data |
-| Feature 4: Approved Pipeline Step Registry | Planned | List real ArcLM steps and safe configs |
-| Feature 5: Pipeline Preview and Step Result Contract | Planned | Bounded before/after previews and step result metadata |
-| Feature 6: Pipeline Save/Load Manifest | Planned | Local manifest storage and reload |
-| Feature 7: Dry Run Execution | Planned | Safe bounded run without training handoff |
-| Feature 8: Upload Security and Local Dataset Store | Planned | Upload controls after storage/security approval |
-| Feature 9: Token and SFT Mapping Preview | Planned | Token/stat/mapping previews for training handoff |
-| Feature 10: Training Handoff Planning | Planned | Dataset-to-model handoff design only |
+| Feature 3: Dataset Inspector UI | Complete | Browser UI for real inspection data |
+| Feature 4: Dataset Source Manager | Complete | Multiple local dataset roots, validation, persistence, enable/disable, refresh, and inspector integration |
+| Feature 5: Approved Pipeline Step Registry | Planned | List real ArcLM steps and safe configs |
+| Feature 6: Pipeline Preview and Step Result Contract | Planned | Bounded before/after previews and step result metadata |
+| Feature 7: Pipeline Save/Load Manifest | Planned | Local manifest storage and reload |
+| Feature 8: Dry Run Execution | Planned | Safe bounded run without training handoff |
+| Feature 9: Upload Security and Local Dataset Store | Planned | Upload controls after storage/security approval |
+| Feature 10: Token and SFT Mapping Preview | Planned | Token/stat/mapping previews for training handoff |
+| Feature 11: Training Handoff Planning | Planned | Dataset-to-model handoff design only |
 
 Related planning documents:
 
 - [Data Pipeline Studio Planning and API Audit](data-pipeline-studio.md)
 - [Data Pipeline Studio API Plan](data-pipeline-api.md)
+- [Dataset Source Manager](dataset-source-manager.md)
 - [Dataset Upload Security Plan](dataset-upload-security.md)
 - [Dataset Storage Plan](dataset-storage.md)
 - [Pipeline Events Plan](pipeline-events.md)

@@ -17,15 +17,19 @@ This is a recommendation, not a final licensing decision.
 | Dataset loading/cleaning/dedup | Implemented | Community | None/Torch | Foundational data work | Low |
 | Streaming datasets | Implemented | Community | None | Local scale without services | Low |
 | Single-device training | Implemented | Community | Torch | Core library function | Low |
-| Checkpoints/resume | Implemented | Community | Torch | Reliability requirement | Low |
+| Checkpoints/resume | Implemented and hardened | Community | Torch | Reliability requirement; includes versioned checkpoint metadata, RNG state, inspection, and atomic writes | Low |
 | Basic evaluation | Implemented | Community | Torch | Required to validate models | Low |
 | Full fine-tuning/SFT | Implemented | Community | Torch | Core LLM workflow | Low |
 | Basic inference | Implemented | Community | Torch | Expected local usage | Low |
+| Model lifecycle and configuration contract | Implemented | Community | Torch, optional adapters | Required before advanced Core features can be reliable | Low |
+| Final model artifacts | Implemented | Community | Torch; optional Transformers for HF | Required for local evaluation, inference, sharing, export, and future fine-tuning handoff | Medium |
 | Public API/compatibility | Implemented | Community | None | Protects users | Low |
 | Plugin interfaces | Interface Only | Community | None | Lightweight extension point | Medium if loaded unsafely |
 | Hugging Face loading/tokenizers | Partial/Experimental | Shared Core | Transformers | Common external model bridge | Medium |
 | Mixed precision | Partial | Shared Core | CUDA/Torch | Useful locally, hardware-sensitive | Low |
-| LoRA/PEFT | Experimental | Pro | PEFT/Transformers | Advanced automation and matrix testing | Medium |
+| Full fine-tuning/SFT | Implemented | Community | Torch | Local model adaptation should be useful without Pro | Medium if datasets leak |
+| Built-in LoRA | Implemented | Shared Core | Torch | Local adapter fine-tuning without external PEFT dependency | Medium |
+| External PEFT automation | Not Implemented | Pro | PEFT/Transformers | Advanced automation and matrix testing | Medium |
 | QLoRA/quant PEFT | Not Implemented | Pro | PEFT/bitsandbytes | Hardware-sensitive advanced training | Medium |
 | DDP/FSDP/Multi-GPU | Not Implemented | Pro | Torch distributed | Operational orchestration | Low |
 | Experiment tracking services | Experimental | Pro | MLflow/W&B/etc. | Team/external-service workflows | Medium |
@@ -40,6 +44,11 @@ This is a recommendation, not a final licensing decision.
 ## What Remains Open Source
 
 Community should include everything required to build, prepare data, train, fine-tune, evaluate, checkpoint, resume, and run local inference on small models.
+
+Core Milestone 2 / Feature 1 keeps full-parameter fine-tuning and SFT in
+Community. Core Milestone 2 / Feature 2 adds built-in local LoRA in Shared Core
+without requiring the external PEFT package. QLoRA and broader PEFT automation
+remain future work and are not approved automatically.
 
 ## What Pro Adds
 

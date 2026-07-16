@@ -106,6 +106,18 @@ http://127.0.0.1:8765/api/project/status
 
 Do not use a remote host for normal local development.
 
+The frontend API client defaults to:
+
+```text
+http://127.0.0.1:8765
+```
+
+For local smoke tests on another port, set:
+
+```bash
+NEXT_PUBLIC_ARCLM_API_BASE_URL=http://127.0.0.1:8876
+```
+
 ## Simple Dashboard Smoke
 
 Start the backend:
@@ -171,10 +183,12 @@ npm run start -- --hostname 127.0.0.1 --port 3124
 Then open the shell routes listed above. Check the desktop sidebar, collapsed
 sidebar, mobile navigation, Simple/Advanced mode switch, theme control, and
 planned-page states. The shell should not show fake backend connection status.
-## Dataset Inspector Backend
+## Dataset Inspector Backend and Source Manager
 
-Web Milestone 2 / Feature 2 adds read-only dataset inspection endpoints. Start
-the backend with an explicit dataset root:
+Web Milestone 2 / Feature 2 adds read-only dataset inspection endpoints.
+Feature 4 adds local source management from the dashboard.
+
+You can still start the backend with a session-only CLI root:
 
 ```bash
 python -m arclm web-api --dataset-root workspace=./data
@@ -187,5 +201,51 @@ GET /api/datasets
 GET /api/datasets/{dataset_id}/inspection
 ```
 
-No dataset roots are configured by default. The browser cannot add roots and
-cannot pass arbitrary local paths.
+The dashboard can also add persisted local roots through `/data`.
+
+Default persisted config:
+
+```text
+<user home>/.arclm/dataset-roots.json
+```
+
+Session-only CLI roots are merged with persisted roots for that server process.
+They are shown as session-only in the UI and are not removed from the persistent
+file.
+
+## Dataset Inspector UI Smoke
+
+Web Milestone 2 / Feature 3 turns `/data` into a read-only Dataset Inspector.
+With the backend running with a dataset root, start the frontend:
+
+```bash
+cd web
+npm run start -- --hostname 127.0.0.1 --port 3126
+```
+
+Open:
+
+```text
+http://127.0.0.1:3126/data
+```
+
+Verify:
+
+- the catalogue lists only approved local datasets
+- selecting a dataset updates the URL with a safe `dataset_...` ID
+- summary, scope, schema, preview, statistics, and warnings render
+- Simple mode hides technical IDs and codes
+- Advanced mode shows safe metadata only
+- stopping the backend shows the disconnected state
+- source dataset files remain unchanged
+
+The source manager on the same page lets you:
+
+- add a local folder by typing or pasting an absolute path
+- enable or disable a source
+- refresh the catalogue
+- remove the source configuration without deleting files
+- enable recursive scanning in Advanced mode
+
+The UI does not upload, edit, delete dataset files, map fields, or run pipeline
+steps.

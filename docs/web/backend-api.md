@@ -2,7 +2,9 @@
 
 Web Milestone 1 / Feature 4 adds a small read-only FastAPI backend for the
 modern ArcLM Web UI. Feature 5 uses those endpoints for the Simple Dashboard.
-Feature 6 extends the safe schemas used by the Advanced Dashboard.
+Feature 6 extends the safe schemas used by the Advanced Dashboard. Web
+Milestone 2 / Features 2-4 add the dataset inspection endpoints, the `/data`
+inspector UI, and the local Dataset Source Manager.
 
 ## Purpose
 
@@ -71,6 +73,12 @@ prints a warning and is not production-safe without a later security milestone.
 | GET | `/api/environment` | Safe runtime summary |
 | GET | `/api/capabilities` | Evidence-based capability status |
 | GET | `/api/project/status` | Small safe project/web milestone status |
+| GET | `/api/dataset-roots` | Local administrative dataset source list |
+| POST | `/api/dataset-roots` | Add a validated local dataset source |
+| PATCH | `/api/dataset-roots/{root_id}` | Update name, enabled state, or recursion |
+| DELETE | `/api/dataset-roots/{root_id}` | Remove source config without deleting files |
+| POST | `/api/dataset-roots/{root_id}/validate` | Revalidate one source |
+| POST | `/api/datasets/refresh` | Refresh active dataset catalogue summary |
 | GET | `/docs` | Local OpenAPI docs, enabled by default |
 | GET | `/openapi.json` | OpenAPI schema, enabled by default |
 
@@ -159,6 +167,10 @@ http://localhost:3000
 
 Wildcard CORS is rejected by configuration. Credentials are not enabled.
 
+Dataset source mutation also checks local access at the backend. The write
+endpoints are disabled when the server is bound to a non-loopback host, and
+unknown origins are rejected even if the frontend hides the controls.
+
 ## Legacy Flask Relationship
 
 Legacy Flask interface:
@@ -190,17 +202,35 @@ modern API is a separate backend for the Next.js application.
 ## Data Pipeline Studio API
 
 Status: Web Milestone 2 / Feature 2 implements the read-only Dataset Inspector
-Backend.
+Backend. Feature 3 implements the `/data` UI. Feature 4 implements the Dataset
+Source Manager for local folder configuration.
 
 Implemented endpoints:
 
 ```text
 GET /api/datasets
 GET /api/datasets/{dataset_id}/inspection
+GET /api/dataset-roots
+POST /api/dataset-roots
+PATCH /api/dataset-roots/{root_id}
+DELETE /api/dataset-roots/{root_id}
+POST /api/dataset-roots/{root_id}/validate
+POST /api/datasets/refresh
 ```
 
-These endpoints inspect only files inside server-configured dataset roots. The
-browser uses safe dataset IDs and never sends local paths.
+Catalogue and inspection endpoints inspect only files inside enabled dataset
+roots. The browser uses safe dataset IDs and never sends local paths to
+inspection routes.
+
+Dataset source endpoints are local administrative endpoints. They accept typed
+or pasted absolute local folder paths and may return configured paths only to
+the source manager UI. They do not upload files, browse arbitrary directories,
+delete folders, or modify dataset files.
+
+The Dataset Inspector UI shows only bounded response data: catalogue entries,
+inspection scope, inferred fields, preview rows, statistics, and warnings. It
+does not upload files, modify datasets, request arbitrary rows, run pipeline
+steps, or expose root paths.
 
 Planned later endpoints include:
 

@@ -1,11 +1,14 @@
 # Dataset Storage Plan
 
-Status: planning only. No persistent Data Pipeline Studio dataset store is
-implemented.
+Status: partial implementation. Web Milestone 2 / Feature 4 implemented
+persistent local dataset source configuration. No persistent uploaded dataset
+store is implemented.
 
 Feature 2 adds only an in-memory, per-request catalogue over configured
-server-side roots. It does not copy files, upload files, create manifests, or
-persist dataset metadata.
+server-side roots. Feature 3 adds a read-only browser inspector for that
+catalogue and bounded inspection data. Feature 4 adds persisted source roots in
+a small JSON file. These features do not copy files, upload files, create
+manifests, or persist dataset metadata.
 
 The Studio needs a local storage model before upload, saved previews, pipeline
 manifests, or training handoff can be stable.
@@ -35,6 +38,28 @@ workspace such as:
 ```
 
 This is a proposal only.
+
+## Implemented Source Configuration
+
+Dataset roots are stored separately from dataset content.
+
+Default:
+
+```text
+<user home>/.arclm/dataset-roots.json
+```
+
+When `ARCLM_CONFIG_DIR` is set:
+
+```text
+<ARCLM_CONFIG_DIR>/dataset-roots.json
+```
+
+The file contains only source records such as name, path, enabled state, and
+recursive state. It is written atomically and validated when loaded.
+
+Dataset catalogue IDs are derived safely at runtime. The normal catalogue and
+inspection endpoints do not return root paths.
 
 ## Dataset Manifest Draft
 

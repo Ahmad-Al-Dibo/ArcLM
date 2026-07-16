@@ -77,3 +77,27 @@ read-only and uses real backend data only.
 Advanced mode adds technical dashboard details on the same `/` route. Simple
 mode keeps those sections hidden so beginner users see only the compact status
 view.
+
+## Dataset Inspector
+
+On `/data`, Simple mode shows the read-only Dataset Inspector in a beginner
+friendly form:
+
+- Dataset Sources with name, folder path input, active state, dataset count,
+  refresh, and remove confirmation
+- approved dataset catalogue
+- selected dataset summary
+- inspection scope
+- detected fields
+- bounded preview rows
+- essential quality statistics
+- warning messages in plain language
+- supported formats
+
+Simple mode hides safe root IDs, canonical path details, source-origin details,
+raw warning codes, scan-limit metadata, and API response details. It does not
+show upload, edit, dataset deletion, field mapping, or pipeline execution
+controls.
+
+Removing a Dataset Source only removes ArcLM's local source configuration. It
+does not delete the folder or any dataset file.

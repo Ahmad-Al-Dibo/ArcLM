@@ -2,6 +2,71 @@
 
 Milestones are dependency-based, not calendar estimates. Each milestone must preserve existing behavior unless a failing test proves a change is needed.
 
+## Current Track State
+
+```text
+Web Track:
+Paused after Web Milestone 2 / Feature 4 - Dataset Source Manager
+
+Next previously planned Web feature:
+Approved Pipeline Step Registry
+
+Web approval:
+Not granted
+
+Core Track:
+Active
+
+Last completed Core action:
+Core Milestone 2 / Feature 2:
+LoRA and General PEFT Foundation
+
+Next recommended Core action:
+Core Milestone 2 / Feature 3:
+QLoRA and Quantized Fine-Tuning Foundation
+
+Approval:
+Not granted
+```
+
+Core Milestone 1 Features 1, 2, and 3 are implemented. Core Milestone 2 /
+Features 1 and 2 are implemented. The next recommended
+implementation feature is not approved automatically:
+
+```text
+Core Milestone 2 / Feature 3:
+QLoRA and Quantized Fine-Tuning Foundation
+```
+
+## Core Milestone 1: Model Lifecycle and Configuration Foundation
+
+- Status: Complete; Features 1, 2, and 3 implemented and verified.
+- Goal: define one backward-compatible contract for model sources, model
+  configuration, tokenizer metadata, training checkpoints, inference artifacts,
+  and external model adapters.
+- User value: developers can reliably save, inspect, load, resume, evaluate, and
+  infer with native ArcLM models, standard PyTorch models, and optional external
+  sources.
+- Product: Community with Shared Core optional adapters.
+- Dependencies: Core Re-baseline and API Audit.
+- Included: stable model source types, model/tokenizer metadata, artifact
+  manifest, checkpoint kind distinction, optional dependency errors,
+  compatibility tests, and CPU runtime validation.
+- Excluded: LoRA, PEFT, QLoRA, DDP, FSDP, serving, export, new native
+  architectures, and Web features.
+- Acceptance criteria: public imports stay compatible; native save/inspect/load,
+  checkpoint resume, evaluation, and inference pass CPU runtime tests; optional
+  HF paths fail clearly when dependencies are absent; docs explain the contract.
+- Complexity: Large.
+
+Feature progress:
+
+| Feature | Status | Evidence |
+| ------- | ------ | -------- |
+| Feature 1: Model Lifecycle and Configuration Contract | Complete | `arclm.lifecycle`, checkpoint `lifecycle_metadata`, config loading from model sources, lifecycle tests |
+| Feature 2: Checkpoint Hardening and Reproducibility Metadata | Complete | `CheckpointInfo`, `inspect_checkpoint`, `validate_checkpoint`, format/version metadata, RNG state, atomic writes, legacy compatibility, deterministic resume tests |
+| Feature 3: Final Model Artifact Save and Load | Complete | `save_model_artifact`, `load_model_artifact`, `validate_model_artifact`, `manifest.json`, SHA-256 inventory, native CPU round trip, evaluation/inference compatibility |
+
 ## Milestone 0: Repository Stabilization and Documentation Accuracy
 
 - Goal: make the current repository state trustworthy before new features.
@@ -94,7 +159,8 @@ Feature progress:
 
 ## Web Milestone 2: Data Pipeline Studio
 
-- Status: Features 1-2 complete; Feature 3 is recommended but not approved automatically.
+- Status: Features 1-4 complete; track paused. Feature 5 was previously
+  recommended but is not approved while Core is active.
 - Goal: create a visual data pipeline workflow after the Web foundation is stable.
 - Included later: visual pipeline graph, dataset preview, transformation steps, before/after comparison, cleaning/dedup/token stats, dry run, config editor, save/load, execution status.
 - Excluded now: upload, preview UI, pipeline execution, training handoff, and any browser-triggered dataset mutation until separately approved.
@@ -108,14 +174,31 @@ Feature progress:
 | ------- | ------ | -------- |
 | Feature 1: Data Pipeline Studio planning and API audit | Complete | `docs/web/data-pipeline-studio.md`, `docs/web/data-pipeline-api.md`, `docs/web/dataset-upload-security.md`, `docs/web/dataset-storage.md`, `docs/web/pipeline-events.md` |
 | Feature 2: Dataset Inspector Backend | Complete | `DatasetRoot`, safe IDs, `GET /api/datasets`, `GET /api/datasets/{dataset_id}/inspection`, tests, and runtime smoke |
-| Feature 3: Dataset Inspector UI | Recommended, awaiting approval | Depends on Feature 2 |
-| Feature 4: Approved Pipeline Step Registry | Planned | Depends on inspector and step contract |
-| Feature 5: Pipeline Preview and Step Result Contract | Planned | Depends on registry |
-| Feature 6: Pipeline Save/Load Manifest | Planned | Depends on provenance/storage decisions |
-| Feature 7: Dry Run Execution | Planned | Depends on step result and cancellation design |
-| Feature 8: Upload Security and Local Dataset Store | Planned | Depends on upload security controls |
-| Feature 9: Token and SFT Mapping Preview | Planned | Depends on inspector and tokenizer contracts |
-| Feature 10: Training Handoff Planning | Planned | Depends on saved manifest and mapping preview |
+| Feature 3: Dataset Inspector UI | Complete | `/data` read-only inspector, typed dataset API client, safe URL selection, simple/advanced views, tests, and runtime smoke |
+| Feature 4: Dataset Source Manager | Complete | Multiple dataset roots, persistent JSON config, validation, enable/disable, removal without deletion, refresh, loopback-only writes, tests, and runtime smoke |
+| Feature 5: Approved Pipeline Step Registry | Planned | Depends on inspector and step contract |
+| Feature 6: Pipeline Preview and Step Result Contract | Planned | Depends on registry |
+| Feature 7: Pipeline Save/Load Manifest | Planned | Depends on provenance/storage decisions |
+| Feature 8: Dry Run Execution | Planned | Depends on step result and cancellation design |
+| Feature 9: Upload Security and Local Dataset Store | Planned | Depends on upload security controls |
+| Feature 10: Token and SFT Mapping Preview | Planned | Depends on inspector and tokenizer contracts |
+| Feature 11: Training Handoff Planning | Planned | Depends on saved manifest and mapping preview |
+
+## Core Milestone 2: Fine-Tuning and PEFT Foundation
+
+- Status: Features 1 and 2 complete; Feature 3 recommended but not approved.
+- Goal: stabilize full-parameter SFT first, then add optional PEFT only through
+  a tested dependency boundary.
+- Excluded now: QLoRA, DPO, RLHF, GRPO, distributed training, serving, new
+  architectures, and Web features.
+
+Feature progress:
+
+| Feature | Status | Evidence |
+| ------- | ------ | -------- |
+| Feature 1: Full Fine-Tuning and SFT Stabilization | Complete | `FineTuningConfig`, `prepare_fine_tuning_dataset`, `fine_tune`, CPU native runtime, checkpoint/resume, artifact reload, evaluation, inference, focused tests |
+| Feature 2: LoRA and General PEFT Foundation | Complete | `arclm.peft`, `LoRAConfig`, built-in `LoRALinear`, `fine_tune(..., peft_config=...)`, adapter artifacts, checkpoint/resume, merge/final artifact, CPU runtime tests |
+| Feature 3: QLoRA | Recommended | Depends on quantization dependency decisions and hardware-sensitive validation |
 
 ## Web Milestone 3: Training and Evaluation Dashboard
 
@@ -147,7 +230,11 @@ Feature progress:
 - Acceptance criteria: to be defined when approved.
 - Complexity: Large.
 
-## Later ML Milestone: LoRA and Basic PEFT Foundation
+## Superseded: Later ML Milestone: LoRA and Basic PEFT Foundation
+
+This earlier planning block is superseded by Core Milestone 2 / Feature 2,
+which implemented built-in ArcLM LoRA and adapter artifacts. QLoRA and external
+PEFT automation remain future work.
 
 - Goal: stabilize LoRA without starting QLoRA or RLHF.
 - User value: adapter fine-tuning becomes reliable.

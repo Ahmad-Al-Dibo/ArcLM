@@ -282,3 +282,216 @@ Implementation note:
   `GET /api/datasets` and `GET /api/datasets/{dataset_id}/inspection`.
   The Feature 1 draft `POST /api/data/inspect` was superseded by this safer
   list-then-inspect flow.
+
+## DEC-015: Dataset Source Manager Uses Local Administrative Writes
+
+Status: Accepted for Web Milestone 2 / Feature 4.
+
+Decision:
+Allow loopback-only dataset source configuration endpoints for adding,
+validating, enabling, disabling, and removing local dataset roots. Store
+persisted roots in a local JSON config file outside the installed package.
+
+Reason:
+
+- The browser cannot safely browse unrestricted server folders.
+- Users still need to configure multiple local dataset folders without
+  restarting the backend for every source change.
+- Source configuration is different from dataset upload or dataset mutation.
+
+Consequence:
+
+- Source-management mutation is disabled for non-loopback server binding.
+- CLI roots remain session-only unless separately saved through the dashboard.
+- Removing a source never deletes folders or dataset files.
+- Normal dataset catalogue and inspection responses must not expose root paths.
+- Pipeline step registry, upload, preview, and execution stay separate future
+  features.
+
+## DEC-016: Pause Web Track and Re-baseline Core
+
+Status: Accepted by owner for the current work sequence.
+
+Context:
+After Web Milestone 2 / Feature 4, the owner paused Web Experience work and
+made the Python Core framework the active priority.
+
+Decision:
+Do not continue the Dataset Source Manager, Pipeline Step Registry Web UI, Data
+Pipeline Studio, dashboards, model registry UI, plugin UI, or marketplace until
+the owner explicitly reactivates the Web track. Complete a Core re-baseline and
+API audit first.
+
+Reasons:
+The Python framework needs a fresh evidence-based baseline before advanced Core
+features continue. Web code should remain stable, but it must not pull focus
+from model lifecycle, configuration, checkpoint, training, evaluation,
+fine-tuning, data, inference, and dependency contracts.
+
+Consequences:
+The recommended next action changes from the Web Pipeline Step Registry to Core
+Milestone 1 / Feature 1: Model Lifecycle and Configuration Contract. That
+recommendation still requires explicit owner approval.
+
+## DEC-017: Model Lifecycle Contract Before Advanced Core Work
+
+Status: Accepted for Core Milestone 1 / Feature 1.
+
+Context:
+ArcLM has working training, evaluation, checkpoints, SFT, loaders, and inference
+pieces, but source metadata and lifecycle behavior are split across domains.
+
+Decision:
+Before LoRA, QLoRA, distributed training, export, serving, or new architecture
+families, define a backward-compatible model lifecycle and configuration
+contract.
+
+Reasons:
+Advanced features depend on a stable answer to what a model source is, what an
+ArcLM training checkpoint contains, how an inference artifact differs from a
+checkpoint, how tokenizers and metadata are saved, and how external models are
+adapted.
+
+Consequences:
+Current public imports and compatibility modules stay. `arclm.lifecycle` is the
+first shared contract. Later milestones should use it instead of creating new
+metadata shapes.
+
+## DEC-018: Web Dataset Tests Must Inject Isolated Config Paths
+
+Status: Accepted for the Core stability gate after Core Milestone 1 / Feature 1.
+
+Context:
+Dataset Inspector tests created local Web API apps without setting
+`dataset_config_path`. The app correctly loaded the default persisted user
+configuration from the local ArcLM config directory, so the tests saw real
+user-local dataset roots and the default full suite failed.
+
+Decision:
+Web dataset tests that construct an app must pass an explicit temporary
+`dataset_config_path`, preferably outside the temporary dataset root. Tests may
+simulate user-local config with `ARCLM_CONFIG_DIR`, but they must not read or
+write the developer's real persisted dataset-root configuration.
+
+Reasons:
+Production behavior should continue loading persisted roots by default, while
+tests must be deterministic, order-independent, and safe for user data.
+
+Consequences:
+Future Dataset Inspector and Dataset Source Manager tests need isolated config
+paths whenever they create a Web app. The full Python suite now passes without
+touching user-local dataset source configuration.
+
+## DEC-019: Versioned Trusted Training Checkpoints
+
+Status: Accepted for Core Milestone 1 / Feature 2.
+
+Context:
+ArcLM checkpoints already saved model, optimizer, scheduler, scaler, training
+state, and lifecycle metadata, but the payload was not explicitly versioned and
+did not preserve supported RNG state.
+
+Decision:
+Training checkpoints now use
+`checkpoint_format="arclm-training-checkpoint"` and `checkpoint_version=1`.
+ArcLM stores structured checkpoint metadata, a safe config snapshot, small
+dataset provenance, and supported RNG state. Public inspection uses
+`CheckpointInfo`, `inspect_checkpoint()`, and `validate_checkpoint()`.
+
+Reasons:
+Training resume needs full PyTorch state, including optimizer and scheduler
+state, so checkpoint loading remains a trusted-file operation. Versioning and
+validation make this explicit without pretending that arbitrary `.pt` files are
+safe.
+
+Consequences:
+Existing unversioned checkpoints remain legacy-compatible. Future versions must
+be rejected unless ArcLM knows how to load them. Mid-epoch dataloader position,
+callback state, checksums, signatures, and final model artifact save/load remain
+separate future work.
+
+## DEC-020: Final Model Artifacts Are Separate From Training Checkpoints
+
+Status: Accepted for Core Milestone 1 / Feature 3.
+
+Context:
+Training checkpoints now restore full training state, but final trained models
+need a different contract for evaluation, inference, export, sharing, and future
+fine-tuning. Treating checkpoints as final artifacts would leak optimizer,
+scheduler, scaler, RNG, and training-run state into user-facing model packages.
+
+Decision:
+ArcLM final model artifacts now use a directory format with
+`manifest.json`, `artifact_format="arclm-model-artifact"`, and
+`artifact_version=1`. Artifacts store model config, portable CPU state
+dictionaries, optional tokenizer files, safe summaries, safe provenance, a file
+inventory, and SHA-256 hashes. They do not store optimizer, scheduler, scaler,
+RNG, or active trainer state.
+
+Reasons:
+Final artifacts should be inspectable and validatable before model
+construction. Native ArcLM models can be reconstructed from built-in config and
+architecture maps. Arbitrary PyTorch modules cannot be reconstructed safely from
+a state dictionary alone, so they require a caller-supplied factory or model at
+load time. Hugging Face artifacts remain optional, local-files-only, and
+`trust_remote_code=False` by default.
+
+Consequences:
+`save_model_artifact()`, `inspect_model_artifact()`,
+`validate_model_artifact()`, and `load_model_artifact()` are the canonical
+final-artifact APIs. `Trainer.save_model_artifact()` is a small convenience
+wrapper. Checkpoints are not accepted as final artifacts, and final artifacts
+are not accepted as training checkpoints. Digital signatures, PEFT adapter
+artifacts, export artifacts, GPU artifact runtime, and Hugging Face runtime
+validation remain future work.
+
+## DEC-018: Stable Fine-Tuning Workflow Reuses Core Trainer
+
+Status: Accepted for Core Milestone 2 / Feature 1.
+
+Context:
+ArcLM already had `FullFineTuner`, `SFTTrainer`, a collator, adapters, and a
+legacy Hugging Face `train_sft` helper. The missing piece was a stable
+Python-first workflow that validates examples, creates labels, trains, resumes,
+evaluates, and saves a final model artifact without creating a parallel
+training engine.
+
+Decision:
+ArcLM fine-tuning now uses `FineTuningConfig`, `FineTuningMode`,
+`PreparedFineTuningDataset`, `FineTuningDatasetReport`, `FineTuningResult`,
+`prepare_fine_tuning_dataset()`, and `fine_tune()`. The workflow prepares
+tokenized `input_ids`, `attention_mask`, and `labels`, then delegates training
+to `FullFineTuner` and `Trainer`.
+
+Consequences:
+Full-parameter native CPU SFT is verified through checkpoint/resume, final
+artifact save, artifact reload, evaluation, and inference. Core Milestone 2 /
+Feature 2 adds LoRA through the same workflow. QLoRA, DDP, FSDP, Web features,
+and model serving remain outside Feature 1. Stable packing is disabled in
+`FineTuningConfig` until a future attention-mask/packing design is approved.
+
+## DEC-021: Built-In LoRA Before External PEFT Automation
+
+Status: Accepted for Core Milestone 2 / Feature 2.
+
+Context:
+ArcLM had a legacy optional `train_sft(use_lora=True)` path for Hugging Face
+models through the external `peft` package, but no stable ArcLM-owned PEFT
+contract. The approved Core step needed adapter fine-tuning without making base
+imports or native CPU workflows depend on PEFT, Transformers, or internet
+access.
+
+Decision:
+ArcLM now provides `arclm.peft` with `PeftMethod`, `PeftConfig`,
+`LoRAConfig`, built-in `LoRALinear`, target inspection, LoRA injection,
+adapter-only artifacts, adapter validation/loading, and merge/unmerge helpers.
+`fine_tune(..., peft_config=LoRAConfig(...))` is the stable built-in LoRA entry
+point. Adapter artifacts use `artifact_format="arclm-peft-adapter"` and remain
+separate from both training checkpoints and final model artifacts.
+
+Consequences:
+Built-in LoRA is verified on CPU with the native ArcLM model through
+checkpoint/resume, adapter reload, evaluation, inference, and merged final model
+artifact reload. QLoRA, other PEFT methods, Hugging Face PEFT runtime, GPU PEFT
+runtime, and external PEFT automation remain future work. The legacy optional
+Hugging Face/PEFT path remains compatibility code.

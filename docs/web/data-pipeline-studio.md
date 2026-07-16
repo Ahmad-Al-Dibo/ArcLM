@@ -1,8 +1,8 @@
 # Data Pipeline Studio Planning and API Audit
 
-Status: Web Milestone 2 / Feature 2 implemented the read-only Dataset Inspector
-Backend. The Data Pipeline Studio UI, upload, pipeline execution, manifest
-storage, and training handoff are still not implemented.
+Status: Web Milestone 2 / Feature 4 implemented the Dataset Source Manager on
+top of the read-only Dataset Inspector Backend and UI. Upload, pipeline
+execution, manifest storage, and training handoff are still not implemented.
 
 This document records what ArcLM already has, what can be reused, and what is
 missing before a safe browser-based Data Pipeline Studio can be built.
@@ -16,10 +16,9 @@ Included in this feature:
 - document security, storage, preview, provenance, and event needs
 - choose the next implementation feature
 
-Excluded from the current implemented backend:
+Excluded from the current implemented inspector:
 
 - upload support
-- dataset preview UI
 - visual graph UI
 - pipeline execution from the browser
 - training controls
@@ -45,6 +44,45 @@ Feature 2 adds:
 The catalogue is refreshed per listing/inspection request with bounded work. It
 does not watch the filesystem, cache inspection results, or read full file
 contents during listing.
+
+## Implemented Dataset Inspector UI
+
+Feature 3 turns `/data` into a read-only inspector.
+
+The UI:
+
+- lists only backend-approved datasets
+- stores selection only as a safe `dataset_...` URL query value
+- shows summary, inspection scope, fields, bounded preview rows, statistics,
+  warnings, and supported formats
+- keeps advanced metadata behind Advanced mode
+- renders dataset values as untrusted plain text
+- clears invalid path-like query values instead of requesting them
+- never uploads, edits, deletes, maps fields, or runs pipeline steps
+
+Manual initial selection is used. The page does not auto-inspect every dataset.
+Users choose a dataset, and refresh preserves the selected safe ID when it still
+exists.
+
+## Implemented Dataset Source Manager
+
+Feature 4 lets the local user manage multiple dataset folders from `/data`.
+
+Implemented behavior:
+
+- add local folder paths with readable names
+- store roots in a local JSON config file
+- list persisted and session-only CLI roots
+- enable and disable individual roots
+- remove root configuration without deleting files
+- validate roots before saving
+- optionally enable recursive scanning in Advanced mode
+- refresh the active catalogue
+- keep dataset catalogue responses path-free
+- block source mutation when the backend is not bound to loopback
+
+The browser still cannot browse arbitrary server folders. Users type or paste
+absolute local paths into the manager.
 
 ## Existing Pipeline Inventory
 
@@ -97,6 +135,13 @@ flow:
 ```text
 configured dataset root -> dataset catalogue -> safe dataset ID
 -> bounded inspection -> validated response -> browser
+```
+
+Feature 4 adds the source-management flow:
+
+```text
+typed local folder path -> validate root -> save root config
+-> refresh catalogue -> safe dataset IDs -> Dataset Inspector
 ```
 
 ArcLM still does not provide the complete Studio flow:
@@ -245,7 +290,8 @@ Do not add a graph library until a real interactive graph is approved.
 
 | Gap | Current status | Risk | Recommended action |
 | --- | -------------- | ---- | ------------------ |
-| Safe dataset references | Implemented for local roots | Needs persistence later | Extend to manifests before upload |
+| Safe dataset references | Implemented for local roots | Needs manifests later | Extend to manifests before upload |
+| Persistent source roots | Implemented | No dataset manifests yet | Keep source config separate from uploaded dataset storage |
 | Upload limits | Missing | Large or unsafe files | Define size/type limits before upload |
 | Preview endpoint | Implemented for source inspection | No step preview yet | Add pipeline preview after step registry |
 | Step registry | Missing | UI cannot list real operations safely | Add typed list of approved steps |
@@ -259,23 +305,24 @@ Do not add a graph library until a real interactive graph is approved.
 ## Recommended Web Milestone 2 Order
 
 1. Feature 2: Dataset Inspector Backend - implemented and verified
-2. Feature 3: Dataset Inspector UI - recommended next action
-3. Feature 4: Approved Pipeline Step Registry
-4. Feature 5: Pipeline Preview and Step Result Contract
-5. Feature 6: Pipeline Save/Load Manifest
-6. Feature 7: Dry Run Execution
-7. Feature 8: Upload Security and Local Dataset Store
-8. Feature 9: Token and SFT Mapping Preview
-9. Feature 10: Training Handoff Planning
+2. Feature 3: Dataset Inspector UI - implemented and verified
+3. Feature 4: Dataset Source Manager - implemented and verified
+4. Feature 5: Approved Pipeline Step Registry
+5. Feature 6: Pipeline Preview and Step Result Contract
+6. Feature 7: Pipeline Save/Load Manifest
+7. Feature 8: Dry Run Execution
+8. Feature 9: Upload Security and Local Dataset Store
+9. Feature 10: Token and SFT Mapping Preview
+10. Feature 11: Training Handoff Planning
 
 The next recommended feature is:
 
 ```text
-Web Milestone 2 / Feature 3: Dataset Inspector UI
+Web Milestone 2 / Feature 5: Approved Pipeline Step Registry
 ```
 
-Feature 3 should consume the existing read-only backend. It must not implement
-upload, mutation, pipeline execution, or training handoff.
+Feature 5 should list approved real ArcLM pipeline steps. It must not implement
+upload, arbitrary code execution, training controls, or a visual graph editor.
 
 ## Feature 2 Success Criteria
 

@@ -4,9 +4,17 @@ This file is the planning source of truth for ArcLM after the July 15, 2026 repo
 
 [PROJECT_STATUS]
 
-- Planning state: Web Experience track approved by the owner; Web Milestone 1 is complete and locally verified. Web Milestone 2 / Feature 1 planning and API audit is complete. Web Milestone 2 / Feature 2 Dataset Inspector Backend is implemented and locally verified.
-- Implementation gate: closed until Web Milestone 2 / Feature 3 or another implementation feature is explicitly approved. Later ML/product milestones remain closed until separately approved.
-- Roadmap priority note: LoRA/PEFT, additional SFT expansion, and other ML feature milestones remain planned, but they are postponed behind the current Web Experience track.
+- Web Track: paused after Web Milestone 2 / Feature 4 - Dataset Source Manager. The next previously planned Web feature is Approved Pipeline Step Registry, but approval is not granted and Web development must not continue until the owner reactivates it.
+- Core Track: active priority. Core Milestone 2 / Feature 2 - LoRA and General PEFT Foundation is implemented and verified.
+- Core Re-baseline result: complete. The canonical Core capability matrix is [../core/current-capabilities.md](../core/current-capabilities.md).
+- Core Milestone 1 / Feature 1 validation: Model Lifecycle and Configuration Contract implemented through `arclm.lifecycle`; native checkpoints include lifecycle metadata; legacy checkpoints can be inspected; `Config.load_config_from_model()` now loads real model config; focused lifecycle/public API/compatibility tests passed with `79 passed, 2 skipped`; broader Core regression passed with `166 passed, 2 skipped`; the isolation gate restored the full Python suite to `259 passed, 10 skipped, 4 warnings`; compileall and wheel build passed.
+- Core Milestone 1 / Feature 2 validation: Checkpoint Hardening and Reproducibility Metadata implemented through `arclm.checkpoints`; training checkpoints now have `checkpoint_format="arclm-training-checkpoint"` and `checkpoint_version=1`; inspection, validation, RNG restore, atomic writes, legacy compatibility, and CPU epoch-boundary deterministic resume are tested. Full Python suite: `269 passed, 10 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed.
+- Core Milestone 1 / Feature 3 validation: Final Model Artifact Save and Load implemented through `arclm.lifecycle`; final artifacts use `artifact_format="arclm-model-artifact"` and `artifact_version=1`; manifest, file inventory, SHA-256 validation, native reconstruction, PyTorch factory boundary, tokenizer persistence, CPU evaluation/inference runtime, and checkpoint/artifact separation are tested. Full Python suite: `285 passed, 10 skipped, 4 warnings`; compileall and wheel build passed.
+- Core Milestone 2 / Feature 1 validation: Full Fine-Tuning and SFT Stabilization implemented through `arclm.finetuning`; stable `FineTuningMode`, `FineTuningConfig`, `FineTuningResult`, dataset preparation/report/fingerprint, prompt/chat masking, `fine_tune()`, checkpoint/resume, final artifact handoff, artifact reload, evaluation, and inference after reload are tested. Focused fine-tuning suite: `37 passed`; full Python suite: `296 passed, 10 skipped, 4 warnings`; compileall passed.
+- Core Milestone 2 / Feature 2 validation: LoRA and General PEFT Foundation implemented through `arclm.peft`; built-in `LoRAConfig`, `LoRALinear`, target planning, adapter injection, base freezing, adapter artifacts, adapter reload, checkpoint/resume, merge/unmerge, merged final artifact reload, evaluation, inference, and public imports are tested. Focused PEFT suite: `13 passed`.
+- Recommended next Core action: Core Milestone 2 / Feature 3 - QLoRA and Quantized Fine-Tuning Foundation. This is not approved automatically.
+- Implementation gate: closed until the owner explicitly approves the next Core implementation feature or reactivates Web.
+- Roadmap priority note: Data Platform Web work, QLoRA, distributed training, serving, and other product milestones remain planned but inactive.
 - Current repository state: large `src/` package migration is present in the working tree; this plan does not revert or normalize it.
 - Baseline validation: Milestone 0 recorded `187 passed, 2 skipped, 38 warnings`; after Milestone 1 warning cleanup, full pytest is `200 passed, 2 skipped, 3 warnings`.
 - Milestone 1 public API check: `tests/public_api -v` passed with `20 passed`; `tests/compatibility -v` passed with `14 passed`.
@@ -23,8 +31,13 @@ This file is the planning source of truth for ArcLM after the July 15, 2026 repo
 - Web Feature 6 validation: Advanced Dashboard added on `/` behind Advanced mode; frontend lint/type/test/build, backend web tests, public API/compatibility tests, npm audit, package wheel, Python regressions, and real frontend-to-backend smoke passed.
 - Web Milestone 2 Feature 1 validation: Data Pipeline Studio planning and API audit completed in documentation only; no executable code, endpoints, UI routes, upload support, or pipeline execution were added.
 - Web Milestone 2 Feature 2 validation: Dataset Inspector Backend added; `GET /api/datasets`, `GET /api/datasets/{dataset_id}/inspection`, focused backend tests, CLI dataset-root configuration, frontend regressions, full pytest, compileall, wheel build, and runtime smoke passed.
-- Current stable center: datasets, single-device training, basic evaluation, full fine-tuning/SFT, basic inference, checkpoint loading.
-- Current weak areas: Web workflow pages beyond the dashboard, real Hugging Face runtime validation, LoRA/PEFT stability, serving, deployment, monitoring, security, retrieval, agents, enterprise.
+- Web Milestone 2 Feature 3 validation: Dataset Inspector UI added on `/data`; frontend typed dataset client, URL selection by safe dataset ID, simple/advanced read-only inspection views, focused UI tests, frontend lint/type/test/build, backend regressions, full pytest, compileall, wheel build, npm audit, and production route/API smoke passed.
+- Web Milestone 2 Feature 4 validation: Dataset Source Manager added on `/data`; multiple roots, persistent JSON config, CLI-root merge, validation, enable/disable, recursive opt-in, removal without deletion, catalogue refresh, loopback-only mutation, focused frontend/backend tests, full regressions, and runtime smoke passed. Web track is now paused by owner direction.
+- Core audit baseline on July 15, 2026: `import arclm` passed, `compileall src/arclm` passed, `pip wheel . --no-deps` passed, public API tests passed with `22 passed`, compatibility tests passed with `15 passed`, focused Core runtime suites passed with `113 passed, 2 skipped`, CLI/package/loader tests passed with `18 passed`, GPU tests skipped correctly in the CPU environment with `8 skipped`, and paused Web regression passed with frontend lint/type/test/build.
+- Core audit full-suite result on July 15, 2026: `3 failed, 245 passed, 10 skipped, 4 warnings`. The failures are isolated to paused Web Dataset Inspector tests reading persisted user-local dataset-root configuration instead of isolated test roots.
+- Core Feature 1 full-suite result on July 15, 2026 after the Dataset Inspector isolation gate: `259 passed, 10 skipped, 4 warnings`. The three paused-Web Dataset Inspector isolation failures are resolved; no Core lifecycle tests failed.
+- Current stable center: datasets, single-device training, basic evaluation, full fine-tuning/SFT, built-in LoRA on CPU, basic inference, checkpoint loading, final model artifacts, PEFT adapter artifacts.
+- Current weak areas: Web workflow pages beyond the dashboard, real Hugging Face runtime validation, GPU PEFT validation, QLoRA, serving, deployment, monitoring, security, retrieval, agents, enterprise.
 
 [ASSUMPTIONS]
 
@@ -45,8 +58,10 @@ This file is the planning source of truth for ArcLM after the July 15, 2026 repo
 - Environment: Windows 11, Python `3.12.10`, PyTorch `2.13.0+cpu`, CUDA unavailable.
 - Local GPU validation environment: `.venv-gpu-validation`, Python `3.12.10`, PyTorch `2.5.1+cu121`, CUDA runtime `12.1`, NVIDIA GeForce GTX 1050 Ti, compute capability `6.1`, `sm_61` present.
 - Installed relevant optional packages: transformers, tokenizers, safetensors, Flask, NumPy, SentencePiece, PyYAML, BeautifulSoup, tqdm.
-- Missing relevant optional packages in this environment: datasets, accelerate, peft, webdataset, ONNX, ONNX Runtime, vLLM, MLflow, Weights & Biases, TensorBoard.
+- Missing relevant optional packages in this environment: datasets, accelerate, peft, webdataset, ONNX, ONNX Runtime, vLLM, MLflow, Weights & Biases, TensorBoard. The external `peft` package is not required for built-in ArcLM LoRA.
 - Web experience: a legacy/simple Flask HTML interface exists; the modern frontend foundation, Simple Dashboard, and Advanced Dashboard now exist under `web/`.
+- Web track handover: [WEB_PAUSE_AND_CORE_HANDOVER.md](WEB_PAUSE_AND_CORE_HANDOVER.md).
+- Core audit docs: [../core/overview.md](../core/overview.md) and [../core/current-capabilities.md](../core/current-capabilities.md).
 - Public APIs are lazy-loaded from `src/arclm/__init__.py` and domain packages.
 - Evidence audit documents already exist under `docs/status/` and remain useful historical evidence.
 - New planning documents live under `docs/project/`.
@@ -92,7 +107,7 @@ The primary planning matrix is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md). Summar
 - Storage: local files for checkpoints, datasets, configs, logs, and artifacts.
 - Deployment: no stable deployment automation.
 - Monitoring: basic training/evaluation metrics and experimental tracking.
-- Optional integrations: Transformers, PEFT, datasets, safetensors, Flask, PyYAML, BeautifulSoup, tqdm, future serving/export/tracking packages.
+- Optional integrations: Transformers, external PEFT, datasets, safetensors, Flask, PyYAML, BeautifulSoup, tqdm, future serving/export/tracking packages.
 
 [DEPENDENCY_VERSIONS]
 
@@ -122,6 +137,12 @@ Fine-tuning:
 
 ```text
 Records -> formatter -> tokenizer adapter -> collator -> FullFineTuner/SFTTrainer -> Trainer -> checkpoint
+```
+
+PEFT fine-tuning:
+
+```text
+Records -> formatter -> tokenizer adapter -> LoRA injection -> FullFineTuner/SFTTrainer -> Trainer -> checkpoint -> adapter artifact or merged final artifact
 ```
 
 Evaluation:
@@ -199,7 +220,18 @@ Detailed milestones are in [MILESTONES.md](MILESTONES.md). Recommended first mil
 Web Milestone 1: Interface Foundation and Dashboards
 ```
 
-The owner has chosen the Web Experience track as the next active direction. Web Milestone 1 is complete and reviewed in this project state. Web Milestone 2 / Feature 1 planning and Web Milestone 2 / Feature 2 Dataset Inspector Backend are complete. Web Milestone 2 UI/execution features and earlier ML milestones such as LoRA/PEFT remain planned but unapproved until separately approved.
+The owner has paused the Web Experience track and made the Core Track the active priority. Web Milestone 1 is complete. Web Milestone 2 / Feature 1 planning, Feature 2 Dataset Inspector Backend, Feature 3 Dataset Inspector UI, and Feature 4 Dataset Source Manager are complete. Web Milestone 2 execution/upload features and ML/product milestones remain planned but unapproved until separately approved.
+
+Current Core Milestone 2 feature state:
+
+```text
+Full Fine-Tuning and SFT Stabilization: Implemented and verified
+LoRA and General PEFT Foundation: Implemented and verified
+QLoRA and Quantized Fine-Tuning Foundation: Recommended, not approved
+Other PEFT methods: Not implemented
+Hugging Face PEFT runtime: Pending optional validation
+GPU PEFT runtime: Pending optional validation
+```
 
 Current Web Milestone 1 feature state:
 
@@ -214,9 +246,12 @@ Advanced Dashboard: Implemented and verified
 Data Pipeline Studio: In progress; backend inspection only
 Data Pipeline Studio planning/API audit: Complete
 Dataset Inspector Backend: Implemented and verified
-Dataset Inspector UI: Recommended next action, not approved automatically
+Dataset Inspector UI: Implemented and verified
+Dataset Source Manager: Implemented and verified
+Multiple Dataset Roots: Implemented and verified
+Dashboard Root Configuration: Implemented and verified
 Dataset Upload: Not implemented
-Pipeline Step Registry: Not implemented
+Approved Pipeline Step Registry: Not implemented
 Pipeline Preview: Not implemented
 ```
 
@@ -293,10 +328,16 @@ Initial decision records are in [DECISIONS.md](DECISIONS.md). All are proposed u
 | OP-014 | Multi-GPU runtime validation is not available on the local laptop. | GPU Validation | Open | Local GTX 1050 Ti has one CUDA device; no DDP world-size-two, FSDP, or multi-GPU checkpoint runtime was run. | At least two CUDA GPUs | Run `python -m pytest tests/gpu -v -m "multi_gpu"` on a suitable runner after implementation exists | 8 |
 | OP-015 | Modern BF16 cloud validation is still needed before broad BF16 hardware claims. | GPU Validation | Open | BF16 correctness passed locally on PyTorch `2.5.1+cu121`; native BF16 acceleration was not proven. | Modern BF16-capable CUDA runner | Run BF16 training/eval/checkpoint tests on a modern BF16 GPU and record capability details | GPU/Release |
 | OP-016 | Modern Web UI workspace needs the rest of Web Milestone 1. | Web Experience | Resolved in Web Milestone 1 | `web/` now contains the verified frontend foundation, source-owned design system, application shell, frontend API client, Simple Dashboard, and Advanced Dashboard. `src/arclm/web` contains the verified local read-only API. | None | Keep Web Milestone 2 workflows planned until separately approved | Web 1 |
-| OP-017 | Data Pipeline Studio, training dashboards, model/project management, and plugin management are planned but unapproved. | Web Experience | Partially resolved | Web Milestone 2 / Feature 1 completed the Data Pipeline Studio planning and API audit; Feature 2 completed the read-only Dataset Inspector Backend. Upload, preview UI, execution, training handoff, and later workflow pages remain unapproved. | Owner approval for each implementation feature | Keep planned pages honest with `Planned` states only; implement Dataset Inspector UI only after explicit approval | Web 2-5 |
-| OP-018 | Data Pipeline Studio needs safe dataset inspection before upload or execution. | Web Experience / Data | Resolved in Web 2 Feature 2 | `GET /api/datasets` and `GET /api/datasets/{dataset_id}/inspection` are implemented with safe IDs, bounded preview, security tests, and runtime smoke. | None | Build the Dataset Inspector UI as a separate feature | Web 2 Feature 2 |
-| OP-019 | Data Pipeline Studio UI, upload, step registry, pipeline preview, manifests, dry run, and training handoff remain missing. | Web Experience / Data | Open | Feature 2 intentionally added only the read-only backend. `docs/web/data-pipeline-studio.md` lists the remaining slices. | Owner approval for Web 2 Feature 3+ | Implement one slice at a time, starting with Dataset Inspector UI | Web 2 |
+| OP-017 | Data Pipeline Studio, training dashboards, model/project management, and plugin management are planned but unapproved. | Web Experience | Partially resolved | Web Milestone 2 / Features 1-4 completed planning, read-only dataset backend inspection, Dataset Inspector UI, and Dataset Source Manager. Upload, execution, training handoff, and later workflow pages remain unapproved. | Owner approval for each implementation feature | Keep planned pages honest with `Planned` states only; implement one Web 2 slice at a time | Web 2-5 |
+| OP-018 | Data Pipeline Studio needs safe dataset inspection before upload or execution. | Web Experience / Data | Resolved in Web 2 Feature 3 | `GET /api/datasets`, `GET /api/datasets/{dataset_id}/inspection`, and `/data` read-only UI are implemented with safe IDs, bounded preview, security tests, and runtime smoke. | None | Keep upload and pipeline execution closed until separately approved | Web 2 Feature 3 |
+| OP-019 | Dataset upload, step registry, pipeline preview, manifests, dry run, and training handoff remain missing. | Web Experience / Data | Paused | Feature 4 intentionally added source management only. `docs/web/data-pipeline-studio.md` lists the remaining slices. | Owner reactivation of Web track | Do not implement until Web is explicitly reactivated | Web 2 |
+| OP-020 | Default full pytest was contaminated by persisted local dataset-root configuration. | Test Reliability / Web | Resolved | `tests/web/datasets/test_dataset_inspector.py` now injects an explicit temporary dataset config path outside the dataset root; full pytest is `259 passed, 10 skipped, 4 warnings`. | None | Keep future Web dataset tests isolated from user-local config and persisted roots | Core stability gate |
+| OP-021 | ArcLM lacked a unified model lifecycle and configuration contract. | Core / Model Lifecycle | Resolved in Core 1 Feature 1 | `arclm.lifecycle` defines source/artifact/tokenizer metadata; checkpoints include `lifecycle_metadata`; `Config.load_config_from_model()` is implemented. | None | Keep hardening lifecycle metadata in later checkpoint and inference milestones | Core 1 Feature 1 |
+| OP-022 | Checkpoints need stronger reproducibility and trusted-loading policy. | Core / Checkpoints | Resolved in Core 1 Feature 2 | `CheckpointInfo`, `inspect_checkpoint`, `validate_checkpoint`, format/version metadata, RNG state, atomic write validation, and deterministic resume tests are implemented. | None | Keep checksum/signature, mid-epoch dataloader position, and callback-state protocol as future hardening | Core 1 Feature 2 |
+| OP-023 | Final model artifacts need a distinct save/load contract separate from training checkpoints. | Core / Model Lifecycle | Resolved in Core 1 Feature 3 | `save_model_artifact`, `load_model_artifact`, `validate_model_artifact`, `manifest.json`, file inventory, SHA-256 hashes, native CPU round trip, PyTorch factory boundary, tokenizer persistence, and checkpoint/artifact separation tests are implemented. | None | Keep HF runtime, GPU portability, signatures, PEFT adapters, and export formats as future work | Core 1 Feature 3 |
+| OP-024 | Full fine-tuning and SFT need stabilization against the new lifecycle and final artifact contract. | Core / Fine-Tuning | Resolved in Core 2 Feature 1 | `FineTuningConfig`, `prepare_fine_tuning_dataset`, `fine_tune`, dataset reports/fingerprints, CPU native SFT runtime, checkpoint/resume, final artifact reload, evaluation, inference, public API, and compatibility tests pass. | None | Keep optional HF/GPU matrices as separate validation work | Core 2 Feature 1 |
+| OP-025 | LoRA and general PEFT need a stable optional foundation. | Core / PEFT | Resolved in Core 2 Feature 2 | `arclm.peft`, built-in `LoRAConfig`, `LoRALinear`, adapter artifacts, `fine_tune(..., peft_config=...)`, checkpoint/resume, adapter reload, merge/final artifact, evaluation, inference, and public API tests are implemented. | None | Keep QLoRA, HF PEFT runtime, GPU PEFT runtime, and other PEFT methods as future work | Core 2 Feature 2 |
 
 [NEXT_APPROVED_ACTION]
 
-Recommended next action: Web Milestone 2 / Feature 3: Dataset Inspector UI. This is not approved automatically. Do not implement Feature 3, upload, pipeline execution, training handoff, or any later ML/product milestone until the owner explicitly approves it.
+Recommended next action: Core Milestone 2 / Feature 3: QLoRA and Quantized Fine-Tuning Foundation. This is not approved automatically. Do not implement this feature, Web Pipeline Step Registry, upload, pipeline execution, training handoff, DPO, RLHF, distributed training, serving, or any later milestone until the owner explicitly approves it.

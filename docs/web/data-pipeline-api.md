@@ -1,7 +1,9 @@
 # Data Pipeline Studio API Plan
 
 Status: Web Milestone 2 / Feature 2 implemented the first read-only Dataset
-Inspector Backend.
+Inspector Backend. Feature 3 implemented the browser UI that consumes it.
+Feature 4 implemented the local Dataset Source Manager for multiple approved
+dataset folders.
 
 The browser must call the local ArcLM Web API. It must not shell out to CLI
 commands or parse terminal output.
@@ -24,18 +26,24 @@ commands or parse terminal output.
 | ------- | -------- | ------ | ------- |
 | Feature 2 | `GET /api/datasets` | Implemented | Read-only dataset catalogue |
 | Feature 2 | `GET /api/datasets/{dataset_id}/inspection` | Implemented | Read-only bounded dataset inspection |
-| Feature 3 | no new endpoint expected | Planned | UI consumes inspector |
-| Feature 4 | `GET /api/data/pipeline/steps` | Planned | List approved step configs |
-| Feature 5 | `POST /api/data/pipeline/preview` | Planned | Run bounded preview with step results |
-| Feature 6 | `POST /api/data/pipeline/manifests` | Planned | Save pipeline manifest locally |
-| Feature 6 | `GET /api/data/pipeline/manifests/{id}` | Planned | Load saved manifest |
+| Feature 3 | no new endpoint added | Implemented | `/data` consumes the read-only inspector |
+| Feature 4 | `GET /api/dataset-roots` | Implemented | List local dataset sources |
+| Feature 4 | `POST /api/dataset-roots` | Implemented | Add a validated local dataset source |
+| Feature 4 | `PATCH /api/dataset-roots/{root_id}` | Implemented | Rename, enable, disable, or change recursion |
+| Feature 4 | `DELETE /api/dataset-roots/{root_id}` | Implemented | Remove source config without deleting files |
+| Feature 4 | `POST /api/dataset-roots/{root_id}/validate` | Implemented | Revalidate one source |
+| Feature 4 | `POST /api/datasets/refresh` | Implemented | Refresh active catalogue summary |
+| Feature 5 | `GET /api/data/pipeline/steps` | Planned | List approved step configs |
+| Feature 6 | `POST /api/data/pipeline/preview` | Planned | Run bounded preview with step results |
+| Feature 7 | `POST /api/data/pipeline/manifests` | Planned | Save pipeline manifest locally |
+| Feature 7 | `GET /api/data/pipeline/manifests/{id}` | Planned | Load saved manifest |
 | Later | upload endpoints | Planned | Only after upload security is approved |
 | Later | execution endpoints | Planned | Only after dry run, cancellation, and events |
 
 ## Implemented `GET /api/datasets`
 
-Returns a safe catalogue of supported dataset files from configured server-side
-roots.
+Returns a safe catalogue of supported dataset files from enabled configured
+dataset roots.
 
 Response:
 
@@ -44,6 +52,8 @@ Response:
   "datasets": [
     {
       "dataset_id": "dataset_7d92e8c1a2b3",
+      "source_name": "Training Data",
+      "source_id": "root_a37f91",
       "name": "sample.jsonl",
       "format": "jsonl",
       "size_bytes": 482194
@@ -120,6 +130,46 @@ Not allowed:
 - Python callables
 - pipeline execution
 - training handoff
+
+Normal catalogue responses do not include the configured root path.
+
+## Implemented Dataset Source Manager Endpoints
+
+These endpoints are local administrative endpoints. They are disabled by default
+when the Web API is bound to a non-loopback host.
+
+```text
+GET    /api/dataset-roots
+POST   /api/dataset-roots
+PATCH  /api/dataset-roots/{root_id}
+DELETE /api/dataset-roots/{root_id}
+POST   /api/dataset-roots/{root_id}/validate
+POST   /api/datasets/refresh
+```
+
+Add request:
+
+```json
+{
+  "name": "Training Data",
+  "path": "D:\\ArcLM\\data\\training",
+  "recursive": false
+}
+```
+
+Root responses may include the configured path because this is the local source
+manager API. Dataset catalogue and inspection responses must not include root
+paths.
+
+Refresh response:
+
+```json
+{
+  "roots_scanned": 2,
+  "datasets_found": 16,
+  "warnings": []
+}
+```
 
 Historical note: Feature 1 drafted `POST /api/data/inspect`. Feature 2 chose
 the safer read-only REST shape above so the browser can list server-approved
@@ -200,3 +250,13 @@ Implemented dataset error codes:
 - `dataset_shape_invalid`
 - `dataset_inspection_limit_invalid`
 - `dataset_catalogue_too_large`
+
+Implemented dataset-root error codes include:
+
+- `dataset_root_invalid`
+- `dataset_root_name_duplicate`
+- `dataset_root_path_duplicate`
+- `dataset_root_not_found`
+- `dataset_root_session_only`
+- `dataset_root_config_invalid`
+- `dataset_source_management_disabled`

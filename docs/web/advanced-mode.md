@@ -68,3 +68,31 @@ commands.
 
 Advanced mode is still read-only. It gives more detail, but it does not unlock
 hidden workflows or bypass planned-state guards.
+
+## Dataset Inspector
+
+On `/data`, Advanced mode reuses the same Dataset Inspector data and adds safe
+technical context:
+
+- safe dataset root ID
+- source origin, including session-only CLI roots
+- recursive scanning state
+- validation warnings
+- supported and ignored file counts
+- scan limits
+- safe dataset ID
+- format identifier
+- scan and preview limits
+- exact or bounded inspection flags
+- schema source
+- observed row counts
+- raw warning codes
+- detailed statistics scope
+- bounded read-only response details
+
+Advanced mode may show configured source paths inside the local Dataset Source
+Manager because it is an administrative local-only endpoint. Normal dataset
+catalogue and inspection responses still do not expose root paths.
+
+Advanced mode does not expose usernames, environment variables, arbitrary
+endpoint input, upload controls, dataset deletion, or pipeline execution.

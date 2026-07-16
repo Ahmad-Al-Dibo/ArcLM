@@ -173,20 +173,39 @@ python -m arclm --run simple-interface
 
 Features 1-6 do not modify the Flask app behavior. The modern API is separate
 from the legacy Flask compatibility path.
-## Data Pipeline Studio Architecture Plan
+## Data Pipeline Studio Architecture
 
-Status: planning only. No Data Pipeline Studio backend or UI has been
-implemented.
+Status: Web Milestone 2 / Features 1-4 are complete. The planning audit,
+read-only Dataset Inspector Backend, read-only `/data` Dataset Inspector UI,
+and Dataset Source Manager are implemented and verified. Upload, pipeline step
+registry, pipeline preview, pipeline execution, manifests, and training handoff
+are still planned.
 
-Future flow:
+Current inspector flow:
 
 ```text
 Browser -> ArcLM Web API -> safe dataset reference -> existing dataset APIs
 -> bounded preview/schema/statistics -> validated response -> Browser
 ```
 
-The Studio must reuse existing ArcLM data APIs instead of duplicating data
-loading, cleaning, deduplication, tokenization, or preprocessing logic.
+The browser receives safe dataset IDs and never sends local file paths. The UI
+renders summary, scope, schema, bounded preview rows, statistics, and warnings
+from the approved backend responses.
+
+Current source-management flow:
+
+```text
+Browser -> ArcLM Web API -> validate local dataset root
+-> persist root config -> refresh catalogue -> safe dataset IDs -> Browser
+```
+
+Only the local administrative Dataset Source Manager endpoints accept configured
+folder paths. Normal dataset catalogue and inspection responses do not expose
+root paths.
+
+Future Studio features must keep reusing existing ArcLM data APIs instead of
+duplicating data loading, cleaning, deduplication, tokenization, or preprocessing
+logic.
 
 Current reusable code:
 
@@ -198,14 +217,18 @@ Current reusable code:
 - `arclm.preprocess.PreprocessPipeline`
 - `arclm.finetuning` formatting and collator helpers
 
-The first implementation feature should be a read-only Dataset Inspector
-Backend. It must not upload files, mutate datasets, execute pipelines, start
-training, or accept arbitrary file paths from the browser.
+The implemented inspector must not upload files, mutate datasets, execute
+pipelines, start training, or accept arbitrary file paths from the browser.
+
+The canonical next slice is the approved pipeline step registry, so the UI can
+show which real ArcLM preprocessing steps are safe to configure before preview
+execution is added.
 
 Detailed contracts are in:
 
 - [Data Pipeline Studio Planning and API Audit](data-pipeline-studio.md)
 - [Data Pipeline Studio API Plan](data-pipeline-api.md)
+- [Dataset Source Manager](dataset-source-manager.md)
 - [Dataset Upload Security Plan](dataset-upload-security.md)
 - [Dataset Storage Plan](dataset-storage.md)
 - [Pipeline Events Plan](pipeline-events.md)

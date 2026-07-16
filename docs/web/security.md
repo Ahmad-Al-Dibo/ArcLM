@@ -61,6 +61,10 @@ configuration and prints a warning. It is not production-safe without a later
 security milestone that adds authentication, authorization, rate limits, and
 server hardening.
 
+Dataset source management is stricter than the read-only dashboard endpoints.
+The mutation endpoints are disabled by default when the backend is bound to a
+non-loopback host, and unknown origins are rejected.
+
 ## Error Handling
 
 API errors use a stable JSON format and hide stack traces in normal responses.
@@ -77,8 +81,9 @@ secrets should not be logged.
 - No remote deployment hardening.
 ## Data Pipeline Studio Security Plan
 
-Status: Dataset Inspector Backend implemented; upload, saved dataset storage,
-and browser-run pipeline execution are not implemented.
+Status: Dataset Inspector Backend, read-only Dataset Inspector UI, and local
+Dataset Source Manager are implemented. Upload, saved dataset storage, and
+browser-run pipeline execution are not implemented.
 
 Datasets are treated as untrusted data. The browser is not allowed to request
 arbitrary local files by path, trigger shell commands, deserialize Python
@@ -96,6 +101,37 @@ Feature 2 protections:
   field length
 - TXT, CSV, JSON, and JSONL are the only supported formats
 - no upload, mutation, execution, network access, CUDA init, or model loading
+
+Feature 3 UI protections:
+
+- `/data` uses only `GET /api/datasets` and
+  `GET /api/datasets/{dataset_id}/inspection`
+- selection state stores only a safe `dataset_...` ID in the URL
+- path-like or invalid query values are cleared and not requested repeatedly
+- dataset names, field names, warnings, and preview values render as plain text
+- preview rows are bounded by the backend and are not fetched beyond the
+  inspection response
+- row details show only already-returned bounded data
+- Simple mode hides technical IDs and warning codes
+- Advanced mode shows only safe metadata and bounded response data
+- no upload, edit, delete, field mapping, shell command, or pipeline execution
+  control exists in the UI
+
+Feature 4 Dataset Source Manager protections:
+
+- source mutation requires the backend to run on a loopback host
+- allowed origins are checked by the backend
+- paths are treated as untrusted input
+- only absolute local directories are accepted
+- relative paths, missing paths, files, filesystem roots, symlink roots, and
+  UNC/network paths are rejected
+- duplicate names and duplicate canonical paths are rejected
+- nested roots produce warnings to reduce duplicate catalogue entries
+- removing a source deletes only ArcLM source configuration, never files
+- normal dataset catalogue and inspection responses still do not expose root
+  paths
+- CLI roots remain session-only unless the user adds a persisted source through
+  the dashboard
 
 Before upload or execution is implemented, ArcLM needs:
 
