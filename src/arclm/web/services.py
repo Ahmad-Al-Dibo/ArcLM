@@ -205,8 +205,15 @@ def get_capabilities() -> CapabilitiesResponse:
                 product_state="Shared Core",
             ),
             "dataset_inspector_ui": Capability(
-                status="planned",
-                note="The browser Dataset Inspector UI is planned for the next feature.",
+                status="available",
+                note="The browser Dataset Inspector UI is implemented.",
+                evidence="Web Milestone 2 Feature 3 frontend tests and route smoke pass.",
+                product_state="Shared Core",
+            ),
+            "dataset_source_manager": Capability(
+                status="available",
+                note="Local dataset source management is implemented for loopback-only Web API sessions.",
+                evidence="Web Milestone 2 Feature 4 backend and frontend tests pass.",
                 product_state="Shared Core",
             ),
         },
@@ -256,7 +263,7 @@ def get_project_status() -> ProjectStatusResponse:
         project=ProjectInfo(name="ArcLM", version=arclm.__version__),
         web_milestone=WebMilestoneInfo(
             name="Web Milestone 2",
-            feature="Dataset Inspector Backend",
+            feature="Dataset Source Manager",
             status="complete",
         ),
         available_sections=[
@@ -279,20 +286,24 @@ def get_project_status() -> ProjectStatusResponse:
             ProgressItem(name="Advanced Dashboard", status="implemented"),
             ProgressItem(name="Data Pipeline Studio Planning", status="implemented"),
             ProgressItem(name="Dataset Inspector Backend", status="implemented"),
+            ProgressItem(name="Dataset Inspector UI", status="implemented"),
+            ProgressItem(name="Dataset Source Manager", status="implemented"),
+            ProgressItem(name="Multiple Dataset Roots", status="implemented"),
+            ProgressItem(name="Dashboard Root Configuration", status="implemented"),
         ],
         current=ProgressItem(name="Data Pipeline Studio", status="in_progress"),
         next=[
-            ProgressItem(name="Dataset Inspector UI", status="planned"),
+            ProgressItem(name="Approved Pipeline Step Registry", status="planned"),
         ],
         planned_features=[
             PlannedFeature(
-                name="Dataset Inspector UI",
-                description="Browser UI for safe dataset catalogue and inspection results.",
+                name="Approved Pipeline Step Registry",
+                description="Approved list of real ArcLM data pipeline steps and safe configs.",
                 milestone="Web Milestone 2",
             ),
             PlannedFeature(
-                name="Pipeline Step Registry",
-                description="Approved list of real ArcLM data pipeline steps and safe configs.",
+                name="Dataset Upload",
+                description="A safe browser upload flow after source management and step approvals.",
                 milestone="Web Milestone 2",
             ),
             PlannedFeature(

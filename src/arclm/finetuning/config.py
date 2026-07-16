@@ -2,10 +2,143 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Any
 
 from ..exceptions import SFTConfigError
 from ..training import TrainingConfig
+
+
+class FineTuningMode(str, Enum):
+    """Beschrijft welke fine-tuning taak uitgevoerd wordt."""
+
+    CAUSAL_LM = "causal_lm"
+    SFT = "supervised_fine_tuning"
+
+
+@dataclass
+class FineTuningConfig:
+    """Configuratie voor data, formatting en labels bij fine-tuning.
+
+    Training zelf blijft in `TrainingConfig`. Deze config bevat alleen de
+    keuzes die bepalen hoe voorbeelden naar tokens en labels worden omgezet.
+    """
+
+    mode: FineTuningMode | str = FineTuningMode.SFT
+    formatter: str = "auto"
+    max_sequence_length: int = 1024
+    train_on_prompt: bool = False
+    append_eos_token: bool = True
+    truncation: bool = True
+    padding: str = "longest"
+    packing: bool = False
+    ignore_index: int = -100
+    text_field: str = "text"
+    prompt_field: str = "prompt"
+    completion_field: str = "completion"
+    instruction_field: str = "instruction"
+    input_field: str = "input"
+    response_field: str = "response"
+    messages_field: str = "messages"
+    skip_invalid_records: bool = False
+    max_report_errors: int = 10
+    config_version: int = 1
+
+    def __post_init__(self) -> None:
+        """Normaliseert en controleert de waarden."""
+        self.mode = self._normalize_mode(self.mode)
+        self.validate()
+
+    @staticmethod
+    def _normalize_mode(value: FineTuningMode | str) -> FineTuningMode:
+        """Zet strings om naar de publieke mode enum."""
+        if isinstance(value, FineTuningMode):
+            return value
+        try:
+            return FineTuningMode(str(value))
+        except ValueError as error:
+            allowed = ", ".join(item.value for item in FineTuningMode)
+            raise SFTConfigError(f"mode must be one of: {allowed}") from error
+
+    def validate(self) -> None:
+        """Controleert of de fine-tuning instellingen bruikbaar zijn."""
+        if self.max_sequence_length <= 0:
+            raise SFTConfigError("max_sequence_length must be greater than zero")
+        if self.padding not in {"longest", "max_length", "none"}:
+            raise SFTConfigError("padding must be one of: longest, max_length, none")
+        if not isinstance(self.ignore_index, int):
+            raise SFTConfigError("ignore_index must be an integer")
+        if self.formatter not in {
+            "auto",
+            "plain_text",
+            "text",
+            "prompt_completion",
+            "instruction_response",
+            "chat",
+        }:
+            raise SFTConfigError("formatter is not supported")
+        if self.packing:
+            raise SFTConfigError(
+                "packing is not enabled for the stable FineTuningConfig workflow yet"
+            )
+        if self.max_report_errors < 0:
+            raise SFTConfigError("max_report_errors must not be negative")
+        if self.config_version != 1:
+            raise SFTConfigError("config_version must be 1")
+
+    def to_dict(self) -> dict[str, Any]:
+        """Zet de config om naar JSON-vriendelijke data."""
+        values = asdict(self)
+        values["mode"] = self.mode.value
+        return values
+
+    @classmethod
+    def from_dict(cls, values: dict[str, Any]) -> "FineTuningConfig":
+        """Maakt een config vanuit een dict met strikte veldcontrole."""
+        known = set(cls.__dataclass_fields__)
+        unknown = set(values) - known
+        if unknown:
+            raise SFTConfigError(
+                "Unknown fine-tuning config field(s): " + ", ".join(sorted(unknown))
+            )
+        return cls(**values)
+
+    def to_sft_config(self, training_config: TrainingConfig | None = None) -> "SFTConfig":
+        """Maakt een `SFTConfig` voor de bestaande trainer-integratie."""
+        base = training_config.to_dict() if training_config is not None else {}
+        if self.formatter in {"plain_text", "text"}:
+            schema_fields = {"text_field": self.text_field}
+        elif self.formatter == "prompt_completion":
+            schema_fields = {
+                "text_field": None,
+                "prompt_field": self.prompt_field,
+                "response_field": self.completion_field,
+            }
+        elif self.formatter == "instruction_response":
+            schema_fields = {
+                "text_field": None,
+                "instruction_field": self.instruction_field,
+                "input_field": self.input_field,
+                "response_field": self.response_field,
+            }
+        elif self.formatter == "chat":
+            schema_fields = {"text_field": None, "messages_field": self.messages_field}
+        else:
+            schema_fields = {"text_field": self.text_field}
+        return SFTConfig(
+            **base,
+            **schema_fields,
+            max_length=self.max_sequence_length,
+            padding=self.padding,
+            truncation=self.truncation,
+            packing=self.packing,
+            assistant_only_loss=(
+                self.mode == FineTuningMode.SFT and not self.train_on_prompt
+            ),
+            add_eos_token=self.append_eos_token,
+            ignore_index=self.ignore_index,
+        )
 
 
 @dataclass

@@ -3,7 +3,7 @@
 from .adapters import ModelAdapter, TokenizerAdapter
 from .base import BaseFineTuner, BaseModelAdapter, BaseTokenizerAdapter
 from .collator import SFTDataCollator
-from .config import SFTConfig
+from .config import FineTuningConfig, FineTuningMode, SFTConfig
 from .formatting import (
     format_chat_example,
     format_example,
@@ -15,13 +15,26 @@ from .full import FullFineTuner, SFTTrainer
 from .labels import create_labels, mask_labels
 from .packing import pack_sequences
 from .sft import SFTTrainingResult, train_sft
+from .workflow import (
+    FineTuningDatasetReport,
+    FineTuningResult,
+    PreparedFineTuningDataset,
+    fine_tune,
+    normalize_fine_tuning_example,
+    prepare_fine_tuning_dataset,
+)
 
 __all__ = [
     "BaseFineTuner",
     "BaseModelAdapter",
     "BaseTokenizerAdapter",
     "FullFineTuner",
+    "FineTuningConfig",
+    "FineTuningDatasetReport",
+    "FineTuningMode",
+    "FineTuningResult",
     "ModelAdapter",
+    "PreparedFineTuningDataset",
     "SFTConfig",
     "SFTDataCollator",
     "SFTTrainer",
@@ -34,6 +47,9 @@ __all__ = [
     "format_prompt_response_example",
     "format_text_example",
     "mask_labels",
+    "fine_tune",
+    "normalize_fine_tuning_example",
     "pack_sequences",
+    "prepare_fine_tuning_dataset",
     "train_sft",
 ]

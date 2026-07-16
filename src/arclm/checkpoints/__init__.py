@@ -15,10 +15,20 @@ from .loaders import (
     register_model_inspector,
     validate_tokenizer_compatibility,
 )
+from .training import (
+    CHECKPOINT_FORMAT,
+    CHECKPOINT_VERSION,
+    CheckpointInfo,
+    inspect_checkpoint,
+    validate_checkpoint,
+)
 
 __all__ = [
     "AdaptedModelBundle",
+    "CHECKPOINT_FORMAT",
+    "CHECKPOINT_VERSION",
     "CheckpointLoader",
+    "CheckpointInfo",
     "LoadPlan",
     "LoadedCheckpoint",
     "LoaderRegistry",
@@ -27,7 +37,9 @@ __all__ = [
     "adapt_for_training",
     "create_default_registry",
     "inspect_model_source",
+    "inspect_checkpoint",
     "load_external_model",
     "register_model_inspector",
     "validate_tokenizer_compatibility",
+    "validate_checkpoint",
 ]

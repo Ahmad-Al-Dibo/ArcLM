@@ -115,7 +115,8 @@ def test_capabilities_are_evidence_based():
     assert data["web"]["simple_dashboard"]["status"] == "locally_verified"
     assert data["web"]["advanced_dashboard"]["status"] == "locally_verified"
     assert data["web"]["dataset_inspector_backend"]["status"] == "available"
-    assert data["web"]["dataset_inspector_ui"]["status"] == "planned"
+    assert data["web"]["dataset_inspector_ui"]["status"] == "available"
+    assert data["web"]["dataset_source_manager"]["status"] == "available"
     assert data["training"]["ddp"]["status"] == "planned"
     assert data["training"]["fp16"]["hardware_requirement"] == "CUDA-capable NVIDIA GPU"
     assert data["training"]["multi_gpu"]["status"] in {"hardware_unavailable", "not_verified"}
@@ -125,15 +126,17 @@ def test_project_status_is_safe_metadata():
     data = make_client().get("/api/project/status").json()
 
     assert data["project"]["name"] == "ArcLM"
-    assert data["web_milestone"]["feature"] == "Dataset Inspector Backend"
+    assert data["web_milestone"]["feature"] == "Dataset Source Manager"
     assert data["web_milestone"]["status"] == "complete"
     assert "overview" in data["available_sections"]
     assert data["completed"][0]["name"] == "Frontend Foundation"
     assert any(item["name"] == "Simple Dashboard" for item in data["completed"])
     assert any(item["name"] == "Advanced Dashboard" for item in data["completed"])
     assert any(item["name"] == "Dataset Inspector Backend" for item in data["completed"])
+    assert any(item["name"] == "Dataset Inspector UI" for item in data["completed"])
+    assert any(item["name"] == "Dataset Source Manager" for item in data["completed"])
     assert data["current"]["name"] == "Data Pipeline Studio"
-    assert any(item["name"] == "Dataset Inspector UI" for item in data["planned_features"])
+    assert any(item["name"] == "Approved Pipeline Step Registry" for item in data["planned_features"])
     assert any(item["name"] == "CPU core suite" for item in data["validation"])
     assert any(item["name"] == "Transformers" for item in data["integrations"])
     assert any(item["title"] == "Single local GPU" for item in data["limitations"])

@@ -27,6 +27,10 @@ notebooks/
 adapter/
 dataset/
 datasets/
+!tests/web/datasets/
+!tests/web/datasets/**
+!web/src/features/datasets/
+!web/src/features/datasets/**
 experiments/
 output/
 examples/qwen3_0_6b_sft/output/

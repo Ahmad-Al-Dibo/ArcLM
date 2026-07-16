@@ -6,6 +6,11 @@ import type {
   DatasetInspectionResponse,
   DatasetListResponse,
   DatasetPreviewRow,
+  DatasetRefreshResponse,
+  DatasetRootCreateRequest,
+  DatasetRootInfo,
+  DatasetRootListResponse,
+  DatasetRootUpdateRequest,
   DatasetStatistics,
   DatasetSummary,
   DatasetWarning,
@@ -34,7 +39,7 @@ export type ApiClientOptions = {
   fetcher?: typeof fetch;
 };
 
-const defaultBaseUrl = "http://127.0.0.1:8765";
+const defaultBaseUrl = process.env.NEXT_PUBLIC_ARCLM_API_BASE_URL ?? "http://127.0.0.1:8765";
 const defaultTimeoutMs = 5000;
 
 function joinUrl(baseUrl: string, path: string) {
@@ -59,6 +64,8 @@ function parseApiError(value: unknown) {
 
 const datasetFormats = new Set(["txt", "csv", "json", "jsonl"]);
 const fieldTypes = new Set(["string", "integer", "number", "boolean", "null", "object", "array", "mixed"]);
+const rootOrigins = new Set(["persisted", "command_line"]);
+const rootValidationStatuses = new Set(["valid", "warning", "error", "unvalidated"]);
 
 function isString(value: unknown): value is string {
   return typeof value === "string";
@@ -97,7 +104,30 @@ function isDatasetSummary(value: unknown): value is DatasetSummary {
     isString(value.dataset_id) &&
     isString(value.name) &&
     isDatasetFormat(value.format) &&
-    isNumber(value.size_bytes)
+    isNumber(value.size_bytes) &&
+    (value.source_name === undefined || value.source_name === null || isString(value.source_name)) &&
+    (value.source_id === undefined || value.source_id === null || isString(value.source_id))
+  );
+}
+
+function isDatasetRootInfo(value: unknown): value is DatasetRootInfo {
+  return (
+    isRecord(value) &&
+    isString(value.root_id) &&
+    isString(value.name) &&
+    isString(value.path) &&
+    isBoolean(value.enabled) &&
+    isBoolean(value.recursive) &&
+    isString(value.source_origin) &&
+    rootOrigins.has(value.source_origin) &&
+    isString(value.validation_status) &&
+    rootValidationStatuses.has(value.validation_status) &&
+    isNumber(value.supported_file_count) &&
+    isNumber(value.ignored_file_count) &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every(isDatasetWarning) &&
+    isBoolean(value.removable) &&
+    isBoolean(value.editable)
   );
 }
 
@@ -161,6 +191,29 @@ function isDatasetListResponse(value: unknown): value is DatasetListResponse {
   );
 }
 
+function isDatasetRootListResponse(value: unknown): value is DatasetRootListResponse {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.roots) &&
+    value.roots.every(isDatasetRootInfo) &&
+    isNumber(value.count) &&
+    isNumber(value.active_count) &&
+    isNumber(value.datasets_found) &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every(isDatasetWarning)
+  );
+}
+
+function isDatasetRefreshResponse(value: unknown): value is DatasetRefreshResponse {
+  return (
+    isRecord(value) &&
+    isNumber(value.roots_scanned) &&
+    isNumber(value.datasets_found) &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every(isDatasetWarning)
+  );
+}
+
 function isDatasetInspectionResponse(value: unknown): value is DatasetInspectionResponse {
   return (
     isRecord(value) &&
@@ -194,6 +247,27 @@ function assertDatasetInspectionResponse(value: unknown): DatasetInspectionRespo
   return value;
 }
 
+function assertDatasetRootInfo(value: unknown): DatasetRootInfo {
+  if (!isDatasetRootInfo(value)) {
+    throw new ApiClientError("The dataset source response did not match the expected schema.", "invalid_response");
+  }
+  return value;
+}
+
+function assertDatasetRootListResponse(value: unknown): DatasetRootListResponse {
+  if (!isDatasetRootListResponse(value)) {
+    throw new ApiClientError("The dataset source list response did not match the expected schema.", "invalid_response");
+  }
+  return value;
+}
+
+function assertDatasetRefreshResponse(value: unknown): DatasetRefreshResponse {
+  if (!isDatasetRefreshResponse(value)) {
+    throw new ApiClientError("The dataset refresh response did not match the expected schema.", "invalid_response");
+  }
+  return value;
+}
+
 async function readJson(response: Response) {
   try {
     return await response.json();
@@ -223,12 +297,20 @@ export class ArcLMApiClient {
     this.fetcher = options.fetcher ?? getDefaultFetcher();
   }
 
-  async request<T>(path: string): Promise<T> {
+  async request<T>(
+    path: string,
+    options: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: unknown } = {}
+  ): Promise<T> {
     const { controller, timeout } = withTimeout(this.timeoutMs);
+    const method = options.method ?? "GET";
     try {
       const response = await this.fetcher(joinUrl(this.baseUrl, path), {
-        method: "GET",
-        headers: { accept: "application/json" },
+        method,
+        headers: {
+          accept: "application/json",
+          ...(options.body === undefined ? {} : { "content-type": "application/json" })
+        },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: controller.signal
       });
       const data = await readJson(response);
@@ -275,6 +357,30 @@ export class ArcLMApiClient {
 
   async getDatasetInspection(datasetId: string) {
     return assertDatasetInspectionResponse(await this.request<unknown>(apiEndpoints.datasetInspection(datasetId)));
+  }
+
+  async getDatasetRoots() {
+    return assertDatasetRootListResponse(await this.request<unknown>(apiEndpoints.datasetRoots));
+  }
+
+  async addDatasetRoot(payload: DatasetRootCreateRequest) {
+    return assertDatasetRootInfo(await this.request<unknown>(apiEndpoints.datasetRoots, { method: "POST", body: payload }));
+  }
+
+  async updateDatasetRoot(rootId: string, payload: DatasetRootUpdateRequest) {
+    return assertDatasetRootInfo(await this.request<unknown>(apiEndpoints.datasetRoot(rootId), { method: "PATCH", body: payload }));
+  }
+
+  async removeDatasetRoot(rootId: string) {
+    return assertDatasetRootInfo(await this.request<unknown>(apiEndpoints.datasetRoot(rootId), { method: "DELETE" }));
+  }
+
+  async validateDatasetRoot(rootId: string) {
+    return assertDatasetRootInfo(await this.request<unknown>(apiEndpoints.datasetRootValidate(rootId), { method: "POST" }));
+  }
+
+  async refreshDatasets() {
+    return assertDatasetRefreshResponse(await this.request<unknown>(apiEndpoints.datasetRefresh, { method: "POST" }));
   }
 }
 

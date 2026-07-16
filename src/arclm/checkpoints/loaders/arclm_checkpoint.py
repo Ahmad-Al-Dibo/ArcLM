@@ -64,5 +64,6 @@ class ArcLMCheckpointLoader(CheckpointLoader):
                 "path": str(path),
                 "current_epoch": checkpoint.get("current_epoch", 0),
                 "best_val_loss": checkpoint.get("best_val_loss"),
+                "lifecycle_metadata": checkpoint.get("lifecycle_metadata"),
             },
         )

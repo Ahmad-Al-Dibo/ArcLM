@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import re
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from arclm.exceptions import ConfigurationError
 
@@ -13,9 +14,6 @@ DEFAULT_ALLOWED_ORIGINS = (
     "http://127.0.0.1:3000",
     "http://localhost:3000",
 )
-
-_ROOT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
-
 
 @dataclass(frozen=True)
 class DatasetRoot:
@@ -27,17 +25,35 @@ class DatasetRoot:
 
     name: str
     path: str | Path
+    root_id: str | None = None
+    enabled: bool = True
+    recursive: bool = True
+    source_origin: Literal["persisted", "command_line"] = "command_line"
 
     def __post_init__(self) -> None:
         """Controleert of de rootnaam veilig is voor IDs en logs."""
         if not isinstance(self.name, str) or not self.name:
             raise ConfigurationError("dataset root name must be a non-empty string")
-        if not _ROOT_NAME_PATTERN.fullmatch(self.name):
-            raise ConfigurationError(
-                "dataset root name may only contain letters, numbers, '_' and '-'"
-            )
+        if any(char in self.name for char in "\r\n\t"):
+            raise ConfigurationError("dataset root name must not contain control characters")
         if not isinstance(self.path, (str, Path)):
             raise ConfigurationError("dataset root path must be a string or Path")
+        if self.root_id is None:
+            object.__setattr__(self, "root_id", _root_id(self.name, self.path))
+        if not isinstance(self.root_id, str) or not self.root_id.startswith("root_"):
+            raise ConfigurationError("dataset root id must start with 'root_'")
+        if not isinstance(self.enabled, bool):
+            raise ConfigurationError("dataset root enabled must be a boolean")
+        if not isinstance(self.recursive, bool):
+            raise ConfigurationError("dataset root recursive must be a boolean")
+        if self.source_origin not in {"persisted", "command_line"}:
+            raise ConfigurationError("dataset root source_origin is invalid")
+
+
+def _root_id(name: str, path: str | Path) -> str:
+    """Maakt een stabiele veilige ID voor een datasetroot."""
+    payload = f"{name}\0{Path(path).as_posix()}".encode("utf-8", errors="replace")
+    return "root_" + hashlib.sha256(payload).hexdigest()[:10]
 
 
 @dataclass(frozen=True)
@@ -52,8 +68,12 @@ class WebConfig:
     port: int = 8765
     allowed_origins: tuple[str, ...] = DEFAULT_ALLOWED_ORIGINS
     expose_docs: bool = True
+    dataset_config_path: str | Path | None = None
+    dataset_source_management: bool = True
     dataset_roots: tuple[DatasetRoot, ...] = ()
+    max_dataset_roots: int = 20
     max_catalogue_entries: int = 500
+    max_recursive_depth: int = 5
     default_preview_rows: int = 20
     max_preview_rows: int = 100
     max_scan_rows: int = 10_000
@@ -69,6 +89,10 @@ class WebConfig:
             raise ConfigurationError("port must be between 1 and 65535")
         if not isinstance(self.expose_docs, bool):
             raise ConfigurationError("expose_docs must be a boolean")
+        if not isinstance(self.dataset_source_management, bool):
+            raise ConfigurationError("dataset_source_management must be a boolean")
+        if self.dataset_config_path is not None and not isinstance(self.dataset_config_path, (str, Path)):
+            raise ConfigurationError("dataset_config_path must be a string or Path")
         if not self.allowed_origins:
             raise ConfigurationError("allowed_origins must not be empty")
         if "*" in self.allowed_origins:
@@ -103,6 +127,8 @@ class WebConfig:
 
         positive_limits = {
             "max_catalogue_entries": self.max_catalogue_entries,
+            "max_dataset_roots": self.max_dataset_roots,
+            "max_recursive_depth": self.max_recursive_depth,
             "default_preview_rows": self.default_preview_rows,
             "max_preview_rows": self.max_preview_rows,
             "max_scan_rows": self.max_scan_rows,

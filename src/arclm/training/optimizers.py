@@ -21,21 +21,25 @@ def create_optimizer(model, config):
     learning_rate = getattr(config, "learning_rate", 2e-5)
     weight_decay = getattr(config, "weight_decay", 0.0)
 
+    parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if not parameters:
+        raise TrainingConfigError("optimizer requires at least one trainable parameter")
+
     if name == "adamw":
         return torch.optim.AdamW(
-            model.parameters(),
+            parameters,
             lr=learning_rate,
             weight_decay=weight_decay,
         )
     if name == "adam":
         return torch.optim.Adam(
-            model.parameters(),
+            parameters,
             lr=learning_rate,
             weight_decay=weight_decay,
         )
     if name == "sgd":
         return torch.optim.SGD(
-            model.parameters(),
+            parameters,
             lr=learning_rate,
             weight_decay=weight_decay,
         )

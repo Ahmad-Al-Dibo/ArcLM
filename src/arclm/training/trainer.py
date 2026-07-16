@@ -14,6 +14,17 @@ import torch
 import torch.nn.functional as F
 from pathlib import Path
 from torch.utils.data import DataLoader
+from ..checkpoints.training import (
+    CHECKPOINT_FORMAT,
+    CHECKPOINT_VERSION,
+    TRAINING_STATE_VERSION,
+    atomic_save_checkpoint,
+    build_checkpoint_metadata,
+    capture_rng_state,
+    checkpoint_file,
+    restore_rng_state,
+    safe_load_training_checkpoint,
+)
 from ..configs import Config
 from ..exceptions import CheckpointError, TrainingError
 from .base import BaseTrainer
@@ -24,6 +35,7 @@ from .optimizers import create_optimizer
 from .precision import PrecisionHelper
 from .schedulers import create_scheduler
 from .state import TrainingState
+from ..lifecycle import build_training_checkpoint_metadata
 
 
 class Trainer(BaseTrainer):
@@ -942,18 +954,43 @@ class Trainer(BaseTrainer):
             return self.config.to_dict()
         return dict(vars(self.config))
 
-    def _checkpoint_payload(self):
+    def _checkpoint_payload(self, tokenizer_metadata=None):
         """Maakt de checkpoint data voor nieuwe en oude save-methodes."""
         self._sync_state_from_counters()
+        config_dict = self._config_to_dict()
+        state_dict = self.state.to_dict()
+        lifecycle_metadata = build_training_checkpoint_metadata(
+            model=self.model,
+            config=config_dict,
+            training_state=state_dict,
+            precision=getattr(self.config, "precision", "fp32"),
+            device=str(self.device),
+            tokenizer_metadata=tokenizer_metadata,
+            extra={
+                "format": "arclm-training-core",
+                "checkpoint_format": CHECKPOINT_FORMAT,
+                "checkpoint_version": CHECKPOINT_VERSION,
+            },
+        ).to_dict()
+        checkpoint_metadata = build_checkpoint_metadata(
+            trainer=self,
+            config=config_dict,
+            training_state=state_dict,
+            lifecycle_metadata=lifecycle_metadata,
+        )
         return {
+            "checkpoint_format": CHECKPOINT_FORMAT,
+            "checkpoint_version": CHECKPOINT_VERSION,
+            "training_state_version": TRAINING_STATE_VERSION,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
             "scheduler_state_dict": (
                 self.scheduler.state_dict() if self.scheduler is not None else None
             ),
             "scaler_state_dict": self.precision.state_dict(),
-            "training_state": self.state.to_dict(),
-            "config": self._config_to_dict(),
+            "rng_state": capture_rng_state(include_cuda=self.device.type == "cuda"),
+            "training_state": state_dict,
+            "config": config_dict,
             "current_epoch": self.current_epoch,
             "current_batch": self.current_batch,
             "global_step": self.global_step,
@@ -962,19 +999,25 @@ class Trainer(BaseTrainer):
             "best_val_loss": self.best_val_loss,
             "best_model_state_dict": self.best_model_state_dict,
             "train_history": self.get_train_history(),
+            "lifecycle_metadata": lifecycle_metadata,
+            "checkpoint_metadata": checkpoint_metadata,
             "metadata": {
                 "format": "arclm-training-core",
+                "checkpoint_format": CHECKPOINT_FORMAT,
+                "checkpoint_version": CHECKPOINT_VERSION,
                 "precision": getattr(self.config, "precision", "fp32"),
+                "artifact_kind": "training_checkpoint",
+                "source_type": "native_checkpoint",
+                "arclm_version": lifecycle_metadata["arclm_version"],
+                "pytorch_version": lifecycle_metadata["pytorch_version"],
+                "model_type": lifecycle_metadata["model_type"],
                 "saved_at": time.time(),
             },
         }
 
     def _checkpoint_file(self, path):
         """Geeft het checkpoint bestand voor een pad terug."""
-        path = Path(path)
-        if path.suffix:
-            return path
-        return path / "training.pt"
+        return checkpoint_file(path)
 
     def save_checkpoint(self, path=None):
         """Slaat de huidige training op.
@@ -990,28 +1033,51 @@ class Trainer(BaseTrainer):
             output_dir = Path(getattr(self.config, "output_dir", "outputs"))
             path = output_dir / f"checkpoint-{self.global_step}"
         checkpoint_file = self._checkpoint_file(path)
-        checkpoint_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # Sla eerst tijdelijk op, zodat een kapot bestand het vorige
-        # checkpoint niet overschrijft.
-        temp_path = None
         try:
-            with tempfile.NamedTemporaryFile(
-                dir=checkpoint_file.parent,
-                prefix=f".{checkpoint_file.name}.",
-                suffix=".tmp",
-                delete=False,
-            ) as temp_file:
-                temp_path = Path(temp_file.name)
-            torch.save(self._checkpoint_payload(), temp_path)
-            os.replace(temp_path, checkpoint_file)
-            self._cleanup_checkpoints()
+            atomic_save_checkpoint(self._checkpoint_payload(), checkpoint_file)
             return checkpoint_file.parent if not Path(path).suffix else checkpoint_file
         except Exception as error:
+            if isinstance(error, CheckpointError):
+                raise
             raise CheckpointError(f"Could not save checkpoint: {checkpoint_file}") from error
         finally:
-            if temp_path is not None and temp_path.exists():
-                temp_path.unlink()
+            if checkpoint_file.exists():
+                self._cleanup_checkpoints()
+
+    def save_model_artifact(
+        self,
+        path,
+        *,
+        tokenizer=None,
+        training_summary=None,
+        evaluation_summary=None,
+        overwrite=False,
+    ):
+        """Bewaart het getrainde model als finale artifact.
+
+        Dit is niet bedoeld om training te hervatten. Daarvoor blijft
+        `save_checkpoint()` de juiste API.
+        """
+        from ..lifecycle import save_model_artifact
+
+        summary = dict(training_summary or {})
+        summary.setdefault("final_epoch", self.current_epoch)
+        summary.setdefault("global_step", self.global_step)
+        summary.setdefault("optimizer_step", self.optimizer_step)
+        if self.train_losses:
+            summary.setdefault("final_loss", float(self.train_losses[-1]))
+        if self.val_losses:
+            summary.setdefault("best_validation_loss", float(self.best_val_loss))
+        return save_model_artifact(
+            self.model,
+            path,
+            config=self.config,
+            tokenizer=tokenizer,
+            training_summary=summary,
+            evaluation_summary=evaluation_summary,
+            overwrite=overwrite,
+            provenance={"source": "arclm.training.Trainer"},
+        )
 
     def load_checkpoint(self, path):
         """Laadt een training checkpoint.
@@ -1023,13 +1089,10 @@ class Trainer(BaseTrainer):
             CheckpointError: Als verplichte checkpoint-data ontbreekt.
         """
         checkpoint_file = self._checkpoint_file(path)
-        if not checkpoint_file.exists():
-            raise CheckpointError(f"Checkpoint not found: {checkpoint_file}")
-        checkpoint = torch.load(checkpoint_file, map_location=self.device)
-        if "model_state_dict" not in checkpoint:
-            raise CheckpointError("Checkpoint is missing model_state_dict")
-        if "optimizer_state_dict" not in checkpoint:
-            raise CheckpointError("Checkpoint is missing optimizer_state_dict")
+        checkpoint = safe_load_training_checkpoint(
+            checkpoint_file,
+            map_location=self.device,
+        )
 
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
@@ -1043,6 +1106,10 @@ class Trainer(BaseTrainer):
             self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         self.precision.load_state_dict(checkpoint.get("scaler_state_dict"))
         self._restore_state_from_checkpoint(checkpoint)
+        restore_rng_state(
+            checkpoint.get("rng_state"),
+            restore_cuda=self.device.type == "cuda",
+        )
         return checkpoint
 
     def resume(self, path):
@@ -1109,7 +1176,7 @@ class Trainer(BaseTrainer):
         """Slaat een oud-stijl ArcLM checkpoint op."""
         Path(config.model_path).parent.mkdir(parents=True, exist_ok=True)
         
-        checkpoint = self._checkpoint_payload()
+        checkpoint = self._checkpoint_payload(tokenizer_metadata=tokenizer_metadata)
         checkpoint.update(
             {
                 "vocab": vocab,
@@ -1139,7 +1206,7 @@ class Trainer(BaseTrainer):
     
     def load(self, model_path):
         """Laadt een oud-stijl ArcLM checkpoint."""
-        checkpoint = torch.load(model_path, map_location=self.device)
+        checkpoint = safe_load_training_checkpoint(model_path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if self.scheduler is not None and checkpoint.get("scheduler_state_dict") is not None:
@@ -1147,6 +1214,10 @@ class Trainer(BaseTrainer):
         self.precision.load_state_dict(checkpoint.get("scaler_state_dict"))
         
         self._restore_state_from_checkpoint(checkpoint)
+        restore_rng_state(
+            checkpoint.get("rng_state"),
+            restore_cuda=self.device.type == "cuda",
+        )
         
         print(f"[OK] Model loaded from {model_path} at epoch {self.current_epoch}")
         return checkpoint

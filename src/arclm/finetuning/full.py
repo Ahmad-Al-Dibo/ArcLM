@@ -99,6 +99,36 @@ class FullFineTuner(BaseFineTuner):
         metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         return metadata_path
 
+    def save_model_artifact(
+        self,
+        path,
+        *,
+        config=None,
+        training_summary=None,
+        evaluation_summary=None,
+        overwrite=False,
+    ):
+        """Bewaart het finale modelartifact, niet de training checkpoint-state."""
+        from ..lifecycle import save_model_artifact
+
+        summary = dict(training_summary or {})
+        summary.setdefault("fine_tuning_config", asdict(self.config))
+        summary.setdefault("dataset_format", self.config.dataset_format)
+        summary.setdefault("global_step", self.trainer.global_step)
+        summary.setdefault("optimizer_step", self.trainer.optimizer_step)
+        if self.trainer.train_losses:
+            summary.setdefault("final_loss", float(self.trainer.train_losses[-1]))
+        return save_model_artifact(
+            self.model,
+            path,
+            config=config,
+            tokenizer=self.tokenizer,
+            training_summary=summary,
+            evaluation_summary=evaluation_summary,
+            overwrite=overwrite,
+            provenance={"source": "arclm.finetuning.FullFineTuner"},
+        )
+
 
 class SFTTrainer(FullFineTuner):
     """Traint een tekstmodel met instruction-, chat- of tekstdatasets."""

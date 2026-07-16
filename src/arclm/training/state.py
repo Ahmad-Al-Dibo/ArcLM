@@ -35,4 +35,12 @@ class TrainingState:
             return cls()
         known = set(cls.__dataclass_fields__)
         clean = {key: value for key, value in values.items() if key in known}
+        for key in ("epoch", "step", "global_step", "optimizer_step"):
+            if key in clean:
+                try:
+                    clean[key] = int(clean[key])
+                except (TypeError, ValueError) as error:
+                    raise ValueError(f"{key} must be an integer") from error
+                if clean[key] < 0:
+                    raise ValueError(f"{key} must not be negative")
         return cls(**clean)

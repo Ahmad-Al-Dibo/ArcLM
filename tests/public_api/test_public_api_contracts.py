@@ -11,7 +11,36 @@ def test_documented_domain_imports_are_available():
         "arclm.evaluation": ["Evaluator", "EvaluationConfig", "Accuracy"],
         "arclm.finetuning": ["SFTTrainer", "SFTConfig", "ModelAdapter"],
         "arclm.inference": ["TextGenerator", "load_model", "predict"],
-        "arclm.checkpoints": ["SmartLoader", "load_external_model"],
+        "arclm.checkpoints": [
+            "CheckpointInfo",
+            "SmartLoader",
+            "inspect_checkpoint",
+            "load_external_model",
+            "validate_checkpoint",
+        ],
+        "arclm.lifecycle": [
+            "ARTIFACT_FORMAT",
+            "ARTIFACT_VERSION",
+            "LoadedModel",
+            "ModelArtifactInfo",
+            "ModelArtifactManifest",
+            "ModelSource",
+            "inspect_model_artifact",
+            "load_model_artifact",
+            "save_model_artifact",
+            "validate_model_artifact",
+        ],
+        "arclm.peft": [
+            "ADAPTER_ARTIFACT_FORMAT",
+            "LoRAConfig",
+            "LoRALinear",
+            "PeftMethod",
+            "apply_lora",
+            "inspect_adapter_artifact",
+            "load_adapter_artifact",
+            "save_adapter_artifact",
+            "validate_adapter_artifact",
+        ],
     }
 
     for module_name, names in imports.items():
@@ -28,6 +57,8 @@ def test_domain_all_exports_resolve():
         "arclm.finetuning",
         "arclm.inference",
         "arclm.checkpoints",
+        "arclm.lifecycle",
+        "arclm.peft",
     ]
 
     for module_name in module_names:

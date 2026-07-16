@@ -214,11 +214,11 @@ def list_available_models(models_dir: str | Path = "models") -> list[str]:
 def load_training_checkpoint(path: str | Path, device_type: str = "cpu"):
     """Load a trusted ArcLM/PyTorch training checkpoint."""
     import torch
+    from .checkpoints.training import safe_load_training_checkpoint
 
-    return torch.load(
+    return safe_load_training_checkpoint(
         path,
         map_location=torch.device(device_type),
-        weights_only=False,
     )
 
 

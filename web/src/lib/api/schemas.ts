@@ -127,11 +127,58 @@ export type DatasetWarning = {
   message: string;
 };
 
+export type DatasetRootSourceOrigin = "persisted" | "command_line";
+
+export type DatasetRootValidationStatus = "valid" | "warning" | "error" | "unvalidated";
+
+export type DatasetRootInfo = {
+  root_id: string;
+  name: string;
+  path: string;
+  enabled: boolean;
+  recursive: boolean;
+  source_origin: DatasetRootSourceOrigin;
+  validation_status: DatasetRootValidationStatus;
+  supported_file_count: number;
+  ignored_file_count: number;
+  warnings: DatasetWarning[];
+  removable: boolean;
+  editable: boolean;
+};
+
+export type DatasetRootListResponse = {
+  roots: DatasetRootInfo[];
+  count: number;
+  active_count: number;
+  datasets_found: number;
+  warnings: DatasetWarning[];
+};
+
+export type DatasetRootCreateRequest = {
+  name: string;
+  path: string;
+  recursive?: boolean;
+};
+
+export type DatasetRootUpdateRequest = {
+  name?: string;
+  enabled?: boolean;
+  recursive?: boolean;
+};
+
+export type DatasetRefreshResponse = {
+  roots_scanned: number;
+  datasets_found: number;
+  warnings: DatasetWarning[];
+};
+
 export type DatasetSummary = {
   dataset_id: string;
   name: string;
   format: DatasetFormat;
   size_bytes: number;
+  source_name?: string | null;
+  source_id?: string | null;
 };
 
 export type DatasetListResponse = {

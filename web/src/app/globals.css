@@ -1468,9 +1468,81 @@ button {
 
 .dataset-list,
 .dataset-selected-stack,
-.dataset-warning-list {
+.dataset-warning-list,
+.dataset-source-list {
   display: grid;
   gap: 12px;
+}
+
+.dataset-source-form {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(10rem, 16rem) minmax(18rem, 1fr);
+  align-items: end;
+}
+
+.dataset-source-form .ui-check-row,
+.dataset-source-form .ui-row {
+  grid-column: 1 / -1;
+}
+
+.dataset-source-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--arclm-muted);
+  font-size: 0.875rem;
+}
+
+.dataset-source-summary span {
+  border: 1px solid var(--arclm-border);
+  border-radius: var(--arclm-radius-sm);
+  padding: 4px 8px;
+  background: var(--arclm-surface-muted);
+}
+
+.dataset-source-item {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--arclm-border);
+  border-radius: var(--arclm-radius-md);
+  padding: 14px;
+  background: var(--arclm-surface);
+}
+
+.dataset-source-main,
+.dataset-source-actions,
+.dataset-source-badges {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dataset-source-main {
+  justify-content: space-between;
+}
+
+.dataset-source-actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dataset-source-badges {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dataset-source-item h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.dataset-source-path {
+  margin: 0;
+  color: var(--arclm-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 .dataset-list-item {
@@ -1605,7 +1677,8 @@ button {
   .dashboard-link-grid,
   .dataset-workspace,
   .dataset-stat-grid,
-  .dataset-format-grid {
+  .dataset-format-grid,
+  .dataset-source-form {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -1632,6 +1705,14 @@ button {
 
   .dataset-preview-value {
     max-width: 12rem;
+  }
+
+  .dataset-source-main {
+    display: grid;
+  }
+
+  .dataset-source-badges {
+    justify-content: flex-start;
   }
 
   .status-pill {

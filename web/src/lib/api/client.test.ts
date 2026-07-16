@@ -288,4 +288,68 @@ describe("ArcLM API client", () => {
 
     await expect(client.getDatasetInspection("dataset_abc123")).rejects.toMatchObject({ code: "invalid_response" });
   });
+
+  it("manages dataset roots through typed local endpoints", async () => {
+    const root = {
+      root_id: "root_abc123",
+      name: "Training Data",
+      path: "D:\\ArcLM\\data\\training",
+      enabled: true,
+      recursive: false,
+      source_origin: "persisted",
+      validation_status: "valid",
+      supported_file_count: 2,
+      ignored_file_count: 1,
+      warnings: [],
+      removable: true,
+      editable: true
+    };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ roots: [root], count: 1, active_count: 1, datasets_found: 2, warnings: [] }))
+      .mockResolvedValueOnce(jsonResponse(root))
+      .mockResolvedValueOnce(jsonResponse({ ...root, enabled: false }))
+      .mockResolvedValueOnce(jsonResponse(root))
+      .mockResolvedValueOnce(jsonResponse(root))
+      .mockResolvedValueOnce(jsonResponse({ roots_scanned: 1, datasets_found: 2, warnings: [] }));
+    const client = createApiClient({ fetcher });
+
+    await expect(client.getDatasetRoots()).resolves.toMatchObject({ count: 1 });
+    await client.addDatasetRoot({ name: "Training Data", path: "D:\\ArcLM\\data\\training", recursive: false });
+    await client.updateDatasetRoot("root_abc123", { enabled: false });
+    await client.removeDatasetRoot("root_abc123");
+    await client.validateDatasetRoot("root_abc123");
+    await expect(client.refreshDatasets()).resolves.toMatchObject({ datasets_found: 2 });
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8765/api/dataset-roots",
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8765/api/dataset-roots",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ name: "Training Data", path: "D:\\ArcLM\\data\\training", recursive: false })
+      })
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8765/api/dataset-roots/root_abc123",
+      expect.objectContaining({ method: "PATCH" })
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8765/api/dataset-roots/root_abc123",
+      expect.objectContaining({ method: "DELETE" })
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "http://127.0.0.1:8765/api/datasets/refresh",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("rejects invalid dataset root responses", async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse({ roots: [{ name: "missing id" }], count: 1, active_count: 1, datasets_found: 0, warnings: [] }));
+    const client = createApiClient({ fetcher });
+
+    await expect(client.getDatasetRoots()).rejects.toMatchObject({ code: "invalid_response" });
+  });
 });

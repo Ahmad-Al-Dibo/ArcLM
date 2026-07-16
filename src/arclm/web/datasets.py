@@ -52,6 +52,8 @@ class DatasetRecord:
     format: DatasetFormat
     size_bytes: int
     path: Path
+    source_name: str | None = None
+    source_id: str | None = None
 
     def to_summary(self) -> DatasetSummary:
         """Maakt een veilige catalogusregel zonder pad."""
@@ -60,16 +62,18 @@ class DatasetRecord:
             name=self.name,
             format=self.format,
             size_bytes=self.size_bytes,
+            source_name=self.source_name,
+            source_id=self.source_id,
         )
 
 
 class DatasetCatalogue:
     """Vindt ondersteunde datasets binnen geconfigureerde roots."""
 
-    def __init__(self, config: WebConfig):
+    def __init__(self, config: WebConfig, source_manager=None):
         """Maakt een catalogus voor de huidige Web API configuratie."""
         self.config = config
-        self._roots = tuple((root, Path(root.path).expanduser().resolve()) for root in config.dataset_roots)
+        self.source_manager = source_manager
 
     def list_records(self) -> list[DatasetRecord]:
         """Geeft alle veilige datasetrecords terug.
@@ -78,7 +82,7 @@ class DatasetCatalogue:
         wordt pas gelezen tijdens inspectie.
         """
         records: list[DatasetRecord] = []
-        for root, root_path in self._roots:
+        for root, root_path in self._roots():
             records.extend(self._records_for_root(root, root_path))
             if len(records) > self.config.max_catalogue_entries:
                 raise DatasetApiError(
@@ -87,6 +91,11 @@ class DatasetCatalogue:
                     status_code=400,
                 )
         return sorted(records, key=lambda record: (record.name.lower(), record.dataset_id))
+
+    def _roots(self) -> tuple[tuple[DatasetRoot, Path], ...]:
+        """Geeft de actuele ingeschakelde roots terug."""
+        roots = self.source_manager.active_roots() if self.source_manager is not None else self.config.dataset_roots
+        return tuple((root, Path(root.path).expanduser().resolve()) for root in roots if root.enabled)
 
     def find(self, dataset_id: str) -> DatasetRecord:
         """Zoekt een dataset op veilige ID."""
@@ -100,7 +109,8 @@ class DatasetCatalogue:
     def _records_for_root(self, root: DatasetRoot, root_path: Path) -> list[DatasetRecord]:
         """Scant één root zonder paden te lekken."""
         records: list[DatasetRecord] = []
-        for candidate in root_path.rglob("*"):
+        iterator = root_path.rglob("*") if root.recursive else root_path.iterdir()
+        for candidate in iterator:
             if not candidate.is_file():
                 continue
             suffix = candidate.suffix.lower()
@@ -113,6 +123,8 @@ class DatasetCatalogue:
             if not _is_inside(resolved, root_path):
                 continue
             relative = resolved.relative_to(root_path)
+            if root.recursive and len(relative.parts) - 1 > self.config.max_recursive_depth:
+                continue
             records.append(
                 DatasetRecord(
                     dataset_id=_dataset_id(root.name, relative),
@@ -120,6 +132,8 @@ class DatasetCatalogue:
                     format=SUPPORTED_FORMATS[suffix],
                     size_bytes=resolved.stat().st_size,
                     path=resolved,
+                    source_name=root.name,
+                    source_id=root.root_id,
                 )
             )
         return records

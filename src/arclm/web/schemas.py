@@ -40,6 +40,57 @@ class DatasetWarning(BaseModel):
     message: str
 
 
+class DatasetRootInfo(BaseModel):
+    """Veilige beheerinformatie over een datasetbron."""
+
+    root_id: str
+    name: str
+    path: str
+    enabled: bool
+    recursive: bool
+    source_origin: Literal["persisted", "command_line"]
+    validation_status: Literal["valid", "warning", "error", "unvalidated"]
+    supported_file_count: int
+    ignored_file_count: int = 0
+    warnings: list[DatasetWarning] = Field(default_factory=list)
+    removable: bool = True
+    editable: bool = True
+
+
+class DatasetRootListResponse(BaseModel):
+    """Lijst met geconfigureerde datasetbronnen."""
+
+    roots: list[DatasetRootInfo]
+    count: int
+    active_count: int
+    datasets_found: int
+    warnings: list[DatasetWarning] = Field(default_factory=list)
+
+
+class DatasetRootCreateRequest(BaseModel):
+    """Request om een nieuwe datasetbron op te slaan."""
+
+    name: str
+    path: str
+    recursive: bool = False
+
+
+class DatasetRootUpdateRequest(BaseModel):
+    """Request om veilige velden van een datasetbron te wijzigen."""
+
+    name: str | None = None
+    enabled: bool | None = None
+    recursive: bool | None = None
+
+
+class DatasetRefreshResponse(BaseModel):
+    """Resultaat van een catalogusrefresh."""
+
+    roots_scanned: int
+    datasets_found: int
+    warnings: list[DatasetWarning] = Field(default_factory=list)
+
+
 class DatasetSummary(BaseModel):
     """Veilige datasetinformatie voor de catalogus."""
 
@@ -47,6 +98,8 @@ class DatasetSummary(BaseModel):
     name: str
     format: Literal["txt", "csv", "json", "jsonl"]
     size_bytes: int
+    source_name: str | None = None
+    source_id: str | None = None
 
 
 class DatasetListResponse(BaseModel):

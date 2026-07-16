@@ -133,8 +133,12 @@ class Config:
 
 
     def load_config_from_model(self, model_path):
-        """Placeholder voor het laden van config uit een modelbestand."""
-        pass
+        """Laadt configwaarden uit een modelbron in dit object."""
+        from ..lifecycle import load_model_config
+
+        values = load_model_config(model_path, map_location=str(self.get_device()))
+        self.set_safe(**values)
+        return self
 
     def get_device(self):
         """Geeft het ingestelde torch device terug."""
