@@ -63,3 +63,17 @@ Core Milestone 2 / Feature 2 verifies evaluation after a LoRA workflow by
 saving a merged final model artifact, loading it on CPU, and running the
 existing `Evaluator` through `ModelAdapter`. Adapter metadata does not change
 metric behavior.
+
+Core Milestone 2 / Feature 4 verifies evaluation against a tiny local Hugging
+Face-style model through `ModelAdapter`. Broad benchmark suites, external PEFT
+package evaluation, and distributed aggregation remain future work.
+
+## Run Manifest Link
+
+Core Milestone 2 / Feature 5 lets evaluation results be recorded in a local run
+manifest as bounded numeric metrics. Raw predictions and private records remain
+outside the default manifest.
+
+Core Milestone 2 / Feature 6 uses one configured objective metric from the
+trial runner's returned metrics. Missing or non-finite objective values fail the
+trial; multi-objective search is deferred.

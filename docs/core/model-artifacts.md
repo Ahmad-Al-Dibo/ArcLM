@@ -323,8 +323,13 @@ recreate the temporary LoRA wrappers from a native model config alone.
 - No digital signatures.
 - No remote upload or registry.
 - No Hugging Face Hub publishing.
-- No default-suite Hugging Face runtime round trip.
-- No GPU artifact runtime in this feature.
+- Tiny local Hugging Face artifact runtime is verified by Core Milestone 2 /
+  Feature 4; broad Hugging Face architecture coverage remains pending.
+- Core Milestone 2 / Feature 6 does not create, copy, or publish model
+  artifacts automatically. Trial runs may reference artifacts through the
+  existing run-manifest contract when user code creates them.
+- GPU final-artifact portability remains pending, though CUDA Hugging Face
+  forward and LoRA runtime are verified separately.
 - No ONNX, GGUF, TensorRT, quantization, serving, or distributed model artifact
   format.
 

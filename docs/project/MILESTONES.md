@@ -18,24 +18,24 @@ Core Track:
 Active
 
 Last completed Core action:
-Core Milestone 2 / Feature 2:
-LoRA and General PEFT Foundation
+Core Milestone 2 / Feature 4:
+Hugging Face and QLoRA Runtime Validation Matrix
 
 Next recommended Core action:
-Core Milestone 2 / Feature 3:
-QLoRA and Quantized Fine-Tuning Foundation
+Core Milestone 2 / Feature 5:
+Experiment Tracking and Reproducible Run Manifests
 
 Approval:
 Not granted
 ```
 
 Core Milestone 1 Features 1, 2, and 3 are implemented. Core Milestone 2 /
-Features 1 and 2 are implemented. The next recommended
+Features 1 through 4 are implemented. The next recommended
 implementation feature is not approved automatically:
 
 ```text
-Core Milestone 2 / Feature 3:
-QLoRA and Quantized Fine-Tuning Foundation
+Core Milestone 2 / Feature 5:
+Experiment Tracking and Reproducible Run Manifests
 ```
 
 ## Core Milestone 1: Model Lifecycle and Configuration Foundation
@@ -186,11 +186,12 @@ Feature progress:
 
 ## Core Milestone 2: Fine-Tuning and PEFT Foundation
 
-- Status: Features 1 and 2 complete; Feature 3 recommended but not approved.
+- Status: Features 1 through 6 complete; Core Milestone 3 / Feature 1 recommended but not approved.
 - Goal: stabilize full-parameter SFT first, then add optional PEFT only through
   a tested dependency boundary.
-- Excluded now: QLoRA, DPO, RLHF, GRPO, distributed training, serving, new
-  architectures, and Web features.
+- Excluded now: production QLoRA claims without bitsandbytes runtime evidence,
+  DPO, RLHF, GRPO, distributed training, serving, new architectures, and Web
+  features.
 
 Feature progress:
 
@@ -198,7 +199,22 @@ Feature progress:
 | ------- | ------ | -------- |
 | Feature 1: Full Fine-Tuning and SFT Stabilization | Complete | `FineTuningConfig`, `prepare_fine_tuning_dataset`, `fine_tune`, CPU native runtime, checkpoint/resume, artifact reload, evaluation, inference, focused tests |
 | Feature 2: LoRA and General PEFT Foundation | Complete | `arclm.peft`, `LoRAConfig`, built-in `LoRALinear`, `fine_tune(..., peft_config=...)`, adapter artifacts, checkpoint/resume, merge/final artifact, CPU runtime tests |
-| Feature 3: QLoRA | Recommended | Depends on quantization dependency decisions and hardware-sensitive validation |
+| Feature 3: QLoRA and Quantized Fine-Tuning Foundation | Complete | `QLoRAConfig`, `QuantizationConfig`, bitsandbytes 4-bit boundary, capability inspection, adapter metadata, fixture-level validation |
+| Feature 4: Hugging Face and QLoRA Runtime Validation Matrix | Complete | Tiny local HF CPU runtime, GTX 1050 Ti HF/LoRA CUDA runtime, bounded environment reports, optional bitsandbytes gate |
+| Feature 5: Experiment Tracking and Reproducible Run Manifests | Complete | `arclm.tracking` local run manifests, metrics/events, references, trainer callback, fine-tuning/QLoRA metadata, inspect/validate/list/compare, legacy compatibility |
+| Feature 6: Hyperparameter Search Foundation | Complete | `arclm.search` local search manifests, typed search spaces, deterministic grid/random trials, one tracked run per trial, failure policy, bounded failed-trial retry, resume, inspect/validate/list/compare, best-config export |
+
+## Core Milestone 3: Distributed Runtime Foundation
+
+- Status: Planned, not approved.
+- Goal: prepare process/runtime contracts for future DDP without implementing
+  FSDP or multi-node behavior in one patch.
+
+Feature progress:
+
+| Feature | Status | Evidence |
+| ------- | ------ | -------- |
+| Feature 1: Distributed Runtime and Process Abstraction | Recommended | Needed before DDP, multi-GPU PEFT, and distributed checkpoint validation |
 
 ## Web Milestone 3: Training and Evaluation Dashboard
 
@@ -232,9 +248,10 @@ Feature progress:
 
 ## Superseded: Later ML Milestone: LoRA and Basic PEFT Foundation
 
-This earlier planning block is superseded by Core Milestone 2 / Feature 2,
-which implemented built-in ArcLM LoRA and adapter artifacts. QLoRA and external
-PEFT automation remain future work.
+This earlier planning block is superseded by Core Milestone 2 / Features 2 and
+3, which implemented built-in ArcLM LoRA, adapter artifacts, and the QLoRA
+configuration/backend boundary. Real QLoRA runtime validation and external PEFT
+automation remain future work.
 
 - Goal: stabilize LoRA without starting QLoRA or RLHF.
 - User value: adapter fine-tuning becomes reliable.

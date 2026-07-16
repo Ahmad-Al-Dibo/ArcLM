@@ -14,13 +14,13 @@ not mark a feature as implemented.
 | CUDA in baseline env | `False` |
 | `import arclm` | Passed |
 | `compileall src/arclm` | Passed |
-| Full pytest | Passed: pending final Feature 2 run |
+| Full pytest | Passed: `335 passed, 13 skipped, 4 warnings` |
 | Wheel build | Passed: `arclm-0.6.1-py3-none-any.whl` |
-| Public API tests | Passed: `22 passed` |
+| Public API tests | Passed: `24 passed` |
 | Compatibility tests | Passed: `15 passed, 1 warning` |
 | Core focused tests | Passed: lifecycle/artifact/checkpoint/training/evaluation/inference/public/compatibility suites |
 | CLI/package/loader tests | Passed: `18 passed, 2 warnings` |
-| GPU tests in CPU env | Skipped: `8 skipped` |
+| GPU/optional runtime tests in CPU env | Skipped: `13 skipped` |
 | Web paused regression | Passed: lint, typecheck, `82` tests, production build |
 
 The previous full-suite failures in
@@ -34,13 +34,14 @@ simulated user-local dataset roots are ignored and left unchanged.
 | ----------- | ------ | ----- | ---------------- | --------------- |
 | Public API | Implemented and verified | Public API and compatibility suites pass | Import inventory passed | Root export surface is broad and includes legacy aliases |
 | Configuration | Implemented for first lifecycle contract, broader configs partial | Config validation and lifecycle tests pass | JSON/YAML helpers import; `Config.load_config_from_model()` now loads real metadata | Config versioning remains absent |
-| Model lifecycle | Implemented and verified for final artifacts | Lifecycle, artifact, loader, checkpoint tests pass | Native ArcLM final artifact save/inspect/validate/load/evaluate/infer verified on CPU | HF runtime and GPU artifact runtime not executed in baseline |
+| Model lifecycle | Implemented and verified for final artifacts | Lifecycle, artifact, loader, checkpoint, and HF runtime tests pass | Native ArcLM final artifact save/inspect/validate/load/evaluate/infer verified on CPU; tiny local HF artifact runtime verified | Broad HF architecture and GPU artifact portability matrix remain pending |
 | Training | Implemented and verified for single-device core | Training unit/smoke tests pass | CPU runtime verified; CUDA verified previously in GPU env | No distributed trainer; task-specific contracts remain narrow |
 | Checkpoints | Implemented and verified for Feature 2 scope | Checkpoint, trainer, lifecycle, public API, compatibility, and full-suite tests pass | Atomic save, inspection, legacy validation, RNG restore, and epoch-boundary deterministic resume verified on CPU | Mid-epoch dataloader position, callback state protocol, checksum/signature, and cloud GPU rerun remain future work |
 | Evaluation | Implemented and verified | Evaluation unit/smoke tests pass | CPU validation loss, perplexity, accuracy verified | No distributed/benchmark evaluation |
-| Fine-tuning/SFT | Implemented and verified for native CPU workflows | Fine-tuning, PEFT, and smoke tests pass | CPU full fine-tuning, SFT, and LoRA smoke pass | External model/tokenizer/GPU runtime matrices are incomplete |
+| Fine-tuning/SFT | Implemented and verified for native CPU workflows, tiny Hugging Face CPU runtime, CUDA LoRA runtime, and QLoRA boundary | Fine-tuning, PEFT, QLoRA, runtime-matrix, and smoke tests pass | CPU full fine-tuning, SFT, LoRA smoke, tiny Hugging Face runtime, GTX 1050 Ti LoRA, and QLoRA fixture/boundary pass | Real bitsandbytes/GPU QLoRA runtime is pending |
 | Data pipeline | Implemented and verified for local files | Dataset unit tests pass | JSON/JSONL/CSV/TXT/list, cleaning, dedup, pipeline tests pass | Provenance/versioning/manifest layer missing |
 | Inference | Partially implemented | CLI/package/loader tests plus artifact forward-pass runtime pass | Native checkpoint inference and final artifact model forward pass verified | Generation options and external inference lack focused runtime coverage |
+| Experiment tracking | Implemented and verified | Tracking and public API tests pass | Local run lifecycle, trainer callback, fine-tuning/QLoRA metadata, inspect/validate/list/compare verified | External tracking services remain compatibility-only |
 | Architectures | Partially implemented | Native causal LM covered indirectly | GPT-style ArcLM/MiniGPT tested | LLaMA/Mistral/BERT/T5/MoE/vision/multimodal are not native |
 | Hardware validation | Partially verified | GPU tests exist and skip correctly in CPU env | GTX 1050 Ti validation recorded separately | Multi-GPU, DDP, FSDP, native BF16 acceleration need cloud validation |
 | Packaging | Implemented and verified | Wheel build and import tests pass | `pip wheel . --no-deps` passed | `python -m build` needs dev dependency in release env |
@@ -59,7 +60,9 @@ simulated user-local dataset roots are ignored and left unchanged.
 | `from arclm.checkpoints import CheckpointInfo, inspect_checkpoint, validate_checkpoint` | Implemented and verified | Checkpoint and public API tests | Stable for training-checkpoint inspection | Trusted PyTorch checkpoint boundary applies |
 | `from arclm.lifecycle import ModelArtifactInfo` | Implemented and verified | Lifecycle and public API tests | Stable for Core Milestone 1 | Preserve JSON-compatible fields |
 | `from arclm.lifecycle import save_model_artifact, load_model_artifact, validate_model_artifact` | Implemented and verified | Artifact, public API, and full-suite tests | Stable for Core Milestone 1 | HF/GPU runtime matrices remain pending |
-| `from arclm.peft import LoRAConfig, apply_lora, save_adapter_artifact` | Implemented and verified | PEFT and public API tests | Stable for Core Milestone 2 / Feature 2 | QLoRA, other PEFT methods, HF PEFT runtime, and GPU PEFT runtime remain pending |
+| `from arclm.peft import LoRAConfig, QLoRAConfig, QuantizationConfig, apply_lora, save_adapter_artifact` | Implemented and verified | PEFT, runtime-matrix, and public API tests | Stable for Core Milestone 2 / Features 2-4 | Real bitsandbytes QLoRA runtime and other PEFT methods remain pending |
+| `from arclm.tracking import RunTracker, create_run, inspect_run, validate_run` | Implemented and verified | Tracking and public API tests | Stable for Core Milestone 2 / Feature 5 | External tracking services are compatibility-only |
+| `from arclm.search import create_search, inspect_search, validate_search` | Implemented and verified | Search and public API tests | Stable for Core Milestone 2 / Feature 6 | Parallel/distributed search, pruning, Bayesian search, and Web UI are not implemented |
 | `from arclm.models import ArcLM, AutoModel` | Partially implemented | Import tested | `ArcLM` stable, `AutoModel` partial | Avoid overclaiming architecture support |
 | `from arclm.tokenizers import Tokenizer, AutoTokenizer` | Partially implemented | Import tested | Native tokenizer stable, auto partial | `__all__` duplication should be cleaned later |
 | `from arclm.web import create_app` | Implemented for paused Web API | Public API tests | Optional | Must not affect Core imports |
@@ -79,6 +82,8 @@ simulated user-local dataset roots are ignored and left unchanged.
 | `EvaluationResult` | Yes | N/A | `to_dict` | No | Stable |
 | `SFTConfig` | Yes | Extends training validation | Dataclass/asdict metadata | No | Stable for current SFT core |
 | `LoRAConfig` | Yes | Strong field validation | `to_dict`/`from_dict` | Config version stored | Stable for built-in LoRA |
+| `QLoRAConfig` | Yes | Strong field validation | `to_dict`/`from_dict` | Config version stored | Stable for QLoRA boundary |
+| `QuantizationConfig` | Yes | Strong field validation | `to_dict`/`from_dict` | Config version stored | Stable for bitsandbytes 4-bit boundary |
 | `PreprocessConfig` | Yes | Partial | Local preprocess use | No | Partial |
 | `WebConfig` | Yes | Local web validation | Runtime config only | No | Optional Web |
 | Model lifecycle metadata | Yes | Source/artifact validation | `to_dict`, JSON manifest | No | Stable first contract |
@@ -136,7 +141,7 @@ simulated user-local dataset roots are ignored and left unchanged.
 | Assistant-only loss | SFT config/formatting | Yes | Unit runtime | Needs wider tokenizer matrix |
 | Packing/truncation | `packing.py`, collator | Yes | Unit runtime | Basic only |
 | External models | `ModelAdapter`, HF legacy path | Partial | Adapter tests | Needs local HF runtime |
-| LoRA | Built-in `arclm.peft` plus legacy optional path | PEFT tests | CPU native runtime verified | Stable for built-in Linear adapters; HF/GPU runtime pending |
+| LoRA | Built-in `arclm.peft` plus legacy optional path | PEFT and runtime-matrix tests | CPU native, tiny HF CPU, and tiny HF CUDA runtime verified | Stable for built-in Linear adapters; external PEFT package automation pending |
 
 ## Architecture Matrix
 
@@ -163,6 +168,8 @@ simulated user-local dataset roots are ignored and left unchanged.
 | Checkpoints | Implemented and verified for current scope | Mid-epoch data position and signed integrity absent | Future reproducibility overclaiming | Harden later | 3 |
 | Evaluation | Implemented and verified | Benchmarks/distributed absent | Overclaiming | Keep as-is | 6 |
 | SFT | Implemented and verified for native CPU | Optional HF/GPU runtime matrix | Adapter drift | Harden later | 4 |
+| Tracking | Implemented and verified for local runs | External services absent | Overclaiming service integrations | Harden later | 5 |
+| Search | Implemented and verified for local sequential trials | Parallel/distributed/adaptive search absent | Overclaiming tuning scale | Keep as-is | 6 |
 | Data pipeline | Implemented and verified | Versioning/provenance | Reproducibility gaps | Harden | 7 |
 | Inference | Partially implemented | Dedicated generation tests | User-facing regressions | Refactor backward-compatibly | 8 |
 | Architectures | Partially implemented | Registry/native families | Overclaiming | Defer | 9 |
@@ -172,12 +179,12 @@ simulated user-local dataset roots are ignored and left unchanged.
 ## Current Next Feature Recommendation
 
 Core Milestone 1 / Features 1, 2, and 3 are implemented and verified. Core
-Milestone 2 / Features 1 and 2 are implemented and verified for the native CPU
-fine-tuning workflow. The next recommended Core feature is:
+Milestone 2 / Features 1 through 6 are implemented and verified at their
+stated evidence levels. The next recommended Core feature is:
 
 ```text
-Core Milestone 2 / Feature 3:
-QLoRA and Quantized Fine-Tuning Foundation
+Core Milestone 3 / Feature 1:
+Distributed Runtime and Process Abstraction
 ```
 
 This is not approved automatically.

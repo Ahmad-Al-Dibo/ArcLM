@@ -7,7 +7,8 @@ Current package metadata:
   `sentencepiece>=0.2,<0.3`
 - Optional Web: Flask, FastAPI, Uvicorn
 - Optional preprocess: BeautifulSoup, PyYAML, tqdm
-- Optional HF/PEFT: transformers, accelerate, datasets, peft, safetensors
+- Optional HF/PEFT/QLoRA: transformers, accelerate, datasets, peft,
+  bitsandbytes, safetensors
 
 Current baseline environment:
 
@@ -24,7 +25,8 @@ Current baseline environment:
 | safetensors | Installed | Optional artifact support |
 | datasets | Not installed | Optional future HF datasets |
 | accelerate | Not installed | Optional HF/distributed helper |
-| peft | Not installed | Optional external PEFT/QLoRA |
+| peft | Not installed | Optional external PEFT automation |
+| bitsandbytes | Not installed | Optional QLoRA 4-bit backend |
 
 Recommendations:
 
@@ -50,6 +52,10 @@ Core Milestone 1 / Feature 3 added no required dependencies.
 
 Core Milestone 2 / Feature 1 adds no required dependency.
 
+Core Milestone 2 / Feature 6 adds no dependency. Local search uses standard
+library storage and existing ArcLM training, fine-tuning, PEFT, and tracking
+APIs. External sweep providers remain uninstalled and deferred.
+
 - Native full fine-tuning and SFT use PyTorch plus existing ArcLM tokenizer,
   trainer, evaluator, checkpoint, and lifecycle code.
 - `import arclm` remains lightweight.
@@ -57,5 +63,12 @@ Core Milestone 2 / Feature 1 adds no required dependency.
   Hugging Face path is explicitly requested.
 - Built-in ArcLM LoRA from Core Milestone 2 / Feature 2 uses PyTorch directly
   and adds no external `peft` dependency.
-- External PEFT package automation, QLoRA, and HF PEFT runtime validation remain
-  optional future work.
+- QLoRA runtime uses the optional `arclm[qlora]` extra, which includes
+  `torch>=2.4,<3`, Transformers, and bitsandbytes. The current validation
+  verifies the QLoRA boundary and missing-bitsandbytes behavior, not real
+  bitsandbytes training.
+- Hugging Face runtime validation now uses local tiny fixtures with
+  Transformers only. The external `peft` package remains optional future work.
+
+See [runtime-validation-matrix.md](runtime-validation-matrix.md) for the exact
+runtime evidence and pending gates.

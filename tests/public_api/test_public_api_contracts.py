@@ -41,6 +41,32 @@ def test_documented_domain_imports_are_available():
             "save_adapter_artifact",
             "validate_adapter_artifact",
         ],
+        "arclm.tracking": [
+            "RunConfig",
+            "RunInfo",
+            "RunManifest",
+            "RunStatus",
+            "RunTracker",
+            "create_run",
+            "inspect_run",
+            "list_runs",
+            "validate_run",
+        ],
+        "arclm.search": [
+            "ChoiceParameter",
+            "FloatParameter",
+            "HyperparameterSearch",
+            "HyperparameterSearchConfig",
+            "IntegerParameter",
+            "ObjectiveConfig",
+            "SearchSpace",
+            "SearchStrategy",
+            "TrialResult",
+            "create_search",
+            "inspect_search",
+            "load_search",
+            "validate_search",
+        ],
     }
 
     for module_name, names in imports.items():
@@ -59,6 +85,8 @@ def test_domain_all_exports_resolve():
         "arclm.checkpoints",
         "arclm.lifecycle",
         "arclm.peft",
+        "arclm.tracking",
+        "arclm.search",
     ]
 
     for module_name in module_names:

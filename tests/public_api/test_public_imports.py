@@ -32,3 +32,45 @@ def test_logics_public_import():
     assert KnowledgeBase is not None
     assert Symbol is not None
     assert create_symbols is not None
+
+
+def test_peft_qlora_public_imports_are_lightweight():
+    from arclm.peft import (
+        QLoRAConfig,
+        QuantizationBackend,
+        QuantizationConfig,
+        inspect_quantization_capabilities,
+    )
+
+    assert QLoRAConfig is not None
+    assert QuantizationBackend.BITSANDBYTES_4BIT.value == "bitsandbytes_4bit"
+    assert QuantizationConfig().bits == 4
+    assert inspect_quantization_capabilities is not None
+
+
+def test_tracking_public_imports_are_available():
+    from arclm.tracking import RunConfig, RunStatus, RunTracker, create_run, inspect_run
+
+    assert RunConfig is not None
+    assert RunStatus.CREATED.value == "created"
+    assert RunTracker is not None
+    assert create_run is not None
+    assert inspect_run is not None
+
+
+def test_search_public_imports_are_available():
+    from arclm.search import (
+        ChoiceParameter,
+        HyperparameterSearchConfig,
+        ObjectiveConfig,
+        SearchSpace,
+        SearchStrategy,
+        create_search,
+    )
+
+    assert ChoiceParameter is not None
+    assert HyperparameterSearchConfig is not None
+    assert ObjectiveConfig is not None
+    assert SearchSpace is not None
+    assert SearchStrategy.GRID.value == "grid"
+    assert create_search is not None

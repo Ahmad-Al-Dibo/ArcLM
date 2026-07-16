@@ -32,7 +32,7 @@ Current CPU command result:
 
 ```text
 python -m pytest
-296 passed, 10 skipped, 4 warnings
+326 passed, 13 skipped, 4 warnings
 ```
 
 Core Milestone 1 / Feature 3 verified final model artifacts on CPU only. GPU
@@ -41,7 +41,16 @@ artifact portability remains prepared by design because artifact weights are
 saved as CPU state dictionaries, but that path still needs a real GPU rerun.
 
 GPU checkpoint and inference tests remain available under `tests/gpu` and skip
-cleanly in `.venv-training-core`.
+cleanly in `.venv-training-core`. The current local CUDA pass used
+`.venv-gpu-validation` with `PYTHONPATH=src` and produced:
+
+```text
+python -m pytest tests/gpu -v -m "cuda and not multi_gpu"
+10 passed
+```
+
+The canonical hardware and optional-runtime evidence is
+[runtime-validation-matrix.md](runtime-validation-matrix.md).
 
 ## Fine-Tuning Hardware Status
 
@@ -63,15 +72,31 @@ Core Milestone 2 / Feature 2 was verified in the CPU baseline environment.
 | PEFT path | Local status | Evidence |
 | --------- | ------------ | -------- |
 | Native CPU LoRA | Verified | `tests/peft/test_finetuning_workflow.py` |
-| Native CUDA LoRA | Not executed in this feature | Run in `.venv-gpu-validation` as a separate optional pass |
-| CUDA FP16 LoRA | Not executed in this feature | Depends on CUDA PEFT runtime validation |
+| Native CUDA LoRA | Verified on GTX 1050 Ti | `tests/gpu/test_huggingface_cuda_runtime.py` |
+| CUDA FP16 LoRA | Not separately executed | Training Core FP16 is verified; LoRA CUDA smoke used the default runtime precision |
 | CUDA BF16 LoRA | Pending suitable hardware validation | GTX 1050 Ti is not a native BF16 validation platform |
-| Hugging Face PEFT runtime | Not executed in this feature | External `peft` package remains optional |
-| QLoRA | Not implemented | Requires Feature 3 approval and quantization decisions |
+| Hugging Face PEFT runtime | Verified for built-in ArcLM LoRA on tiny local HF model | No external `peft` package required |
+| QLoRA configuration/backend boundary | Implemented | `tests/peft/test_qlora.py` |
+| QLoRA real bitsandbytes model loading | Pending runtime validation | Requires `arclm[qlora]`, local HF folder, CUDA, and bitsandbytes support |
+| QLoRA real GPU training | Pending runtime validation | Requires supported CUDA GPU and optional QLoRA dependencies |
 | Multi-GPU PEFT | Not implemented | Requires later distributed milestones |
+
+Feature 4 does not mark QLoRA as locally GPU-runtime-verified. The validation
+matrix verifies Hugging Face CPU runtime, CUDA Hugging Face forward, CUDA LoRA,
+and missing bitsandbytes detection. Real 4-bit loading and QLoRA training remain
+separate runtime gates.
 
 See also:
 
 - `docs/testing/gpu-capability-matrix.md`
 - `docs/testing/local-gtx-1050-ti.md`
 - `docs/testing/external-gpu-validation.md`
+
+Core Milestone 2 / Feature 5 is not GPU-specific. Its local run manifests record
+bounded environment summaries, but they do not convert skipped hardware gates
+into passing runtime evidence. Real bitsandbytes QLoRA and multi-GPU validation
+remain pending.
+
+Core Milestone 2 / Feature 6 is not GPU-specific. CPU search runtime is
+verified with tiny local training trials. Optional CUDA search runtime and real
+bitsandbytes QLoRA search runtime remain pending separate validation.

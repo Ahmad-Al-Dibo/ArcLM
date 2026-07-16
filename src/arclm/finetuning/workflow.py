@@ -7,6 +7,7 @@ import json
 import math
 import platform
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 import torch
@@ -148,6 +149,11 @@ class FineTuningResult:
                 raise FineTuningError(
                     "LoRA fine-tuned models must be saved as adapter artifacts or "
                     "with merge_adapter=True for a final model artifact"
+                )
+            if bool(getattr(model, "_arclm_quantized_runtime", False)):
+                raise FineTuningError(
+                    "QLoRA adapters cannot be merged from a quantized runtime model. "
+                    "Load the adapter on a compatible full-precision base model first."
                 )
             model = merged_lora_model(model)
         return save_model_artifact(
@@ -421,6 +427,8 @@ def fine_tune(
     checkpoint_path = None
     if save_checkpoint:
         checkpoint_path = str(fine_tuner.save_checkpoint())
+        if peft_config is not None:
+            _write_peft_checkpoint_metadata(checkpoint_path, peft_config, peft_result)
     return FineTuningResult(
         training_state=state,
         dataset_report=train_prepared.report,
@@ -434,6 +442,36 @@ def fine_tune(
         peft_config=peft_config,
         peft_result=peft_result,
     )
+
+
+def _write_peft_checkpoint_metadata(checkpoint_path: str, peft_config: Any, peft_result: Any) -> None:
+    """Schrijft PEFT-metadata naast de checkpoint zonder resume-state te veranderen."""
+    data = {
+        "metadata_format": "arclm-peft-checkpoint-metadata",
+        "metadata_version": 1,
+        "peft_config": peft_config.to_dict() if hasattr(peft_config, "to_dict") else dict(peft_config),
+        "peft_result": peft_result.to_dict() if hasattr(peft_result, "to_dict") else None,
+    }
+    path = Path(checkpoint_path)
+    path.mkdir(parents=True, exist_ok=True)
+    metadata_path = path / "peft_metadata.json"
+    metadata_path.write_text(
+        json.dumps(_json_safe(data), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+
+def _json_safe(value: Any) -> Any:
+    """Maakt metadata veilig voor JSON zonder runtime objecten."""
+    if callable(value):
+        raise FineTuningError("PEFT checkpoint metadata may not contain callables")
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
 
 
 def _resolve_formatter(record: Mapping[str, Any], config: FineTuningConfig) -> str:

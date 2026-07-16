@@ -281,7 +281,7 @@ def restore_rng_state(state: Mapping[str, Any] | None, *, restore_cuda: bool = F
             pass
     cuda_state = state.get("torch_cuda")
     if restore_cuda and cuda_state and torch.cuda.is_available():
-        torch.cuda.set_rng_state_all(cuda_state)
+        torch.cuda.set_rng_state_all(_normalize_cuda_rng_state(cuda_state))
 
 
 def atomic_save_checkpoint(payload: Mapping[str, Any], path: str | Path) -> Path:
@@ -343,6 +343,18 @@ def _safe_len(value: Any) -> int | None:
         return int(len(value))
     except Exception:
         return None
+
+
+def _normalize_cuda_rng_state(state: Any) -> list[torch.Tensor]:
+    """Zet CUDA RNG state terug naar CPU ByteTensors voor PyTorch."""
+    normalized: list[torch.Tensor] = []
+    for item in state:
+        if not torch.is_tensor(item):
+            raise CheckpointError("CUDA RNG state must contain tensors")
+        if item.dtype != torch.uint8:
+            raise CheckpointError("CUDA RNG state tensors must use torch.uint8")
+        normalized.append(item.detach().cpu())
+    return normalized
 
 
 def _json_safe(value: Any) -> Any:

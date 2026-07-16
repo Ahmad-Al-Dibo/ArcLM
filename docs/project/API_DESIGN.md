@@ -236,3 +236,104 @@ Built-in LoRA does not require the external `peft` package. Adapter artifacts
 use `artifact_format="arclm-peft-adapter"` and are separate from training
 checkpoints and final model artifacts. A compatible base model must be supplied
 when loading an adapter.
+
+Core Milestone 2 / Feature 3 extends the same domain with QLoRA and quantized
+fine-tuning boundaries:
+
+```python
+from arclm.peft import (
+    QLoRAConfig,
+    QuantizationBackend,
+    QuantizationConfig,
+    QuantizationType,
+    QuantizedComputeDType,
+    inspect_quantization_capabilities,
+    load_quantized_model,
+    prepare_model_for_qlora,
+    validate_quantized_base_model,
+)
+```
+
+QLoRA does not add a second training engine. A local quantized base model is
+loaded explicitly, then `fine_tune(..., peft_config=QLoRAConfig(...))` uses the
+same fine-tuning and Training Core path. The QLoRA backend imports
+Transformers/bitsandbytes lazily only when the quantized runtime path is used.
+
+ArcLM does not export QLoRA helpers from the root package.
+
+Core Milestone 2 / Feature 4 adds runtime validation helpers and tests without
+changing the stable QLoRA API. The real bitsandbytes runtime gate is:
+
+```bash
+python -m pytest tests/quantization -v -m "bitsandbytes and qlora"
+```
+
+This gate must pass in a suitable CUDA environment before ArcLM claims
+production QLoRA runtime support.
+
+## Experiment Tracking API
+
+Core Milestone 2 / Feature 5 adds a dependency-free local tracking domain:
+
+```python
+from arclm.tracking import (
+    RunConfig,
+    RunInfo,
+    RunManifest,
+    RunStatus,
+    RunTracker,
+    create_run,
+    inspect_run,
+    validate_run,
+    list_runs,
+    compare_runs,
+)
+```
+
+The API records local run manifests, append-only metrics/events, bounded
+environment metadata, dataset fingerprints, PEFT/QLoRA metadata, and references
+to checkpoints, adapter artifacts, and final model artifacts. It does not copy
+raw datasets, raw prompts, optimizer/scheduler/scaler state, external service
+credentials, or absolute paths.
+
+`ExperimentTracker`, `create_experiment()`, and `list_experiments()` remain as
+compatibility APIs. Local compatibility tracking delegates to the run-manifest
+backend. MLflow and Weights & Biases are imported lazily only when those
+compatibility backends are explicitly requested.
+
+## Hyperparameter Search API
+
+Core Milestone 2 / Feature 6 adds a dependency-free local search domain:
+
+```python
+from arclm.search import (
+    ChoiceParameter,
+    FloatParameter,
+    HyperparameterSearch,
+    HyperparameterSearchConfig,
+    HyperparameterSearchResult,
+    IntegerParameter,
+    ObjectiveConfig,
+    SearchSpace,
+    SearchStatus,
+    SearchStrategy,
+    TrialResult,
+    TrialStatus,
+    compare_trials,
+    create_search,
+    inspect_search,
+    list_searches,
+    load_search,
+    validate_search,
+)
+```
+
+The API creates local search manifests with deterministic grid or random trial
+generation, materializes validated `TrainingConfig`, `FineTuningConfig`, and
+LoRA/QLoRA config snapshots, runs one caller-supplied trial function at a time,
+and records one existing `RunTracker` run for each started trial.
+
+Search APIs do not serialize model factories, execute arbitrary imports, copy
+model weights, create a second training loop, start distributed workers, or
+integrate external search frameworks. A trial runner must create fresh runtime
+objects and call existing ArcLM training/evaluation/fine-tuning APIs.

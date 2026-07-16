@@ -27,7 +27,8 @@ Limitations:
 - No streaming generation API.
 - No KV-cache support.
 - No serving/OpenAI-compatible API.
-- External model inference needs local tiny HF runtime tests.
+- Broad external model inference needs more architecture coverage. Tiny local
+  Hugging Face runtime is verified by Core Milestone 2 / Feature 4.
 
 ## Model Artifact Compatibility
 
@@ -64,3 +65,15 @@ Core Milestone 2 / Feature 2 verifies that a LoRA adapter can be reloaded onto a
 compatible clean base model and produce matching local inference output. It also
 verifies a merged final model artifact can be loaded on CPU and used with the
 existing generation helper.
+
+Core Milestone 2 / Feature 4 verifies a tiny local Hugging Face model can be
+saved as an ArcLM artifact, loaded locally, and used for generation without
+network access. CUDA Hugging Face forward and CUDA LoRA smoke validation also
+pass on the GTX 1050 Ti. Serving, streaming, and real QLoRA generation remain
+future gates.
+
+## Run Manifest Link
+
+Core Milestone 2 / Feature 5 can record final model artifact references and
+safe run summaries for inference-ready outputs. It does not implement serving,
+streaming, or model registry behavior.

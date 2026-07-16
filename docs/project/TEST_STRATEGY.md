@@ -15,14 +15,16 @@ ArcLM, compiles `src/arclm`, and builds a wheel successfully. Focused Core
 runtime suites passed with `113 passed, 2 skipped`; public API passed with
 `22 passed`; compatibility passed with `15 passed`.
 
-Current full pytest result after Core Milestone 1 / Feature 2 is green:
-`269 passed, 10 skipped, 4 warnings`. OP-020 is resolved by making
+Current full pytest result after Core Milestone 2 / Feature 5 is green:
+`335 passed, 13 skipped, 4 warnings`. OP-020 is resolved by making
 `tests/web/datasets/test_dataset_inspector.py` pass an explicit temporary
 `dataset_config_path` for every test app, so user-local persisted dataset roots
 cannot enter the catalogue. Direct `python -m build` requires the optional
 `build` package in the active environment.
 
-Current local GPU result: `.venv-gpu-validation` uses PyTorch `2.5.1+cu121` on an NVIDIA GeForce GTX 1050 Ti and passed with `210 passed, 12 warnings`.
+Current local GPU result: `.venv-gpu-validation` uses PyTorch `2.5.1+cu121` on
+an NVIDIA GeForce GTX 1050 Ti. The current Feature 4 CUDA gate passed with
+`10 passed` using `PYTHONPATH=src`.
 
 ## Test Types
 
@@ -306,3 +308,202 @@ These tests cover:
 Required final gate remains full pytest, compileall, wheel build, and paused
 frontend regression. GPU LoRA and Hugging Face PEFT runtime are separate
 optional validation gates.
+
+Feature 2 final Python suite result: `309 passed, 10 skipped, 4 warnings`.
+Paused frontend regression passed after rerunning Vitest alone: lint passed,
+typecheck passed, `82` tests passed, production build passed, and npm audit
+reported `0` vulnerabilities.
+
+## Core Milestone 2 / Feature 3 Validation
+
+QLoRA and Quantized Fine-Tuning Foundation extends `tests/peft`.
+
+These tests cover:
+
+- `QLoRAConfig` and `QuantizationConfig` validation and round trip
+- `PeftMethod.QLORA`
+- `QuantizationBackend.BITSANDBYTES_4BIT`
+- optional dependency capability reporting
+- CUDA capability reporting through controlled monkeypatches
+- rejection of unquantized base models
+- fixture-level quantized-module preparation and base freezing
+- QLoRA adapter artifact metadata
+- QLoRA adapter reload onto a full-precision base model
+- full-precision merge path for QLoRA adapter metadata
+- rejection of direct final-artifact merge from a quantized runtime model
+- public `arclm.peft` QLoRA imports
+
+Evidence vocabulary:
+
+| QLoRA evidence level | Feature 3 status |
+| -------------------- | ---------------- |
+| Configuration verified | Passed |
+| Backend boundary verified | Passed |
+| Fixture verified | Passed |
+| Real GPU load verified | Not executed |
+| Real GPU training verified | Not executed |
+| Checkpoint/resume verified | Pending real runtime |
+| Artifact/reload verified | Adapter metadata and full-precision reload path verified |
+
+Real bitsandbytes 4-bit loading and real GPU QLoRA training must be validated in
+a separate optional runtime matrix before ArcLM claims production QLoRA runtime
+support.
+
+Feature 3 final validation:
+
+- `tests/peft -v`: `22 passed`
+- `tests/public_api -v`: `23 passed`
+- `tests/compatibility -v`: `15 passed, 1 warning`
+- full `python -m pytest`: `319 passed, 10 skipped, 4 warnings`
+- `python -m compileall src/arclm`: passed
+- `python -m pip wheel . --no-deps`: passed
+- paused Web regression: lint passed, typecheck passed, `82` tests passed,
+  production build passed, and npm audit reported `0` vulnerabilities
+
+## Core Milestone 2 / Feature 4 Validation
+
+Hugging Face and QLoRA Runtime Validation Matrix adds focused runtime tests
+without making optional packages required.
+
+These tests cover:
+
+- bounded CPU/CUDA runtime environment reports
+- tiny local Hugging Face model artifact save/load
+- tiny local Hugging Face full fine-tuning checkpoint/resume
+- tiny local Hugging Face built-in LoRA adapter reload/merge/final artifact
+- Hugging Face evaluation through `ModelAdapter`
+- CUDA Hugging Face forward on GTX 1050 Ti
+- CUDA built-in LoRA training step on GTX 1050 Ti
+- bitsandbytes absence as a strict skip/pending runtime gate
+- CUDA RNG restore normalization for PyTorch 2.5.1 checkpoint resume
+
+Evidence vocabulary:
+
+| Runtime area | Feature 4 status |
+| ------------ | ---------------- |
+| Hugging Face CPU runtime | Passed with tiny local fixture |
+| Hugging Face CUDA forward | Passed on GTX 1050 Ti |
+| CUDA built-in LoRA | Passed on GTX 1050 Ti |
+| QLoRA API boundary | Passed |
+| bitsandbytes import/runtime | Pending; dependency absent |
+| real QLoRA 4-bit train step | Pending; dependency absent |
+| multi-GPU PEFT | Not implemented |
+
+Required commands:
+
+```bash
+python -m pytest tests/integration/test_huggingface_runtime_validation.py -v
+python -m pytest tests/quantization -v
+python -m pytest tests/checkpoints -v
+python -m pytest
+python -m compileall src/arclm
+python -m pip wheel . --no-deps
+```
+
+Local CUDA command:
+
+```powershell
+$env:PYTHONPATH = (Join-Path (Get-Location) "src")
+.\.venv-gpu-validation\Scripts\python.exe -m pytest tests\gpu -v -m "cuda and not multi_gpu"
+```
+
+Provider-independent QLoRA runtime gate:
+
+```bash
+python -m pytest tests/quantization -v -m "bitsandbytes and qlora"
+```
+
+## Core Milestone 2 / Feature 5 Validation
+
+Experiment Tracking and Reproducible Run Manifests adds `tests/tracking`.
+
+Validated:
+
+- run manifest creation, status transitions, interruption, failure, completion
+- metric and event JSONL recording
+- config path redaction
+- dataset fingerprints and bounded metadata
+- checkpoint, adapter, and model-artifact references
+- trainer callback runtime integration
+- fine-tuning, LoRA, and QLoRA metadata recording
+- run inspection, validation, listing, and comparison
+- legacy `ExperimentTracker` local compatibility
+- lazy optional MLflow/W&B boundary
+
+Commands:
+
+```bash
+python -m pytest tests/tracking -v
+python -m pytest tests/public_api -v
+python -m pytest
+python -m compileall src/arclm
+python -m pip wheel . --no-deps
+```
+
+Feature 5 result:
+
+| Gate | Result |
+| ---- | ------ |
+| `tests/tracking -v` | `8 passed` |
+| `tests/public_api -v` | `24 passed` |
+| Full Python suite | `335 passed, 13 skipped, 4 warnings` |
+| Compileall | Passed |
+| Wheel build | Passed |
+| Paused frontend regression | Lint/type/test/build passed; npm audit 0 vulnerabilities |
+
+## Core Milestone 2 / Feature 6 Validation
+
+Hyperparameter Search Foundation adds `tests/search`.
+
+Validated:
+
+- search strategy, search status, and trial status values
+- choice, integer, and float parameter definitions
+- approved parameter-path validation
+- deterministic grid ordering
+- deterministic random search with dedicated RNG
+- search-size bounds
+- effective config materialization through existing config classes
+- one run manifest per started trial
+- real CPU tiny training search with four sequential trials
+- best-trial selection and best-config export
+- interrupted search resume without rerunning completed trials
+- continue and stop failure policies
+- one bounded failed-trial retry
+- LoRA config override materialization
+- search inspection, validation, listing, and trial comparison
+- missing run-reference validation error
+- public API imports
+
+Commands:
+
+```bash
+python -m pytest tests/search -v
+python -m pytest tests/search tests/tracking tests/peft tests/unit/training tests/public_api tests/compatibility -v
+python -m pytest
+python -m compileall src/arclm
+python -m pip wheel . --no-deps
+```
+
+Feature 6 focused result:
+
+| Gate | Result |
+| ---- | ------ |
+| `tests/search -v` | `10 passed` |
+| Search/tracking/PEFT/training/public API/compatibility | `109 passed, 2 skipped, 1 warning` |
+| Full Python suite | `346 passed, 13 skipped, 4 warnings` |
+| Compileall | Passed |
+| Wheel build | Passed |
+| Paused frontend regression | Lint/typecheck/test/build passed; npm audit 0 vulnerabilities |
+
+Feature 4 final validation:
+
+- `tests/integration/test_huggingface_runtime_validation.py -v`: `4 passed`
+- `tests/quantization -v`: `2 passed, 1 skipped`
+- `tests/checkpoints -v`: `11 passed`
+- `.venv-gpu-validation` CUDA suite with `PYTHONPATH=src`: `10 passed`
+- full `python -m pytest`: `326 passed, 13 skipped, 4 warnings`
+- `python -m compileall src/arclm`: passed
+- `python -m pip wheel . --no-deps`: passed
+- paused Web regression: lint passed, typecheck passed, `82` tests passed,
+  production build passed, and npm audit reported `0` vulnerabilities

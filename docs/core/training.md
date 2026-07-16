@@ -59,3 +59,16 @@ parameters are not optimized during PEFT runs.
 
 No second native training loop was added. QLoRA, DDP, FSDP, serving, and Web
 training controls remain outside this feature.
+
+Core Milestone 2 / Feature 5 adds `RunTrackingCallback` for recording training
+metadata, step metrics, evaluation metrics, checkpoint references, and explicit
+failure/interruption hooks into a local run manifest. The callback does not add
+a second training loop.
+
+## Hyperparameter Search Integration
+
+Core Milestone 2 / Feature 6 adds local sequential hyperparameter search above
+the existing `Trainer`. Search trial runners create fresh models and
+optimizers per trial and call the normal training/evaluation APIs. Search does
+not add a second training loop. See
+[hyperparameter-search.md](hyperparameter-search.md).

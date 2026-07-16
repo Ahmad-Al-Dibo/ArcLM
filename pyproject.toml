@@ -81,6 +81,11 @@ preprocess = [
 peft = [
   "peft>=0.11,<1",
 ]
+qlora = [
+  "torch>=2.4,<3",
+  "transformers>=4.51,<6",
+  "bitsandbytes>=0.49,<1; python_version >= '3.10'",
+]
 hf = [
   "transformers>=4.51,<6",
   "accelerate>=0.30,<2",
@@ -190,4 +195,10 @@ markers = [
   "bf16: tests that validate BF16 behavior",
   "multi_gpu: tests that require more than one GPU",
   "distributed: tests that validate distributed behavior",
+  "huggingface: tests that require the optional Hugging Face Transformers stack",
+  "bitsandbytes: tests that require the optional bitsandbytes backend",
+  "qlora: tests that validate QLoRA runtime behavior",
+  "cpu_integration: optional CPU integration tests",
+  "hf_optional: optional Hugging Face runtime tests",
+  "cuda_optional: optional CUDA runtime tests",
 ]

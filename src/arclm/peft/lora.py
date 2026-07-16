@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 from ..exceptions import FineTuningError
-from .config import LoRAConfig, PeftConfig, PeftMethod
+from .config import LoRAConfig, PeftConfig, PeftMethod, QLoRAConfig
 
 
 class LoRALinear(nn.Module):
@@ -146,6 +146,10 @@ def apply_peft(model: nn.Module, config: PeftConfig | None) -> PeftApplicationRe
         return None
     if isinstance(config, LoRAConfig):
         return apply_lora(model, config)
+    if isinstance(config, QLoRAConfig):
+        from .quantization import apply_qlora
+
+        return apply_qlora(model, config)
     raise FineTuningError("PEFT method is not implemented")
 
 

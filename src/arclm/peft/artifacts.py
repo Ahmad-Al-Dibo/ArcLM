@@ -19,7 +19,7 @@ from torch import nn
 
 from .._version import __version__
 from ..exceptions import FineTuningError
-from .config import LoRAConfig, PeftMethod
+from .config import LoRAConfig, PeftMethod, QLoRAConfig
 from .lora import (
     apply_lora,
     fingerprint_base_model,
@@ -94,7 +94,7 @@ class PeftAdapterManifest:
         if version > ADAPTER_ARTIFACT_VERSION:
             raise FineTuningError("Adapter artifact version is newer than this ArcLM version supports")
         method = str(values.get("method", ""))
-        if method != PeftMethod.LORA.value:
+        if method not in {PeftMethod.LORA.value, PeftMethod.QLORA.value}:
             raise FineTuningError("Adapter artifact method is not supported")
         config = values.get("config")
         if not isinstance(config, Mapping):
@@ -138,6 +138,7 @@ class PeftAdapterInfo:
     created_at: str
     arclm_version: str | None
     pytorch_version: str | None
+    quantization_backend: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Geeft inspectie-info als dict terug."""
@@ -148,14 +149,15 @@ def save_adapter_artifact(
     model: nn.Module,
     path: str | Path,
     *,
-    config: LoRAConfig | Mapping[str, Any] | None = None,
+    config: LoRAConfig | QLoRAConfig | Mapping[str, Any] | None = None,
     adapted_modules: tuple[str, ...] | None = None,
     overwrite: bool = False,
 ) -> PeftAdapterManifest:
     """Bewaart alleen LoRA adaptergewichten."""
     if not isinstance(model, nn.Module):
         raise FineTuningError("model must be a torch.nn.Module")
-    lora_config = _resolve_lora_config(config)
+    adapter_config = _resolve_adapter_config(config)
+    lora_config = adapter_config["lora_config"]
     state = get_lora_state_dict(model)
     destination = Path(path)
     _validate_destination(destination, overwrite=overwrite)
@@ -174,15 +176,18 @@ def save_adapter_artifact(
             adapter_id=f"adapter_{uuid.uuid4().hex[:16]}",
             created_at=datetime.now(timezone.utc).isoformat(),
             created_with=_created_with(),
-            method=PeftMethod.LORA.value,
-            config=lora_config.to_dict(),
+            method=adapter_config["method"],
+            config=adapter_config["config"],
             base_model={"fingerprint": fingerprint_base_model(model)},
             adapted_modules=adapted_modules or tuple(
                 key.rsplit(".", 2)[0] for key in state if key.endswith("lora_a.weight")
             ),
             parameter_report=report.to_dict(),
             files=files,
-            metadata={"state_format": "torch_state_dict"},
+            metadata={
+                "state_format": "torch_state_dict",
+                "quantization": adapter_config["quantization"],
+            },
         )
         _write_json(staging / ADAPTER_MANIFEST, manifest.to_dict())
         validate_adapter_artifact(staging)
@@ -203,12 +208,13 @@ def inspect_adapter_artifact(
     manifest = _read_manifest(Path(path))
     if verify_integrity:
         validate_adapter_artifact(path)
+    lora_config = _manifest_lora_config(manifest)
     return PeftAdapterInfo(
         adapter_id=manifest.adapter_id,
         artifact_format=manifest.artifact_format,
         artifact_version=manifest.artifact_version,
         method=manifest.method,
-        target_modules=tuple(manifest.config.get("target_modules") or ()),
+        target_modules=tuple(lora_config.target_modules),
         adapted_modules=manifest.adapted_modules,
         base_model_fingerprint=manifest.base_model.get("fingerprint"),
         file_count=len(manifest.files),
@@ -217,6 +223,7 @@ def inspect_adapter_artifact(
         created_at=manifest.created_at,
         arclm_version=manifest.created_with.get("arclm"),
         pytorch_version=manifest.created_with.get("pytorch"),
+        quantization_backend=(manifest.metadata.get("quantization") or {}).get("backend"),
     )
 
 
@@ -258,7 +265,7 @@ def load_adapter_artifact(
     actual = fingerprint_base_model(model)
     if expected and expected != actual:
         raise FineTuningError("Adapter artifact does not match the base model")
-    config = LoRAConfig.from_dict(manifest.config)
+    config = _manifest_lora_config(manifest)
     apply_lora(model, config)
     state = _load_state_dict(Path(path) / ADAPTER_WEIGHTS_PATH)
     load_lora_state_dict(model, state, strict=strict)
@@ -269,14 +276,40 @@ def load_adapter_artifact(
     return manifest
 
 
-def _resolve_lora_config(config: LoRAConfig | Mapping[str, Any] | None) -> LoRAConfig:
-    """Haalt LoRA config uit expliciete data of een aangepast model."""
+def _resolve_adapter_config(
+    config: LoRAConfig | QLoRAConfig | Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Haalt adapterconfig uit expliciete LoRA of QLoRA data."""
     if config is None:
         raise FineTuningError("LoRA config is required to save an adapter artifact")
     if isinstance(config, LoRAConfig):
         config.validate()
-        return config
-    return LoRAConfig.from_dict(config)
+        return {
+            "method": PeftMethod.LORA.value,
+            "lora_config": config,
+            "config": config.to_dict(),
+            "quantization": {},
+        }
+    if isinstance(config, QLoRAConfig):
+        config.validate()
+        return {
+            "method": PeftMethod.QLORA.value,
+            "lora_config": config.lora,
+            "config": config.to_dict(),
+            "quantization": config.quantization.to_dict(),
+        }
+    values = dict(config)
+    method = str(values.get("method", PeftMethod.LORA.value))
+    if method == PeftMethod.QLORA.value:
+        return _resolve_adapter_config(QLoRAConfig.from_dict(values))
+    return _resolve_adapter_config(LoRAConfig.from_dict(values))
+
+
+def _manifest_lora_config(manifest: PeftAdapterManifest) -> LoRAConfig:
+    """Leest de LoRA-laagconfig uit LoRA of QLoRA manifesten."""
+    if manifest.method == PeftMethod.QLORA.value:
+        return QLoRAConfig.from_dict(manifest.config).lora
+    return LoRAConfig.from_dict(manifest.config)
 
 
 def _validate_destination(path: Path, *, overwrite: bool) -> None:

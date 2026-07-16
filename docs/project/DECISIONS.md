@@ -495,3 +495,109 @@ checkpoint/resume, adapter reload, evaluation, inference, and merged final model
 artifact reload. QLoRA, other PEFT methods, Hugging Face PEFT runtime, GPU PEFT
 runtime, and external PEFT automation remain future work. The legacy optional
 Hugging Face/PEFT path remains compatibility code.
+
+## DEC-022: QLoRA Boundary Before Runtime Claims
+
+Status: Accepted for Core Milestone 2 / Feature 3.
+
+Context:
+QLoRA needs bitsandbytes, Transformers, CUDA hardware, and a local Hugging Face
+model folder for real 4-bit training. The default Core validation environment
+is CPU-only, so ArcLM must not claim real QLoRA runtime support from config
+tests or fixtures.
+
+Decision:
+ArcLM adds `PeftMethod.QLORA`, `QuantizationConfig`, `QLoRAConfig`,
+`inspect_quantization_capabilities()`, and a bitsandbytes 4-bit backend
+boundary under `arclm.peft`. The backend imports optional dependencies lazily
+and only when quantized runtime loading is requested. QLoRA adapter artifacts
+reuse the existing PEFT adapter artifact format and record quantization
+metadata. Direct merge from a quantized runtime model is rejected; users must
+load the adapter onto a compatible full-precision base model before saving a
+merged final artifact.
+
+Consequences:
+Configuration, optional-dependency errors, capability reporting,
+quantized-base validation, fixture preparation, adapter metadata, and
+full-precision adapter reload are verified. Real bitsandbytes 4-bit loading,
+real GPU QLoRA training, real checkpoint/resume, and real adapter artifact
+reload on Hugging Face models remain pending a separate runtime validation
+matrix.
+
+## DEC-023: Runtime Matrix Before Production QLoRA Claims
+
+Status: Accepted for Core Milestone 2 / Feature 4.
+
+Context:
+Core Milestone 2 / Feature 3 created the QLoRA API and backend boundary, but
+the repository still needed runtime evidence for local Hugging Face workflows,
+CUDA LoRA, and optional bitsandbytes behavior. The local GPU environment has a
+GTX 1050 Ti and no bitsandbytes install, so it can validate CUDA and LoRA paths
+but cannot prove real 4-bit QLoRA training.
+
+Decision:
+ArcLM adds provider-independent runtime validation tests and bounded runtime
+environment reporting. The matrix verifies tiny local Hugging Face artifact,
+fine-tuning, evaluation, and built-in LoRA flows on CPU; verifies CUDA
+Hugging Face forward and CUDA built-in LoRA on the GTX 1050 Ti; and records
+bitsandbytes QLoRA runtime as pending when the optional dependency is absent.
+
+Consequences:
+ArcLM may claim Hugging Face tiny-local runtime validation and GTX 1050 Ti CUDA
+LoRA validation. ArcLM must not claim production QLoRA runtime support until the
+bitsandbytes gate, real 4-bit train step, checkpoint/resume, adapter artifact
+reload, and inference/evaluation checks pass in a suitable CUDA environment.
+The next recommended Core feature is Experiment Tracking and Reproducible Run
+Manifests, while QLoRA production runtime remains a separate optional gate.
+
+## DEC-024: Local Run Manifest Before External Tracking Services
+
+Status: Accepted for Core Milestone 2 / Feature 5.
+
+ArcLM needs reproducible run metadata before hyperparameter search,
+distributed training, dashboard training controls, or external service
+integrations. The stable first layer must be local, inspectable, and
+dependency-free.
+
+Decision:
+
+ArcLM adds `arclm.tracking` with `RunConfig`, `RunManifest`, `RunInfo`,
+`RunStatus`, `RunTracker`, `create_run`, `inspect_run`, `validate_run`,
+`list_runs`, and `compare_runs`. Local runs write `manifest.json`,
+`events.jsonl`, `metrics.jsonl`, bounded summaries, and safe output references.
+Legacy `ExperimentTracker` remains available and delegates local tracking to
+the same manifest backend. MLflow and Weights & Biases stay lazy
+compatibility-only paths.
+
+Consequences:
+
+Run manifests are stable Community functionality. External tracking services,
+hyperparameter search, distributed aggregation, and remote storage are deferred
+until separately approved.
+
+## DEC-025: Local Sequential Search Before Distributed Tuning
+
+Status: Accepted for Core Milestone 2 / Feature 6.
+
+ArcLM needs a reproducible trial contract before distributed training,
+dashboard-controlled tuning, or external sweep providers. The first search
+layer must reuse existing training, fine-tuning, evaluation, checkpoint,
+artifact, and run-manifest contracts instead of introducing a second training
+engine.
+
+Decision:
+
+ArcLM adds `arclm.search` with local search manifests,
+`SearchStrategy`, `SearchStatus`, `TrialStatus`, typed parameter definitions,
+`SearchSpace`, `ObjectiveConfig`, `HyperparameterSearchConfig`,
+`create_search`, `load_search`, `inspect_search`, `validate_search`,
+`list_searches`, and `compare_trials`. Search supports deterministic grid and
+random generation, one tracked run per started trial, bounded failed-trial
+retry, resume, best-trial selection, and best-config export.
+
+Consequences:
+
+Search is Community local functionality. Bayesian optimization, pruning,
+parallel trials, distributed search, cloud workers, Web UI controls, and
+external sweep providers remain deferred. Real bitsandbytes QLoRA runtime
+validation remains a separate pending optional gate.

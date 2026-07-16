@@ -2,7 +2,11 @@
 
 Core Milestone 2 / Feature 1 stabilizes ArcLM full-parameter fine-tuning and
 supervised fine-tuning for causal language modeling. Core Milestone 2 / Feature
-2 adds built-in LoRA through the same workflow.
+2 adds built-in LoRA through the same workflow. Core Milestone 2 / Feature 3
+adds the QLoRA configuration and quantized-runtime boundary without adding a
+second training loop. Core Milestone 2 / Feature 4 verifies tiny local Hugging
+Face CPU runtime and CUDA LoRA runtime while keeping real bitsandbytes QLoRA
+runtime pending.
 
 ## Status
 
@@ -21,6 +25,8 @@ Evidence:
   - existing `SFTConfig`, `FullFineTuner`, `SFTTrainer`
 - PEFT API:
   - `LoRAConfig`
+  - `QLoRAConfig`
+  - `QuantizationConfig`
   - `fine_tune(..., peft_config=...)`
   - `FineTuningResult.save_adapter_artifact()`
   - `FineTuningResult.save_model_artifact(..., merge_adapter=True)`
@@ -184,15 +190,38 @@ Additional LoRA CPU runtime verifies:
 - merge/unmerge output equivalence
 - merged final model artifact reload, evaluation, and inference
 
+QLoRA boundary tests verify:
+
+- QLoRA and quantization config validation
+- optional bitsandbytes/Transformers dependency reporting
+- capability status without loading a model
+- rejection of unquantized base models
+- quantized-module fixture preparation and base freezing
+- adapter artifact metadata with `method="qlora"`
+- full-precision base reload and merge path for QLoRA adapter metadata
+- rejection of direct final-artifact merge from a quantized runtime model
+
+Real bitsandbytes 4-bit model loading and real GPU QLoRA training were not
+executed because bitsandbytes is unavailable in the current validation
+environments. Runtime evidence is tracked in
+[runtime-validation-matrix.md](runtime-validation-matrix.md).
+
+Core Milestone 2 / Feature 5 records fine-tuning runs through
+`RunTracker.record_fine_tuning_result()`. The manifest stores safe
+`FineTuningConfig`, `TrainingConfig`, dataset report/fingerprint, tokenizer
+summary, LoRA/QLoRA config, quantization config, checkpoint references, and
+evaluation metrics without raw records or private paths.
+
 ## External Models
 
 Standard PyTorch causal language models can use the existing
 `ModelAdapter`/`TokenizerAdapter` boundary. The runtime tests cover custom
 external PyTorch-style adapters for SFT.
 
-Hugging Face full fine-tuning remains optional. The legacy
-`train_sft(backend="huggingface")` path is preserved, but the full local HF
-runtime matrix was not executed in this feature.
+Hugging Face full fine-tuning remains optional. Feature 4 verifies a tiny local
+Hugging Face model through artifact save/load, fine-tuning checkpoint/resume,
+evaluation, and built-in LoRA adapter reload/merge. The legacy
+`train_sft(backend="huggingface")` path is preserved as compatibility code.
 
 The legacy optional `train_sft(use_lora=True)` path remains compatibility code.
 The stable ArcLM-owned LoRA contract is `arclm.peft.LoRAConfig` plus
@@ -216,10 +245,22 @@ Implemented guardrails:
 ## Limitations
 
 - Stable packing is disabled for the new workflow.
-- Hugging Face runtime is not verified in this baseline environment.
-- GPU fine-tuning runtime was not executed during this feature.
+- Hugging Face tiny-local runtime is verified, but broad HF architecture
+  coverage remains pending.
+- GPU LoRA runtime is verified on GTX 1050 Ti, but broad GPU fine-tuning and
+  performance coverage remain pending.
+- QLoRA real runtime validation requires the optional `arclm[qlora]`
+  dependencies, a supported CUDA GPU, and a bitsandbytes wheel that supports
+  that stack.
 - Mid-epoch dataloader position is still not restored by checkpoints.
 - QLoRA, DPO, RLHF, GRPO, DDP, FSDP, model serving, and Web features are not
   part of this feature.
-- Hugging Face PEFT runtime and GPU PEFT runtime are pending separate optional
-  validation.
+- External `peft` package automation remains pending; Feature 4 validated
+  ArcLM-owned built-in LoRA on tiny Hugging Face models.
+
+## Hyperparameter Search Boundary
+
+Core Milestone 2 / Feature 6 can search approved `training.*`,
+`fine_tuning.*`, and `lora.*` config paths while reusing `fine_tune()`,
+`Trainer`, and run manifests. QLoRA search remains a configuration/capability
+boundary until real bitsandbytes runtime validation passes.

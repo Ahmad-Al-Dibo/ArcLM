@@ -110,6 +110,31 @@ Implemented policy:
   false by default.
 
 SHA-256 hashes detect file changes. They do not prove who created the artifact.
+
+## Hyperparameter Search Metadata Boundary
+
+Core Milestone 2 / Feature 6 adds local search manifests. They are metadata,
+not executable code.
+
+Implemented policy:
+
+- Search definitions use typed parameter definitions and an allowlist of
+  approved config paths.
+- Search does not serialize model factories, tokenizer factories, callables,
+  Python import paths, `eval`, or `exec`.
+- Search rejects non-finite parameter values, unknown paths, unsafe search
+  roots, path traversal in run references, duplicate trial IDs, duplicate trial
+  fingerprints, and malformed JSON records.
+- Search stores run references and bounded objective summaries. It does not
+  copy model weights, checkpoint payloads, adapter artifacts, final model
+  artifacts, raw datasets, prompts, responses, external tracking credentials,
+  or environment variables.
+- Inspection and validation do not load models, checkpoints, artifacts,
+  datasets, optional model dependencies, CUDA, or user factories.
+
+Best-config export writes the effective validated configuration selected by
+the user. It may include user-provided output paths because those are part of
+the runnable training configuration.
 ## Data Pipeline Studio Security Boundary
 
 Status: Dataset Inspector Backend, read-only Dataset Inspector UI, and
@@ -173,3 +198,38 @@ Rules:
   the runtime model.
 - Built-in LoRA does not import the external `peft` package or contact the
   network.
+
+## Quantization Runtime Boundary
+
+Core Milestone 2 / Feature 4 keeps QLoRA validation local and explicit.
+
+Rules:
+
+- Tiny Hugging Face fixtures are created locally; no model download is used.
+- Quantized loading requires a local folder.
+- Missing bitsandbytes is reported as a pending optional runtime gate, not as a
+  successful QLoRA runtime pass.
+- ArcLM does not enable `trust_remote_code` by default.
+- ArcLM does not use `eval`, `exec`, arbitrary import strings, shell commands,
+  or hidden network access for QLoRA validation.
+
+## Run Manifest Security
+
+Core Milestone 2 / Feature 5 treats run metadata as local but still sensitive.
+
+The local tracker:
+
+- redacts path-like config fields
+- stores references by safe file name and fingerprint instead of absolute path
+- avoids usernames, hostnames, environment variables, raw prompts, raw
+  completions, raw datasets, and credentials
+- writes `manifest.json` atomically
+- uses append-only JSONL for metrics and events
+- rejects non-finite metrics and callable metadata
+- uses a local lock file to avoid two writers for one run
+- imports MLflow/W&B only when an explicit legacy backend requests them
+
+Run manifests are not a secure audit log or signed evidence system. They are
+local reproducibility metadata.
+- Runtime environment reports exclude environment variables, usernames,
+  hostnames, absolute project paths, access tokens, and dataset contents.

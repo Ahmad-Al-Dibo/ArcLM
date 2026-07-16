@@ -10,7 +10,16 @@ from .artifacts import (
     save_adapter_artifact,
     validate_adapter_artifact,
 )
-from .config import LoRAConfig, PeftConfig, PeftMethod
+from .config import (
+    LoRAConfig,
+    PeftConfig,
+    PeftMethod,
+    QLoRAConfig,
+    QuantizationBackend,
+    QuantizationConfig,
+    QuantizationType,
+    QuantizedComputeDType,
+)
 from .lora import (
     LoRALinear,
     PeftApplicationResult,
@@ -28,6 +37,17 @@ from .lora import (
     merged_lora_model,
     unmerge_lora,
 )
+from .quantization import (
+    QuantizationCapabilityReport,
+    QuantizedModelReport,
+    create_quantized_load_config,
+    get_quantization_backend,
+    inspect_quantization_capabilities,
+    is_quantized_runtime_model,
+    load_quantized_model,
+    prepare_model_for_qlora,
+    validate_quantized_base_model,
+)
 
 __all__ = [
     "ADAPTER_ARTIFACT_FORMAT",
@@ -41,19 +61,33 @@ __all__ = [
     "PeftMethod",
     "PeftParameterReport",
     "PeftTarget",
+    "QLoRAConfig",
+    "QuantizationBackend",
+    "QuantizationCapabilityReport",
+    "QuantizationConfig",
+    "QuantizationType",
+    "QuantizedComputeDType",
+    "QuantizedModelReport",
     "apply_lora",
     "apply_peft",
+    "create_quantized_load_config",
     "fingerprint_base_model",
     "get_lora_state_dict",
+    "get_quantization_backend",
     "get_peft_parameter_report",
     "inspect_adapter_artifact",
     "inspect_lora_targets",
+    "inspect_quantization_capabilities",
     "is_lora_model",
+    "is_quantized_runtime_model",
     "load_adapter_artifact",
     "load_lora_state_dict",
+    "load_quantized_model",
     "merge_lora",
     "merged_lora_model",
+    "prepare_model_for_qlora",
     "save_adapter_artifact",
     "unmerge_lora",
+    "validate_quantized_base_model",
     "validate_adapter_artifact",
 ]

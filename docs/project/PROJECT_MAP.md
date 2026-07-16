@@ -5,16 +5,20 @@ This file is the planning source of truth for ArcLM after the July 15, 2026 repo
 [PROJECT_STATUS]
 
 - Web Track: paused after Web Milestone 2 / Feature 4 - Dataset Source Manager. The next previously planned Web feature is Approved Pipeline Step Registry, but approval is not granted and Web development must not continue until the owner reactivates it.
-- Core Track: active priority. Core Milestone 2 / Feature 2 - LoRA and General PEFT Foundation is implemented and verified.
+- Core Track: active priority. Core Milestone 2 / Feature 6 - Hyperparameter Search Foundation is implemented and verified.
 - Core Re-baseline result: complete. The canonical Core capability matrix is [../core/current-capabilities.md](../core/current-capabilities.md).
 - Core Milestone 1 / Feature 1 validation: Model Lifecycle and Configuration Contract implemented through `arclm.lifecycle`; native checkpoints include lifecycle metadata; legacy checkpoints can be inspected; `Config.load_config_from_model()` now loads real model config; focused lifecycle/public API/compatibility tests passed with `79 passed, 2 skipped`; broader Core regression passed with `166 passed, 2 skipped`; the isolation gate restored the full Python suite to `259 passed, 10 skipped, 4 warnings`; compileall and wheel build passed.
 - Core Milestone 1 / Feature 2 validation: Checkpoint Hardening and Reproducibility Metadata implemented through `arclm.checkpoints`; training checkpoints now have `checkpoint_format="arclm-training-checkpoint"` and `checkpoint_version=1`; inspection, validation, RNG restore, atomic writes, legacy compatibility, and CPU epoch-boundary deterministic resume are tested. Full Python suite: `269 passed, 10 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed.
 - Core Milestone 1 / Feature 3 validation: Final Model Artifact Save and Load implemented through `arclm.lifecycle`; final artifacts use `artifact_format="arclm-model-artifact"` and `artifact_version=1`; manifest, file inventory, SHA-256 validation, native reconstruction, PyTorch factory boundary, tokenizer persistence, CPU evaluation/inference runtime, and checkpoint/artifact separation are tested. Full Python suite: `285 passed, 10 skipped, 4 warnings`; compileall and wheel build passed.
 - Core Milestone 2 / Feature 1 validation: Full Fine-Tuning and SFT Stabilization implemented through `arclm.finetuning`; stable `FineTuningMode`, `FineTuningConfig`, `FineTuningResult`, dataset preparation/report/fingerprint, prompt/chat masking, `fine_tune()`, checkpoint/resume, final artifact handoff, artifact reload, evaluation, and inference after reload are tested. Focused fine-tuning suite: `37 passed`; full Python suite: `296 passed, 10 skipped, 4 warnings`; compileall passed.
-- Core Milestone 2 / Feature 2 validation: LoRA and General PEFT Foundation implemented through `arclm.peft`; built-in `LoRAConfig`, `LoRALinear`, target planning, adapter injection, base freezing, adapter artifacts, adapter reload, checkpoint/resume, merge/unmerge, merged final artifact reload, evaluation, inference, and public imports are tested. Focused PEFT suite: `13 passed`.
-- Recommended next Core action: Core Milestone 2 / Feature 3 - QLoRA and Quantized Fine-Tuning Foundation. This is not approved automatically.
+- Core Milestone 2 / Feature 2 validation: LoRA and General PEFT Foundation implemented through `arclm.peft`; built-in `LoRAConfig`, `LoRALinear`, target planning, adapter injection, base freezing, adapter artifacts, adapter reload, checkpoint/resume, merge/unmerge, merged final artifact reload, evaluation, inference, and public imports are tested. Focused PEFT suite: `13 passed`; full Python suite: `309 passed, 10 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed.
+- Core Milestone 2 / Feature 3 validation: QLoRA and Quantized Fine-Tuning Foundation implemented through `arclm.peft`; `QLoRAConfig`, `QuantizationConfig`, bitsandbytes 4-bit backend boundary, capability inspection, quantized-base validation, QLoRA adapter metadata, full-precision adapter reload/merge path, and quantized-runtime merge rejection are tested. Focused PEFT suite: `22 passed`; public API suite: `23 passed`; full Python suite: `319 passed, 10 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed. Real bitsandbytes GPU loading/training is pending runtime validation.
+- Core Milestone 2 / Feature 4 validation: Hugging Face and QLoRA Runtime Validation Matrix implemented through local tiny Hugging Face runtime tests, CUDA Hugging Face/LoRA tests, bounded runtime environment reports, and an optional bitsandbytes QLoRA runtime gate. Focused HF runtime suite: `4 passed`; quantization suite: `2 passed, 1 skipped`; `.venv-gpu-validation` CUDA suite with `PYTHONPATH=src`: `10 passed`; full Python suite: `326 passed, 13 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed. Real bitsandbytes 4-bit QLoRA loading/training remains pending because bitsandbytes is not installed in the current validation environments.
+- Core Milestone 2 / Feature 5 validation: Experiment Tracking and Reproducible Run Manifests implemented through `arclm.tracking`; `RunConfig`, `RunManifest`, `RunInfo`, `RunStatus`, `RunTracker`, `create_run`, `inspect_run`, `validate_run`, `list_runs`, `compare_runs`, `RunTrackingCallback`, and legacy `ExperimentTracker` compatibility are tested. Focused tracking suite: `8 passed`; public API suite: `24 passed`; full Python suite: `335 passed, 13 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed.
+- Core Milestone 2 / Feature 6 validation: Hyperparameter Search Foundation implemented through `arclm.search`; `SearchStrategy`, `SearchStatus`, `TrialStatus`, typed parameter definitions, `SearchSpace`, `ObjectiveConfig`, `HyperparameterSearchConfig`, local search manifests, deterministic grid/random generation, one tracked run per trial, failure policy, bounded failed-trial retry, resume, inspection, validation, listing, comparison, and best-config export are tested. Focused search suite: `10 passed`; combined search/tracking/PEFT/training/public API/compatibility suite: `109 passed, 2 skipped, 1 warning`; full Python suite: `346 passed, 13 skipped, 4 warnings`; compileall, wheel build, and paused frontend regression passed.
+- Recommended next Core action: Core Milestone 3 / Feature 1 - Distributed Runtime and Process Abstraction. This is not approved automatically.
 - Implementation gate: closed until the owner explicitly approves the next Core implementation feature or reactivates Web.
-- Roadmap priority note: Data Platform Web work, QLoRA, distributed training, serving, and other product milestones remain planned but inactive.
+- Roadmap priority note: Data Platform Web work, real bitsandbytes QLoRA runtime validation, distributed training, serving, and other product milestones remain planned but inactive.
 - Current repository state: large `src/` package migration is present in the working tree; this plan does not revert or normalize it.
 - Baseline validation: Milestone 0 recorded `187 passed, 2 skipped, 38 warnings`; after Milestone 1 warning cleanup, full pytest is `200 passed, 2 skipped, 3 warnings`.
 - Milestone 1 public API check: `tests/public_api -v` passed with `20 passed`; `tests/compatibility -v` passed with `14 passed`.
@@ -36,8 +40,8 @@ This file is the planning source of truth for ArcLM after the July 15, 2026 repo
 - Core audit baseline on July 15, 2026: `import arclm` passed, `compileall src/arclm` passed, `pip wheel . --no-deps` passed, public API tests passed with `22 passed`, compatibility tests passed with `15 passed`, focused Core runtime suites passed with `113 passed, 2 skipped`, CLI/package/loader tests passed with `18 passed`, GPU tests skipped correctly in the CPU environment with `8 skipped`, and paused Web regression passed with frontend lint/type/test/build.
 - Core audit full-suite result on July 15, 2026: `3 failed, 245 passed, 10 skipped, 4 warnings`. The failures are isolated to paused Web Dataset Inspector tests reading persisted user-local dataset-root configuration instead of isolated test roots.
 - Core Feature 1 full-suite result on July 15, 2026 after the Dataset Inspector isolation gate: `259 passed, 10 skipped, 4 warnings`. The three paused-Web Dataset Inspector isolation failures are resolved; no Core lifecycle tests failed.
-- Current stable center: datasets, single-device training, basic evaluation, full fine-tuning/SFT, built-in LoRA on CPU, basic inference, checkpoint loading, final model artifacts, PEFT adapter artifacts.
-- Current weak areas: Web workflow pages beyond the dashboard, real Hugging Face runtime validation, GPU PEFT validation, QLoRA, serving, deployment, monitoring, security, retrieval, agents, enterprise.
+- Current stable center: datasets, single-device training, basic evaluation, full fine-tuning/SFT, built-in LoRA on native and tiny Hugging Face models, basic inference, checkpoint loading, final model artifacts, PEFT adapter artifacts.
+- Current weak areas: Web workflow pages beyond the dashboard, real bitsandbytes QLoRA runtime validation, distributed runtime, multi-GPU PEFT, serving, deployment, monitoring integrations, security, retrieval, agents, enterprise.
 
 [ASSUMPTIONS]
 
@@ -72,7 +76,7 @@ The primary planning matrix is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md). Summar
 
 | Category | Implemented | Partial | Experimental | Interface Only | Not Implemented |
 | -------- | ----------: | ------: | -----------: | -------------: | --------------: |
-| Training | 12 | 2 | 2 | 0 | 13 |
+| Training | 13 | 2 | 1 | 0 | 13 |
 | Architectures | 2 | 2 | 1 | 0 | 12 |
 | Tokenizers | 7 | 6 | 1 | 0 | 0 |
 | Data | 14 | 5 | 1 | 2 | 3 |
@@ -106,7 +110,7 @@ The primary planning matrix is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md). Summar
 - Web frontend/backend: Feature 1 implemented an optional Next.js workspace under `web/`; Feature 2 implemented the first design system; Feature 3 implemented the shared application shell; Feature 4 implemented the local read-only Web API and frontend API client; Feature 5 implemented the Simple Dashboard; Feature 6 implemented the Advanced Dashboard.
 - Storage: local files for checkpoints, datasets, configs, logs, and artifacts.
 - Deployment: no stable deployment automation.
-- Monitoring: basic training/evaluation metrics and experimental tracking.
+- Monitoring: basic training/evaluation metrics and local run manifests; external tracking services remain compatibility-only.
 - Optional integrations: Transformers, external PEFT, datasets, safetensors, Flask, PyYAML, BeautifulSoup, tqdm, future serving/export/tracking packages.
 
 [DEPENDENCY_VERSIONS]
@@ -227,10 +231,13 @@ Current Core Milestone 2 feature state:
 ```text
 Full Fine-Tuning and SFT Stabilization: Implemented and verified
 LoRA and General PEFT Foundation: Implemented and verified
-QLoRA and Quantized Fine-Tuning Foundation: Recommended, not approved
+QLoRA and Quantized Fine-Tuning Foundation: Implemented foundation and locally verified at CPU-safe boundary
+Hugging Face and QLoRA Runtime Validation Matrix: Implemented and verified; bitsandbytes runtime pending
+Experiment Tracking and Reproducible Run Manifests: Implemented and verified
+Hyperparameter Search Foundation: Implemented and verified
 Other PEFT methods: Not implemented
-Hugging Face PEFT runtime: Pending optional validation
-GPU PEFT runtime: Pending optional validation
+Hugging Face PEFT runtime: Verified for ArcLM-owned LoRA tiny local fixtures
+GPU PEFT runtime: Verified for ArcLM-owned LoRA tiny local fixture on GTX 1050 Ti
 ```
 
 Current Web Milestone 1 feature state:
@@ -279,7 +286,7 @@ The security plan is in [SECURITY_MODEL.md](SECURITY_MODEL.md). Core rules:
 
 - Use standard Python logging compatibility.
 - Keep training/evaluation callbacks as the basic monitoring extension point.
-- Keep local logs structured and small.
+- Keep local logs and run manifests structured and small.
 - Redact secrets and avoid raw PII by default.
 - External tracking integrations remain optional and Pro-oriented until tested.
 
@@ -319,7 +326,7 @@ Initial decision records are in [DECISIONS.md](DECISIONS.md). All are proposed u
 | OP-005 | Duplicate `ModelAdapter` names have different responsibilities. | Compatibility | Resolved in Milestone 1 | Public API tests lock the behavior; docs explain domain-specific imports. | None | Keep documented until a future migration is approved | 1 |
 | OP-006 | LoRA exists only as experimental optional paths. | Fine-tuning | Open | Feature matrix marks LoRA experimental; PEFT is not installed in the validated environment. | PEFT dependency and runtime tests | Build PEFT foundation after Web Milestone 1 review if approved | Later ML milestone |
 | OP-007 | Hugging Face support lacks real local model runtime matrix. | External Models | Open | Feature matrix marks HF model/tokenizer support experimental or partial; tests use fake/local contracts. | Optional test fixtures | Add tiny local HF config/model tests | 3 |
-| OP-008 | Tracking code has little current test coverage. | Monitoring | Open | `src/arclm/tracking.py` exists; full suite has no focused tracking tests. | Optional deps and design | Stabilize local tracker first | 5 |
+| OP-008 | Local experiment tracking coverage and contract stabilized. | Monitoring | Resolved in Core 2 Feature 5 | `tests/tracking` covers run lifecycle, metrics/events, references, trainer callback, fine-tuning/QLoRA metadata, legacy compatibility, validation, listing, and comparison. | None | Keep external tracking services optional and separately validated | Core 2 Feature 5 |
 | OP-009 | Simple Flask UI exists but serving is not production. | Serving/Web | Partially resolved | Modern read-only Web API has endpoint tests and localhost smoke; legacy Flask remains experimental compatibility. | Production serving milestone | Keep Flask as compatibility path; do not claim model serving from Feature 4 | Serving later |
 | OP-010 | PII/toxicity helpers are light preprocessing, not complete security. | Security | Open | `preprocess/pii.py` and `preprocess/toxicity.py` are small helpers, not a full security system. | Security scope decision | Document limitations and avoid safety guarantees | 15 |
 | OP-011 | Retrieval, agents, multimodal, and enterprise are absent. | Roadmap | Open | Feature matrix marks these categories mostly or entirely not implemented. | Core stabilization | Keep planned until prerequisite milestones pass | Later |
@@ -336,8 +343,11 @@ Initial decision records are in [DECISIONS.md](DECISIONS.md). All are proposed u
 | OP-022 | Checkpoints need stronger reproducibility and trusted-loading policy. | Core / Checkpoints | Resolved in Core 1 Feature 2 | `CheckpointInfo`, `inspect_checkpoint`, `validate_checkpoint`, format/version metadata, RNG state, atomic write validation, and deterministic resume tests are implemented. | None | Keep checksum/signature, mid-epoch dataloader position, and callback-state protocol as future hardening | Core 1 Feature 2 |
 | OP-023 | Final model artifacts need a distinct save/load contract separate from training checkpoints. | Core / Model Lifecycle | Resolved in Core 1 Feature 3 | `save_model_artifact`, `load_model_artifact`, `validate_model_artifact`, `manifest.json`, file inventory, SHA-256 hashes, native CPU round trip, PyTorch factory boundary, tokenizer persistence, and checkpoint/artifact separation tests are implemented. | None | Keep HF runtime, GPU portability, signatures, PEFT adapters, and export formats as future work | Core 1 Feature 3 |
 | OP-024 | Full fine-tuning and SFT need stabilization against the new lifecycle and final artifact contract. | Core / Fine-Tuning | Resolved in Core 2 Feature 1 | `FineTuningConfig`, `prepare_fine_tuning_dataset`, `fine_tune`, dataset reports/fingerprints, CPU native SFT runtime, checkpoint/resume, final artifact reload, evaluation, inference, public API, and compatibility tests pass. | None | Keep optional HF/GPU matrices as separate validation work | Core 2 Feature 1 |
-| OP-025 | LoRA and general PEFT need a stable optional foundation. | Core / PEFT | Resolved in Core 2 Feature 2 | `arclm.peft`, built-in `LoRAConfig`, `LoRALinear`, adapter artifacts, `fine_tune(..., peft_config=...)`, checkpoint/resume, adapter reload, merge/final artifact, evaluation, inference, and public API tests are implemented. | None | Keep QLoRA, HF PEFT runtime, GPU PEFT runtime, and other PEFT methods as future work | Core 2 Feature 2 |
+| OP-025 | LoRA and general PEFT need a stable optional foundation. | Core / PEFT | Resolved in Core 2 Feature 2 | `arclm.peft`, built-in `LoRAConfig`, `LoRALinear`, adapter artifacts, `fine_tune(..., peft_config=...)`, checkpoint/resume, adapter reload, merge/final artifact, evaluation, inference, and public API tests are implemented. | None | Keep real HF PEFT runtime, GPU PEFT runtime, and other PEFT methods as future work | Core 2 Feature 2 |
+| OP-026 | QLoRA needs real bitsandbytes runtime validation after the foundation. | Core / PEFT / Quantization | Partially resolved | Core 2 Feature 4 verifies local Hugging Face CPU runtime, CUDA Hugging Face forward, CUDA LoRA, bounded environment reports, and missing bitsandbytes detection. Real 4-bit model loading/training was not executed because bitsandbytes is not installed in `.venv-training-core` or `.venv-gpu-validation`. | Optional `arclm[qlora]` environment with bitsandbytes and supported CUDA hardware | Run `python -m pytest tests/quantization -v -m "bitsandbytes and qlora"` before claiming production QLoRA runtime support | Optional QLoRA validation gate |
+| OP-027 | External experiment tracking services are compatibility-only and not stable. | Monitoring / Integrations | Open | Local `ExperimentTracker` compatibility writes through run manifests; MLflow and W&B are imported lazily but not installed or runtime-verified in the baseline. | Optional service dependencies and product boundary | Keep external service integrations Pro-oriented until focused tests and docs are approved | Later monitoring milestone |
+| OP-028 | Hyperparameter search foundation was missing. | Core / Search | Resolved in Core 2 Feature 6 | `arclm.search`, search manifests, typed parameter definitions, deterministic grid/random generation, one run per trial, resume, failure policy, bounded retry, inspection, validation, listing, comparison, best-config export, and CPU runtime search tests pass. | None | Keep parallel/distributed/adaptive search deferred until separately approved | Core 2 Feature 6 |
 
 [NEXT_APPROVED_ACTION]
 
-Recommended next action: Core Milestone 2 / Feature 3: QLoRA and Quantized Fine-Tuning Foundation. This is not approved automatically. Do not implement this feature, Web Pipeline Step Registry, upload, pipeline execution, training handoff, DPO, RLHF, distributed training, serving, or any later milestone until the owner explicitly approves it.
+Recommended next action: Core Milestone 3 / Feature 1: Distributed Runtime and Process Abstraction. This is not approved automatically. Do not implement this feature, Web Pipeline Step Registry, upload, pipeline execution, training handoff, DPO, RLHF, distributed training, serving, or any later milestone until the owner explicitly approves it.

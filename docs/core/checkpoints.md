@@ -211,3 +211,19 @@ training counters.
 
 Adapter artifacts are separate. They save only LoRA adapter tensors and cannot
 resume training by themselves.
+
+Core Milestone 2 / Feature 4 found and fixed a CUDA checkpoint compatibility
+issue in the RNG restore path for PyTorch 2.5.1. CUDA RNG tensors loaded onto a
+CUDA device are normalized back to CPU `torch.uint8` tensors before
+`torch.cuda.set_rng_state_all()` is called. Regression coverage exists in
+`tests/checkpoints` and `tests/gpu/test_cuda_checkpoint_resume.py`.
+
+## Run Manifest Link
+
+Core Milestone 2 / Feature 5 records checkpoint references in run manifests.
+
+Core Milestone 2 / Feature 6 references trial runs instead of copying
+checkpoint payloads into search directories. Trial checkpoints remain governed
+by the normal `TrainingConfig` and run-manifest behavior.
+The manifest keeps safe reference metadata only; it does not copy checkpoint
+payloads and does not replace the training checkpoint resume contract.

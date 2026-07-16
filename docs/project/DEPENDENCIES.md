@@ -14,6 +14,14 @@ Hugging Face artifact save/load paths, not for inspection or validation.
 Core Milestone 2 / Feature 2 added no dependencies. Built-in ArcLM LoRA uses
 PyTorch modules directly and does not require the external `peft` package.
 
+Core Milestone 2 / Feature 3 added one optional extra, `arclm[qlora]`, for real
+QLoRA runtime validation. The base package still does not require bitsandbytes,
+Transformers, or external PEFT.
+
+Core Milestone 2 / Feature 4 added no dependencies. Runtime validation used the
+already-installed Transformers package and detected that bitsandbytes and the
+external `peft` package are not installed in either validation environment.
+
 ## Current Local Environment
 
 | Dependency | Local Version | Installed | Notes |
@@ -24,7 +32,8 @@ PyTorch modules directly and does not require the external `peft` package.
 | datasets | n/a | No | Optional future dataset bridge |
 | tokenizers | installed | Yes | Used through Transformers/SentencePiece ecosystem |
 | accelerate | n/a | No | Future distributed/HF helper |
-| peft | n/a | No | Optional for future external/HF PEFT automation and QLoRA research |
+| peft | n/a | No | Optional for future external/HF PEFT automation |
+| bitsandbytes | n/a | No | Optional for real QLoRA 4-bit loading/training through `arclm[qlora]` |
 | safetensors | 0.8.0 | Yes | External checkpoint support |
 | webdataset | n/a | No | Future WebDataset support |
 | flask | 3.1.3 | Yes | Simple interface only |
@@ -46,7 +55,8 @@ PyTorch modules directly and does not require the external `peft` package.
 | Datasets | Current PyPI-compatible optional range after review | HF datasets | Optional | Shared Core | Add only with tests |
 | Tokenizers | Transitive/optional | Fast tokenizers | Optional | Shared Core | Usually via Transformers |
 | Accelerate | Current PyPI-compatible optional range after review | HF/distributed helpers | Optional | Pro | Useful after HF runtime and distributed plans |
-| PEFT | Current PyPI-compatible optional range after review | External PEFT/QLoRA | Optional | Pro | Not required for built-in ArcLM LoRA; needed before external PEFT automation claims |
+| PEFT | Current PyPI-compatible optional range after review | External PEFT automation | Optional | Pro | Not required for built-in ArcLM LoRA; needed before external PEFT package claims |
+| bitsandbytes | `>=0.49,<1` on Python 3.10+ | QLoRA 4-bit backend | Optional | Shared Core | Used only by `arclm[qlora]`; official docs require modern PyTorch/CUDA support |
 | safetensors | Existing optional range | Safe model files | Optional | Shared Core | External artifact support |
 | WebDataset | Current PyPI-compatible optional range after review | Tar streaming datasets | Optional | Pro | Add only with loader and lazy tests |
 | FastAPI/Uvicorn | Latest compatible range after server design | Production API | Optional | Pro | Do not add before serving milestone |
@@ -60,6 +70,9 @@ PyTorch modules directly and does not require the external `peft` package.
 - Install `arclm[dev]` or `build` in release validation environments when direct `python -m build` is required.
 - Keep the Core model lifecycle contract independent from optional HF, PEFT, and Web dependencies; optional adapters should fail only when used.
 - Built-in ArcLM LoRA remains independent of the external PEFT package.
+- QLoRA runtime dependencies remain optional. The `qlora` extra may upgrade
+  PyTorch to `>=2.4,<3` because current bitsandbytes documentation lists
+  PyTorch 2.4+ as the supported baseline.
 - Do not add serving/export/cloud dependencies until their milestone begins.
 - Keep fallback behavior for missing optional dependencies.
 
@@ -80,3 +93,60 @@ Full fine-tuning and SFT stabilization added no new required dependency.
 - `import arclm` remains lightweight.
 - Transformers remains optional for Hugging Face paths.
 - PEFT remains uninstalled and deferred to Core Milestone 2 / Feature 2.
+
+## Core Milestone 2 / Feature 3 Dependency Result
+
+QLoRA foundation added:
+
+```toml
+qlora = [
+  "torch>=2.4,<3",
+  "transformers>=4.51,<6",
+  "bitsandbytes>=0.49,<1; python_version >= '3.10'",
+]
+```
+
+This is optional. CPU configuration tests and ordinary LoRA tests run without
+installing this extra. Real QLoRA runtime validation requires the extra plus a
+supported CUDA environment.
+
+## Core Milestone 2 / Feature 4 Dependency Result
+
+No dependency versions changed.
+
+Observed environments:
+
+- `.venv-training-core`: Python 3.12.10, PyTorch 2.13.0+cpu, Transformers
+  5.13.1, bitsandbytes not installed, external `peft` not installed.
+- `.venv-gpu-validation`: Python 3.12.10, PyTorch 2.5.1+cu121, CUDA 12.1,
+  GTX 1050 Ti, Transformers 5.13.1, bitsandbytes not installed, external
+  `peft` not installed.
+
+Result:
+
+- Tiny local Hugging Face runtime validation can run with the existing optional
+  Transformers install.
+- Built-in ArcLM LoRA does not require the external `peft` package.
+- Real QLoRA runtime remains pending until bitsandbytes is installed in a
+  suitable CUDA environment.
+
+## Core Milestone 2 / Feature 5 Dependency Result
+
+Experiment Tracking and Reproducible Run Manifests added no dependencies.
+
+- Local run manifests use the Python standard library plus PyTorch metadata that
+  ArcLM already requires.
+- MLflow and Weights & Biases remain optional compatibility backends and are
+  imported lazily only when requested.
+- `import arclm` remains lightweight.
+
+## Core Milestone 2 / Feature 6 Dependency Result
+
+Hyperparameter Search Foundation added no dependencies.
+
+- Search uses the Python standard library plus existing ArcLM training,
+  fine-tuning, PEFT, and run-tracking contracts.
+- Optuna, Ray Tune, Hyperopt, MLflow optimization, W&B sweeps, external
+  databases, and cloud workers are not dependencies of this feature.
+- `import arclm` remains lightweight because `arclm.search` is a domain import,
+  not a root import side effect.

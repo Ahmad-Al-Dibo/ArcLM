@@ -30,9 +30,12 @@ This is a recommendation, not a final licensing decision.
 | Full fine-tuning/SFT | Implemented | Community | Torch | Local model adaptation should be useful without Pro | Medium if datasets leak |
 | Built-in LoRA | Implemented | Shared Core | Torch | Local adapter fine-tuning without external PEFT dependency | Medium |
 | External PEFT automation | Not Implemented | Pro | PEFT/Transformers | Advanced automation and matrix testing | Medium |
-| QLoRA/quant PEFT | Not Implemented | Pro | PEFT/bitsandbytes | Hardware-sensitive advanced training | Medium |
+| QLoRA/quant PEFT boundary | Implemented foundation | Shared Core | Transformers/bitsandbytes optional | Hardware-sensitive advanced training with strict runtime gates | Medium |
+| QLoRA production runtime | Pending validation | Pro/Shared Core decision pending | bitsandbytes/CUDA | Needs real 4-bit load, train, checkpoint/resume, and artifact evidence | Medium |
 | DDP/FSDP/Multi-GPU | Not Implemented | Pro | Torch distributed | Operational orchestration | Low |
-| Experiment tracking services | Experimental | Pro | MLflow/W&B/etc. | Team/external-service workflows | Medium |
+| Local run manifests | Implemented | Community | None beyond Core | Reproducible local training and fine-tuning records | Medium |
+| Local hyperparameter search | Implemented | Community | None beyond Core | Reproducible sequential trial orchestration without external services | Medium |
+| Experiment tracking services | Compatibility-only | Pro | MLflow/W&B/etc. | Team/external-service workflows | Medium |
 | Dashboards | Not Implemented | Pro | Web stack | Product UI | Medium |
 | Production serving | Not Implemented | Pro | FastAPI/vLLM/etc. | Operational reliability | Medium |
 | Cloud deployment | Not Implemented | Pro | Cloud SDKs | Provider automation | Medium |
@@ -47,8 +50,19 @@ Community should include everything required to build, prepare data, train, fine
 
 Core Milestone 2 / Feature 1 keeps full-parameter fine-tuning and SFT in
 Community. Core Milestone 2 / Feature 2 adds built-in local LoRA in Shared Core
-without requiring the external PEFT package. QLoRA and broader PEFT automation
-remain future work and are not approved automatically.
+without requiring the external PEFT package. Core Milestone 2 / Feature 3 adds
+the QLoRA configuration/backend boundary, and Feature 4 verifies local
+Hugging Face plus CUDA LoRA runtime. Production QLoRA claims remain gated on
+real bitsandbytes runtime validation. Broader external PEFT automation remains
+future work and is not approved automatically.
+
+Core Milestone 2 / Feature 5 adds local run manifests to Community. External
+tracking services remain Pro-oriented compatibility paths until they receive
+focused optional-dependency tests and a product decision.
+
+Core Milestone 2 / Feature 6 adds local sequential hyperparameter search to
+Community. Parallel search, distributed search, cloud workers, Web-controlled
+tuning, and external sweep providers remain future Shared Core or Pro work.
 
 ## What Pro Adds
 

@@ -165,6 +165,28 @@ def test_rng_state_round_trip_restores_python_numpy_and_torch():
     assert torch.equal(torch.rand(1), expected_torch)
 
 
+def test_cuda_rng_restore_normalizes_loaded_tensors(monkeypatch):
+    captured = {}
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+
+    def fake_set_rng_state_all(states):
+        captured["states"] = states
+
+    monkeypatch.setattr(torch.cuda, "set_rng_state_all", fake_set_rng_state_all)
+    restore_rng_state(
+        {
+            "torch_cuda": [
+                torch.tensor([1, 2, 3], dtype=torch.uint8),
+            ],
+        },
+        restore_cuda=True,
+    )
+
+    assert captured["states"][0].device.type == "cpu"
+    assert captured["states"][0].dtype == torch.uint8
+
+
 def test_atomic_write_preserves_existing_checkpoint_on_failure(tmp_path, monkeypatch):
     trainer = make_trainer(tmp_path)
     trainer.train()

@@ -85,15 +85,19 @@ native ArcLM model
 → run inference forward pass
 ```
 
+Core Milestone 2 / Feature 4 verifies tiny local Hugging Face artifact,
+fine-tuning, evaluation, and LoRA adapter flows. See
+[runtime-validation-matrix.md](runtime-validation-matrix.md).
+
 Remaining lifecycle limitations:
 
-- External Hugging Face runtime tests are still a separate milestone.
 - Training checkpoints still require trusted PyTorch loading for full-state
   resume; arbitrary internet `.pt` files are not safe inputs.
-- Hugging Face artifact runtime remains optional and was not executed in the
-  baseline environment.
+- Broad Hugging Face architecture coverage remains optional and incomplete.
 - GPU artifact portability was not executed during Feature 3.
-- QLoRA, export artifacts, and digital signatures are not implemented.
+- QLoRA is implemented as a PEFT boundary, but final model artifact integration
+  for real quantized runtimes is pending. Export artifacts and digital
+  signatures are not implemented.
 
 ## Fine-Tuning Lifecycle
 
@@ -108,8 +112,9 @@ runtime model
 ```
 
 The stable native CPU flow verifies artifact reload after SFT and inference
-after reload. Hugging Face and GPU fine-tuning runtime validation remain pending
-separate optional environments.
+after reload. Feature 4 adds tiny Hugging Face CPU runtime and GTX 1050 Ti LoRA
+runtime validation. Broad Hugging Face, QLoRA bitsandbytes, and multi-GPU
+runtime validation remain separate optional gates.
 
 ## PEFT Lifecycle
 
@@ -128,3 +133,13 @@ runtime base model
 Adapter artifacts use `artifact_format="arclm-peft-adapter"` and do not contain
 the complete base model. Loading requires a compatible base model supplied by
 the caller.
+
+## Run Manifest Link
+
+Core Milestone 2 / Feature 5 connects lifecycle outputs to local run manifests.
+
+Core Milestone 2 / Feature 6 connects repeated lifecycle runs through local
+search manifests. Search references trial runs and best effective configs; it
+does not load, copy, publish, or mutate model artifacts automatically.
+Run manifests can reference training checkpoints, PEFT adapter artifacts, and
+final model artifacts without copying those payloads or exposing absolute paths.

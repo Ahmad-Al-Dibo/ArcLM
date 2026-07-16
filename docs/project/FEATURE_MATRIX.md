@@ -7,11 +7,15 @@ Core re-baseline note: the canonical current Core capability matrix is
 Milestone 2 / Feature 4. Core Milestone 1 / Feature 1, Model Lifecycle and
 Configuration Contract, Feature 2, Checkpoint Hardening and Reproducibility
 Metadata, Feature 3, Final Model Artifact Save and Load, Core Milestone 2 /
-Feature 1, Full Fine-Tuning and SFT Stabilization, and Core Milestone 2 /
-Feature 2, LoRA and General PEFT Foundation, are implemented. The next
-recommended active implementation feature is Core Milestone 2 / Feature 3:
-QLoRA and Quantized Fine-Tuning Foundation, not the previously planned Web
-Pipeline Step Registry.
+Feature 1, Full Fine-Tuning and SFT Stabilization, Core Milestone 2 / Feature
+2, LoRA and General PEFT Foundation, Core Milestone 2 / Feature 3, QLoRA
+and Quantized Fine-Tuning Foundation, and Core Milestone 2 / Feature 4,
+Hugging Face and QLoRA Runtime Validation Matrix, and Core Milestone 2 /
+Feature 5, Experiment Tracking and Reproducible Run Manifests, and Core
+Milestone 2 / Feature 6, Hyperparameter Search Foundation, are implemented at
+their stated evidence levels. The next recommended active implementation
+feature is Core Milestone 3 / Feature 1: Distributed Runtime and Process
+Abstraction, not the previously planned Web Pipeline Step Registry.
 
 | Category | Feature | Status | Evidence | Public API | Tests | Runtime Verified | External Models | CPU | CUDA | Dependency | Product | Milestone | Missing Work |
 | -------- | ------- | ------ | -------- | ---------- | ----- | ---------------- | --------------- | --- | ---- | ---------- | ------- | --------- | ------------ |
@@ -31,18 +35,18 @@ Pipeline Step Registry.
 | Training | Learning-rate schedulers | Implemented | `training/schedulers.py` | config scheduler | optimizer/trainer tests | Yes | Yes | Yes | Unverified | Torch | Community | 0 | More schedules only if needed |
 | Training | Training callbacks | Implemented | `training/callbacks.py` | `BaseCallback` | trainer tests | Yes | N/A | Yes | Unverified | None | Community | 0 | None |
 | Training | Training state | Implemented | `training/state.py` | `TrainingState` | state tests | Yes | N/A | Yes | Unverified | None | Community | 0 | None |
-| Training | Hyperparameter search | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | 17 | Trial engine |
+| Training | Hyperparameter search | Implemented | `src/arclm/search`; `tests/search` | `ChoiceParameter`, `IntegerParameter`, `FloatParameter`, `SearchSpace`, `ObjectiveConfig`, `HyperparameterSearchConfig`, `create_search`, `load_search`, `inspect_search`, `validate_search`, `list_searches`, `compare_trials` | search + tracking + public API + compatibility | Local CPU runtime with four sequential tiny training trials, tracked runs, best-trial selection, resume, and best-config export | Runtime supplied by caller; no model factory serialization | Yes | Optional CUDA search pending | No new deps | Community | Core 2 Feature 6 | Parallel/distributed search, pruning, Bayesian search, Web UI |
 | Training | Curriculum learning | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | Later | Data/training policy |
-| Training | Full fine-tuning | Implemented | `finetuning/full.py`, `finetuning/workflow.py` | `FullFineTuner`, `FineTuningConfig`, `fine_tune` | finetuning + smoke | Native CPU workflow verified through checkpoint, resume, artifact reload, evaluation, inference | PyTorch adapter boundary | Yes | Not executed in Feature 1 | Torch | Community | Core 2 Feature 1 | Optional HF/GPU runtime matrix |
+| Training | Full fine-tuning | Implemented | `finetuning/full.py`, `finetuning/workflow.py` | `FullFineTuner`, `FineTuningConfig`, `fine_tune` | finetuning + smoke + HF runtime | Native CPU workflow verified through checkpoint, resume, artifact reload, evaluation, inference; tiny local HF runtime verified | PyTorch adapter boundary plus tiny local HF fixture | Yes | GTX 1050 Ti LoRA/HF smoke | Torch; Transformers optional | Community | Core 2 Feature 1/4 | Broad HF architecture and GPU matrix |
 | Training | Supervised Fine-Tuning | Implemented | `finetuning/workflow.py`, `finetuning/collator.py` | `SFTTrainer`, `SFTConfig`, `FineTuningConfig`, `prepare_fine_tuning_dataset` | finetuning + smoke | Native CPU SFT verified | Adapter support; HF optional legacy path | Yes | Not executed in Feature 1 | Torch | Community | Core 2 Feature 1 | Stable packing, HF runtime, GPU runtime |
-| Training | LoRA | Implemented | `src/arclm/peft`, `finetuning/workflow.py` | `LoRAConfig`, `apply_lora`, `fine_tune(..., peft_config=...)`, `save_adapter_artifact` | PEFT + public API + fine-tuning smoke | Native CPU LoRA workflow, checkpoint/resume, adapter reload, merge/final artifact, evaluation, inference | PyTorch modules with Linear targets; HF runtime pending | Yes | Not executed in Feature 2 | Torch only for built-in LoRA | Shared Core | Core 2 Feature 2 | GPU/HF runtime matrix |
-| Training | QLoRA | Not Implemented | none | No | No | No | No | No | No | PEFT/bitsandbytes | Pro | After 2 | Quantized adapter training |
+| Training | LoRA | Implemented | `src/arclm/peft`, `finetuning/workflow.py` | `LoRAConfig`, `apply_lora`, `fine_tune(..., peft_config=...)`, `save_adapter_artifact` | PEFT + public API + fine-tuning smoke + runtime matrix | Native CPU LoRA workflow, checkpoint/resume, adapter reload, merge/final artifact, evaluation, inference; tiny HF CPU/CUDA LoRA verified | PyTorch modules with Linear targets; tiny local HF verified | Yes | GTX 1050 Ti verified for tiny HF LoRA | Torch only for built-in LoRA | Shared Core | Core 2 Feature 2/4 | External PEFT package automation |
+| Training | QLoRA | Implemented foundation | `src/arclm/peft/config.py`; `src/arclm/peft/quantization.py`; adapter metadata | `QLoRAConfig`, `QuantizationConfig`, `inspect_quantization_capabilities`, `load_quantized_model` | PEFT + public API + quantization runtime gate | Config, backend boundary, fixture preparation, adapter metadata, full-precision adapter reload path, and missing-bitsandbytes runtime gate verified | Local HF folder boundary; real bitsandbytes runtime pending | CPU boundary yes | CUDA boundary yes; real bitsandbytes unavailable | Optional `arclm[qlora]` (`torch>=2.4`, Transformers, bitsandbytes) | Shared Core | Core 2 Feature 3/4 | Run bitsandbytes QLoRA runtime gate |
 | Training | Other PEFT methods | Not Implemented | none | No | No | No | No | No | No | PEFT | Pro | After 2 | PEFT methods |
 | Training | RLHF | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | Later | Alignment stack |
 | Training | DPO | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | Later | DPO loss/data |
 | Training | GRPO | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | Later | GRPO workflow |
 | Training | Reward model training | Not Implemented | none | No | No | No | No | No | No | TBD | Pro | Later | Reward model pipeline |
-| Training | Experiment tracking | Experimental | `src/arclm/tracking.py` | `ExperimentTracker` | No current tests | No | N/A | Local possible | No | mlflow/wandb optional | Pro | 7 | Tests/docs |
+| Training | Experiment tracking | Implemented | `src/arclm/tracking.py`; `tests/tracking` | `RunTracker`, `RunConfig`, `create_run`, `inspect_run`, `validate_run`, `list_runs`, `compare_runs`, legacy `ExperimentTracker` | tracking + public API + full suite | Local run lifecycle, metrics/events, references, trainer callback, fine-tuning/QLoRA metadata, legacy compatibility | N/A | Yes | Not GPU-specific | No new deps; mlflow/wandb lazy compatibility only | Community | Core 2 Feature 5 | External service integrations |
 | Training | Training dashboards | Not Implemented | none | No | No | No | N/A | No | No | Web stack | Pro | Web 3 | Planned after Web foundation and monitoring/event contracts |
 | Architectures | GPT | Implemented | `models/text/causal_lm.py` | `ArcLM`, `MiniGPT` | smoke/unit | Yes | Native only | Yes | Unverified | Torch | Community | 0 | Larger variants |
 | Architectures | LLaMA | Not Implemented | no native LLaMA | No native | No | No | HF generic only | No | No | Transformers optional | Pro | 3/4 | Native or tested HF path |
@@ -304,8 +308,8 @@ Pipeline Step Registry.
 | Integrations | Ollama | Not Implemented | none | No | No | No | N/A | No | No | Ollama | Pro | Later | Adapter |
 | Integrations | vLLM | Not Implemented | none | No | No | No | N/A | No | No | vLLM | Pro | 9 | Serving backend |
 | Integrations | llama.cpp | Not Implemented | none | No | No | No | N/A | No | No | llama.cpp | Pro | 10 | Runtime/export |
-| Integrations | MLflow | Experimental | `tracking.py` | backend | No | No | N/A | No | No | mlflow | Pro | 7 | Optional tests |
-| Integrations | Weights & Biases | Experimental | `tracking.py` | backend | No | No | N/A | No | No | wandb | Pro | 7 | Optional tests |
+| Integrations | MLflow | Compatibility-only | `tracking.py` lazy backend | legacy backend | No focused optional tests | No | N/A | No | No | mlflow | Pro | 7 | Optional tests |
+| Integrations | Weights & Biases | Compatibility-only | `tracking.py` lazy backend | legacy backend | No focused optional tests | No | N/A | No | No | wandb | Pro | 7 | Optional tests |
 | Integrations | Comet ML | Not Implemented | docstring mention only | No | No | No | N/A | No | No | comet | Pro | 7 | Adapter |
 | Integrations | TensorBoard | Not Implemented | none | No | No | No | N/A | No | No | tensorboard | Pro | 7 | Adapter |
 | Integrations | MCP clients and servers | Not Implemented | none | No | No | No | N/A | No | No | MCP SDK | Pro | 13 | MCP layer |

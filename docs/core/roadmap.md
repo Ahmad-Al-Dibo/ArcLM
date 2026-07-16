@@ -124,14 +124,154 @@ Implemented:
 - CPU native fine-tuning, checkpoint/resume, adapter reload, evaluation, and
   inference runtime tests
 
-## Next Recommended Implementation Feature
+## Core Milestone 2 / Feature 3
 
 ```text
 Core Milestone 2 / Feature 3:
 QLoRA and Quantized Fine-Tuning Foundation
 ```
 
-Reason: the built-in LoRA foundation is now verified on CPU with native ArcLM.
-The next Core gap is quantized adapter fine-tuning. It must be approved
-separately because it requires quantization policy, dependency decisions, and
-hardware-sensitive validation.
+Implemented:
+
+- `PeftMethod.QLORA`
+- `QuantizationBackend`
+- `QuantizationConfig`
+- `QLoRAConfig`
+- bitsandbytes 4-bit backend boundary through lazy Transformers
+  `BitsAndBytesConfig`
+- `inspect_quantization_capabilities`
+- explicit local-folder 4-bit model loading boundary
+- quantized-base validation before adapter injection
+- QLoRA adapter artifact metadata with the existing PEFT artifact format
+- full-precision adapter reload and merge path
+- rejection of direct merge from quantized runtime models
+
+Verified:
+
+- configuration round trip
+- optional dependency boundary
+- CUDA capability reporting through mocked local capability checks
+- quantized-module fixture preparation and base freezing
+- ordinary LoRA regression
+- adapter artifact inspection/validation/load
+- public API import
+
+Not verified:
+
+- real bitsandbytes 4-bit model loading
+- real GPU QLoRA training
+- QLoRA checkpoint/resume on real quantized models
+- QLoRA adapter artifact reload from a real quantized runtime
+
+## Core Milestone 2 / Feature 4
+
+```text
+Core Milestone 2 / Feature 4:
+Hugging Face and QLoRA Runtime Validation Matrix
+```
+
+Implemented:
+
+- bounded runtime environment reports for CPU and CUDA validation
+- local tiny Hugging Face model artifact save/load runtime
+- local tiny Hugging Face full fine-tuning checkpoint/resume runtime
+- local tiny Hugging Face built-in LoRA adapter reload/merge runtime
+- CUDA Hugging Face forward runtime on GTX 1050 Ti
+- CUDA built-in LoRA training step on GTX 1050 Ti
+- optional bitsandbytes QLoRA runtime gate with strict skip conditions
+- CPU regression for CUDA RNG restore normalization
+
+Verified:
+
+- `tests/integration/test_huggingface_runtime_validation.py`: `4 passed`
+- `tests/quantization`: `2 passed, 1 skipped`
+- `.venv-gpu-validation` CUDA suite with `PYTHONPATH=src`: `10 passed`
+- full CPU suite: `326 passed, 13 skipped, 4 warnings`
+
+Not verified:
+
+- real bitsandbytes 4-bit loading
+- real QLoRA forward/backward/optimizer step
+- QLoRA checkpoint/resume on a real quantized model
+- multi-GPU QLoRA
+
+The canonical matrix is [runtime-validation-matrix.md](runtime-validation-matrix.md).
+
+## Next Recommended Implementation Feature
+
+```text
+Core Milestone 2 / Feature 5:
+Experiment Tracking and Reproducible Run Manifests
+```
+
+Implemented:
+
+- `arclm.tracking`
+- local run manifest format `arclm-experiment-run` version 1
+- `RunConfig`, `RunManifest`, `RunInfo`, `RunStatus`, `RunTracker`
+- `create_run`, `inspect_run`, `validate_run`, `list_runs`, `compare_runs`
+- config, model, tokenizer, dataset, PEFT, QLoRA, metric, event, checkpoint,
+  adapter, and model-artifact recording
+- run lock file for single local writer
+- append-only metrics and events
+- bounded environment and reproducibility summaries
+- `RunTrackingCallback`
+- compatibility wrapper for legacy `ExperimentTracker`
+
+Verified:
+
+- `tests/tracking`: `8 passed`
+- full CPU suite: `335 passed, 13 skipped, 4 warnings`
+- compileall, wheel build, and paused frontend regression passed
+
+Not implemented:
+
+- external tracking-service stability claims
+- hyperparameter search
+- distributed run aggregation
+- remote run storage
+
+```text
+Core Milestone 2 / Feature 6:
+Hyperparameter Search Foundation
+```
+
+Implemented:
+
+- `arclm.search`
+- local search manifest format `arclm-hyperparameter-search` version 1
+- `SearchStrategy`, `SearchStatus`, and `TrialStatus`
+- `ChoiceParameter`, `IntegerParameter`, and `FloatParameter`
+- allowlisted search paths for training, fine-tuning, and LoRA configs
+- deterministic grid and random trial generation
+- `ObjectiveConfig`, `SearchSpace`, and `HyperparameterSearchConfig`
+- one existing `RunTracker` run per started trial
+- failure policy, bounded failed-trial retry, interruption, and resume
+- best-trial selection and best-config export
+- inspect, validate, list, and compare APIs
+
+Verified:
+
+- `tests/search`: `10 passed`
+- combined search/tracking/PEFT/training/public API/compatibility suite:
+  `109 passed, 2 skipped, 1 warning`
+
+Not implemented:
+
+- Bayesian or adaptive search
+- pruning, Hyperband, ASHA, or multi-objective optimization
+- parallel or distributed trials
+- Web search UI
+- external sweep providers
+- real bitsandbytes QLoRA search runtime
+
+## Next Recommended Implementation Feature
+
+```text
+Core Milestone 3 / Feature 1:
+Distributed Runtime and Process Abstraction
+```
+
+Reason: local training, fine-tuning, PEFT, tracking, and search now have stable
+single-process contracts. Distributed work should start with process/runtime
+abstractions before DDP, FSDP, or multi-GPU PEFT are implemented.
