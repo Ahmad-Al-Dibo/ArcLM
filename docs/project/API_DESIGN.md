@@ -337,3 +337,27 @@ Search APIs do not serialize model factories, execute arbitrary imports, copy
 model weights, create a second training loop, start distributed workers, or
 integrate external search frameworks. A trial runner must create fresh runtime
 objects and call existing ArcLM training/evaluation/fine-tuning APIs.
+
+## Distributed Runtime API
+
+Core Milestone 3 / Feature 1 adds a small distributed runtime domain:
+
+```python
+from arclm.distributed import (
+    DistributedBackend,
+    DistributedConfig,
+    DistributedRuntimeInfo,
+    build_distributed_env,
+    get_distributed_info,
+    resolve_process_device,
+    validate_distributed_config,
+)
+```
+
+This API validates process identity, rank, world size, local rank, backend
+availability, and process device selection. It does not initialize a process
+group, spawn workers, wrap models in DDP/FSDP, create distributed samplers, or
+change the existing single-device `Trainer`.
+
+`arclm.distributed` is a domain import. It is not exported from the package
+root, and `import arclm` remains lightweight.

@@ -100,3 +100,15 @@ remain pending.
 Core Milestone 2 / Feature 6 is not GPU-specific. CPU search runtime is
 verified with tiny local training trials. Optional CUDA search runtime and real
 bitsandbytes QLoRA search runtime remain pending separate validation.
+
+Core Milestone 3 / Feature 1 is not a GPU runtime validation. It verifies
+process/runtime inspection in the CPU baseline:
+
+| Distributed path | Local status | Evidence |
+| ---------------- | ------------ | -------- |
+| `torch.distributed` availability | Verified in CPU baseline | `tests/distributed` |
+| Gloo backend capability | Verified in CPU baseline | `tests/distributed` |
+| NCCL backend capability | Reported unavailable in CPU baseline | `tests/distributed` |
+| Process-group lifecycle | Not implemented in Feature 1 | Planned for Core Milestone 3 / Feature 3 |
+| DDP world-size-two | Not implemented | Requires later DDP milestone and at least two GPUs for CUDA validation |
+| FSDP | Not implemented | Requires later FSDP milestone and external hardware |

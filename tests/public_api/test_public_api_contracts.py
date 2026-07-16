@@ -67,6 +67,31 @@ def test_documented_domain_imports_are_available():
             "load_search",
             "validate_search",
         ],
+        "arclm.distributed": [
+            "DistributedBackend",
+            "DistributedConfig",
+            "DistributedError",
+            "DistributedLaunchResult",
+            "DistributedProcessGroupInfo",
+            "DistributedRuntimeInfo",
+            "DistributedValidationIssue",
+            "DistributedValidationResult",
+            "DistributedWorkerResult",
+            "ExternalValidationTarget",
+            "SingleGpuBoundaryInfo",
+            "build_distributed_env",
+            "destroy_process_group",
+            "get_external_multi_gpu_validation_matrix",
+            "get_distributed_info",
+            "init_process_group",
+            "inspect_single_gpu_boundary",
+            "launch_processes",
+            "process_group_context",
+            "resolve_process_device",
+            "validate_distributed_config",
+            "validate_distributed_setup",
+            "validate_single_gpu_boundary",
+        ],
     }
 
     for module_name, names in imports.items():
@@ -87,6 +112,7 @@ def test_domain_all_exports_resolve():
         "arclm.peft",
         "arclm.tracking",
         "arclm.search",
+        "arclm.distributed",
     ]
 
     for module_name in module_names:

@@ -233,3 +233,21 @@ Run manifests are not a secure audit log or signed evidence system. They are
 local reproducibility metadata.
 - Runtime environment reports exclude environment variables, usernames,
   hostnames, absolute project paths, access tokens, and dataset contents.
+
+## Distributed Runtime Security
+
+Core Milestone 3 / Feature 1 does not start worker processes and does not
+initialize a process group.
+
+Rules:
+
+- Only explicit distributed configuration values and standard launcher
+  variables are read.
+- Full environment blocks, secrets, dataset paths, and credentials are not
+  copied into runtime summaries.
+- CUDA requests fail clearly when CUDA is unavailable; they do not silently
+  fall back to CPU.
+- Backend availability is reported as capability evidence, not as proof of
+  DDP/FSDP training support.
+- Future launchers must validate rank/world-size/device configuration before
+  starting child processes.

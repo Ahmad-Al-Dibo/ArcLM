@@ -1,4 +1,4 @@
-"""Generate baseline Qwen3-0.6B answers before SFT."""
+"""Generate baseline Qwen3-0.6B structured JSON answers before SFT."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ DEFAULT_MODEL = "Qwen/Qwen3-0.6B"
 DEFAULT_PROMPTS = EXAMPLE_DIR / "data" / "benchmark_prompts.jsonl"
 DEFAULT_OUTPUT = EXAMPLE_DIR / "output" / "base_outputs.jsonl"
 SYSTEM_PROMPT = (
-    "You are a helpful AI assistant specialized in explaining machine learning "
-    "concepts clearly."
+    "You convert user requests into strict JSON. Return only valid JSON with "
+    "keys: task, answer, confidence, tags. Do not use markdown."
 )
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test the base Qwen3-0.6B model.")
+    parser = argparse.ArgumentParser(description="Test the base Qwen3-0.6B model on structured JSON prompts.")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--prompts", default=str(DEFAULT_PROMPTS))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
@@ -78,7 +78,9 @@ def generate_for_prompts(tokenizer, model, prompts_path: Path, max_new_tokens: i
         rows.append({
             "id": item["id"],
             "prompt": item["prompt"],
-            "expected_keywords": item.get("expected_keywords", []),
+            "required_task": item.get("required_task"),
+            "required_keys": item.get("required_keys", []),
+            "expected_tags": item.get("expected_tags", []),
             "generated_text": generated,
         })
     return rows

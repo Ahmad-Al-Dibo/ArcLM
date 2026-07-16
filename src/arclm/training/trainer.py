@@ -13,7 +13,8 @@ import warnings
 import torch
 import torch.nn.functional as F
 from pathlib import Path
-from torch.utils.data import DataLoader
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data import DataLoader, DistributedSampler
 from ..checkpoints.training import (
     CHECKPOINT_FORMAT,
     CHECKPOINT_VERSION,
@@ -60,6 +61,7 @@ class Trainer(BaseTrainer):
         callbacks=None,
         event_logger=None,
         collate_fn=None,
+        distributed_config=None,
     ):
         """Maakt de trainer klaar voor gebruik.
 
@@ -77,8 +79,15 @@ class Trainer(BaseTrainer):
         """
         self.model = model
         self.config = config or TrainingConfig()
+        self.distributed_config = distributed_config
+        self.distributed_enabled = bool(
+            distributed_config is not None and distributed_config.world_size > 1
+        )
+        self.distributed_rank = getattr(distributed_config, "rank", 0)
+        self.distributed_world_size = getattr(distributed_config, "world_size", 1)
         self.device = self._resolve_device(self.config)
         self.model.to(self.device)
+        self.model = self._wrap_distributed_model(self.model)
         self.criterion = criterion or torch.nn.CrossEntropyLoss()
         self.train_dataset = train_dataset
         self.validation_dataset = validation_dataset
@@ -110,12 +119,80 @@ class Trainer(BaseTrainer):
         self.global_step = 0
         self.optimizer_step = 0
 
+    @property
+    def is_rank_zero(self):
+        """Geeft aan of dit proces gedeelde output mag schrijven."""
+        return self.distributed_rank == 0
+
+    def _distributed_barrier(self, reason):
+        """Wacht tot alle ranks hetzelfde checkpoint-moment bereiken."""
+        if not self.distributed_enabled:
+            return
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            raise TrainingError(
+                "Distributed checkpoint synchronization requires an initialized process group."
+            )
+        try:
+            torch.distributed.barrier()
+        except Exception as error:
+            raise TrainingError(
+                f"Distributed synchronization failed during {reason}."
+            ) from error
+
+    def _broadcast_rank_zero_error(self, message):
+        """Deelt een rank-zero fout met alle ranks."""
+        if not self.distributed_enabled:
+            return message
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            raise TrainingError(
+                "Distributed error synchronization requires an initialized process group."
+            )
+        payload = [message if self.is_rank_zero else None]
+        try:
+            torch.distributed.broadcast_object_list(payload, src=0)
+        except Exception as error:
+            raise TrainingError(
+                "Distributed synchronization failed while sharing checkpoint status."
+            ) from error
+        return payload[0]
+
+    def _raw_model(self):
+        """Geeft het echte model terug, ook als DDP eromheen zit."""
+        return self.model.module if hasattr(self.model, "module") else self.model
+
     def _resolve_device(self, config):
         """Bepaalt op welk apparaat de trainer draait."""
+        if self.distributed_config is not None:
+            from ..distributed import resolve_process_device
+
+            return torch.device(resolve_process_device(self.distributed_config))
         device = getattr(config, "device", None)
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         return torch.device(device)
+
+    def _wrap_distributed_model(self, model):
+        """Wikkelt het model in DDP als distributed training expliciet aan staat."""
+        if not self.distributed_enabled:
+            return model
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            raise TrainingError(
+                "DDP training requires an initialized torch distributed process group."
+            )
+        if int(torch.distributed.get_world_size()) != self.distributed_world_size:
+            raise TrainingError("DDP world_size does not match the active process group.")
+        if int(torch.distributed.get_rank()) != self.distributed_rank:
+            raise TrainingError("DDP rank does not match the active process group.")
+        if self.device.type == "cuda":
+            index = self.device.index
+            if index is None:
+                index = getattr(self.distributed_config, "local_rank", 0)
+            return DistributedDataParallel(
+                model,
+                device_ids=[index],
+                output_device=index,
+            )
+        return DistributedDataParallel(model)
 
     def _config_epochs(self):
         """Geeft het aantal epochs uit nieuwe of oude configs terug."""
@@ -129,10 +206,19 @@ class Trainer(BaseTrainer):
         """Maakt een dataloader voor een dataset."""
         if dataset is None:
             return None
+        sampler = None
+        if self.distributed_enabled:
+            sampler = DistributedSampler(
+                dataset,
+                num_replicas=self.distributed_world_size,
+                rank=self.distributed_rank,
+                shuffle=shuffle,
+            )
         return DataLoader(
             dataset,
             batch_size=self._config_batch_size(),
-            shuffle=shuffle,
+            shuffle=False if sampler is not None else shuffle,
+            sampler=sampler,
             num_workers=getattr(self.config, "num_workers", 0),
             collate_fn=self.collate_fn,
         )
@@ -220,6 +306,12 @@ class Trainer(BaseTrainer):
             self.scheduler.step()
         self.optimizer.zero_grad(set_to_none=True)
         self.optimizer_step += 1
+
+    def _set_distributed_sampler_epoch(self, loader, epoch):
+        """Zet de epoch op een DistributedSampler als die wordt gebruikt."""
+        sampler = getattr(loader, "sampler", None)
+        if isinstance(sampler, DistributedSampler):
+            sampler.set_epoch(epoch)
     
     def train(
         self,
@@ -365,6 +457,7 @@ class Trainer(BaseTrainer):
         self._call_callbacks("on_train_start")
 
         for epoch in range(self.current_epoch, epochs):
+            self._set_distributed_sampler_epoch(loader, epoch)
             epoch_start = time.time()
             total_loss = 0
             log_interval = getattr(self.config, "training_log_interval", 50)
@@ -407,6 +500,7 @@ class Trainer(BaseTrainer):
                 if (
                     checkpoint_batch_interval > 0
                     and checkpoint_callback is not None
+                    and self.is_rank_zero
                     and self.global_step % checkpoint_batch_interval == 0
                 ):
                     self._call_checkpoint_callback(
@@ -421,6 +515,7 @@ class Trainer(BaseTrainer):
                 if (
                     save_every_steps
                     and save_every_steps > 0
+                    and self.is_rank_zero
                     and self.global_step % save_every_steps == 0
                 ):
                     checkpoint_path = self.save_checkpoint()
@@ -555,6 +650,7 @@ class Trainer(BaseTrainer):
             if (
                 checkpoint_epoch_interval > 0
                 and checkpoint_callback is not None
+                and self.is_rank_zero
                 and self.current_epoch % checkpoint_epoch_interval == 0
             ):
                 self._call_checkpoint_callback(
@@ -798,7 +894,7 @@ class Trainer(BaseTrainer):
         if val_loss < self.best_val_loss - min_delta:
             self.best_val_loss = val_loss
             self.patience_counter = 0
-            self.best_model_state_dict = copy.deepcopy(self.model.state_dict())
+            self.best_model_state_dict = copy.deepcopy(self._raw_model().state_dict())
             return True
         return False
 
@@ -862,7 +958,7 @@ class Trainer(BaseTrainer):
     def restore_best_model(self):
         """Herstelt weights van de beste validatie loss als die bestaat."""
         if self.best_model_state_dict is not None:
-            self.model.load_state_dict(self.best_model_state_dict)
+            self._raw_model().load_state_dict(self.best_model_state_dict)
             print(f"[OK] Restored best validation model ({self.best_val_loss:.4f})")
     
     def get_generalization_gap(self):
@@ -959,8 +1055,9 @@ class Trainer(BaseTrainer):
         self._sync_state_from_counters()
         config_dict = self._config_to_dict()
         state_dict = self.state.to_dict()
+        distributed_metadata = self._distributed_checkpoint_metadata()
         lifecycle_metadata = build_training_checkpoint_metadata(
-            model=self.model,
+            model=self._raw_model(),
             config=config_dict,
             training_state=state_dict,
             precision=getattr(self.config, "precision", "fp32"),
@@ -982,7 +1079,7 @@ class Trainer(BaseTrainer):
             "checkpoint_format": CHECKPOINT_FORMAT,
             "checkpoint_version": CHECKPOINT_VERSION,
             "training_state_version": TRAINING_STATE_VERSION,
-            "model_state_dict": self.model.state_dict(),
+            "model_state_dict": self._raw_model().state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
             "scheduler_state_dict": (
                 self.scheduler.state_dict() if self.scheduler is not None else None
@@ -999,6 +1096,7 @@ class Trainer(BaseTrainer):
             "best_val_loss": self.best_val_loss,
             "best_model_state_dict": self.best_model_state_dict,
             "train_history": self.get_train_history(),
+            "distributed": distributed_metadata,
             "lifecycle_metadata": lifecycle_metadata,
             "checkpoint_metadata": checkpoint_metadata,
             "metadata": {
@@ -1012,37 +1110,74 @@ class Trainer(BaseTrainer):
                 "pytorch_version": lifecycle_metadata["pytorch_version"],
                 "model_type": lifecycle_metadata["model_type"],
                 "saved_at": time.time(),
+                "distributed": distributed_metadata,
             },
+        }
+
+    def _distributed_checkpoint_metadata(self):
+        """Beschrijft de distributed checkpoint-policy zonder worker state."""
+        if self.distributed_config is None:
+            return {
+                "enabled": False,
+                "rank_zero_only": True,
+            }
+        return {
+            "enabled": bool(self.distributed_enabled),
+            "rank": int(self.distributed_rank),
+            "world_size": int(self.distributed_world_size),
+            "local_rank": int(getattr(self.distributed_config, "local_rank", 0)),
+            "backend": getattr(self.distributed_config, "backend_name", None),
+            "device": str(self.device),
+            "rank_zero_only": True,
+            "resume_synchronizes_ranks": True,
         }
 
     def _checkpoint_file(self, path):
         """Geeft het checkpoint bestand voor een pad terug."""
         return checkpoint_file(path)
 
-    def save_checkpoint(self, path=None):
+    def save_checkpoint(self, path=None, *, synchronize=False):
         """Slaat de huidige training op.
 
         Args:
             path: Checkpoint map of bestand. Zonder pad gebruikt de trainer
                 `output_dir/checkpoint-{global_step}`.
+            synchronize: Wacht op alle ranks rond het schrijven. Gebruik dit
+                alleen wanneer elke rank deze methode aanroept.
 
         Raises:
             CheckpointError: Als opslaan mislukt.
         """
+        if synchronize:
+            self._distributed_barrier("checkpoint save start")
+        if not self.is_rank_zero:
+            if synchronize:
+                error_message = self._broadcast_rank_zero_error(None)
+                if error_message:
+                    raise CheckpointError(error_message)
+                self._distributed_barrier("checkpoint save finish")
+            return None
         if path is None:
             output_dir = Path(getattr(self.config, "output_dir", "outputs"))
             path = output_dir / f"checkpoint-{self.global_step}"
         checkpoint_file = self._checkpoint_file(path)
+        result_path = None
         try:
             atomic_save_checkpoint(self._checkpoint_payload(), checkpoint_file)
-            return checkpoint_file.parent if not Path(path).suffix else checkpoint_file
+            result_path = checkpoint_file.parent if not Path(path).suffix else checkpoint_file
         except Exception as error:
+            if synchronize:
+                self._broadcast_rank_zero_error(str(error))
             if isinstance(error, CheckpointError):
                 raise
             raise CheckpointError(f"Could not save checkpoint: {checkpoint_file}") from error
         finally:
             if checkpoint_file.exists():
                 self._cleanup_checkpoints()
+        if synchronize:
+            self._broadcast_rank_zero_error(None)
+            self._distributed_barrier("checkpoint save finish")
+        return result_path
 
     def save_model_artifact(
         self,
@@ -1058,6 +1193,8 @@ class Trainer(BaseTrainer):
         Dit is niet bedoeld om training te hervatten. Daarvoor blijft
         `save_checkpoint()` de juiste API.
         """
+        if not self.is_rank_zero:
+            return None
         from ..lifecycle import save_model_artifact
 
         summary = dict(training_summary or {})
@@ -1069,7 +1206,7 @@ class Trainer(BaseTrainer):
         if self.val_losses:
             summary.setdefault("best_validation_loss", float(self.best_val_loss))
         return save_model_artifact(
-            self.model,
+            self._raw_model(),
             path,
             config=self.config,
             tokenizer=tokenizer,
@@ -1079,22 +1216,28 @@ class Trainer(BaseTrainer):
             provenance={"source": "arclm.training.Trainer"},
         )
 
-    def load_checkpoint(self, path):
+    def load_checkpoint(self, path, *, synchronize=None):
         """Laadt een training checkpoint.
 
         Args:
             path: Checkpoint map of bestand.
+            synchronize: Wacht rond het laden wanneer distributed training actief
+                is. Standaard gebeurt dit voor DDP-runs.
 
         Raises:
             CheckpointError: Als verplichte checkpoint-data ontbreekt.
         """
+        if synchronize is None:
+            synchronize = self.distributed_enabled
+        if synchronize:
+            self._distributed_barrier("checkpoint load start")
         checkpoint_file = self._checkpoint_file(path)
         checkpoint = safe_load_training_checkpoint(
             checkpoint_file,
             map_location=self.device,
         )
 
-        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self._raw_model().load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if self.scheduler is None and checkpoint.get("scheduler_state_dict") is not None:
             total_steps = self._total_optimizer_steps(
@@ -1110,6 +1253,8 @@ class Trainer(BaseTrainer):
             checkpoint.get("rng_state"),
             restore_cuda=self.device.type == "cuda",
         )
+        if synchronize:
+            self._distributed_barrier("checkpoint load finish")
         return checkpoint
 
     def resume(self, path):
@@ -1174,6 +1319,8 @@ class Trainer(BaseTrainer):
         tokenizer_metadata=None,
     ):
         """Slaat een oud-stijl ArcLM checkpoint op."""
+        if not self.is_rank_zero:
+            return None
         Path(config.model_path).parent.mkdir(parents=True, exist_ok=True)
         
         checkpoint = self._checkpoint_payload(tokenizer_metadata=tokenizer_metadata)
@@ -1207,7 +1354,7 @@ class Trainer(BaseTrainer):
     def load(self, model_path):
         """Laadt een oud-stijl ArcLM checkpoint."""
         checkpoint = safe_load_training_checkpoint(model_path, map_location=self.device)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self._raw_model().load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         if self.scheduler is not None and checkpoint.get("scheduler_state_dict") is not None:
             self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])

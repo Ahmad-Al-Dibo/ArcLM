@@ -360,6 +360,37 @@ Feature 3 final validation:
 - paused Web regression: lint passed, typecheck passed, `82` tests passed,
   production build passed, and npm audit reported `0` vulnerabilities
 
+## Core Milestone 3 / Feature 1 Validation
+
+Distributed Runtime and Process Abstraction is validated without starting a
+process group.
+
+Commands:
+
+```bash
+python -m pytest tests/distributed -v
+python -m pytest tests/public_api -v
+python -m pytest
+python -m compileall src/arclm
+python -m pip wheel . --no-deps
+```
+
+Focused result:
+
+| Gate | Result |
+| ---- | ------ |
+| `tests/distributed -v` | `19 passed` |
+| `tests/public_api -v` | `26 passed` |
+| Full Python suite | `366 passed, 13 skipped, 4 warnings` |
+| Compileall | Passed |
+| Wheel build | Passed |
+| Paused frontend regression | Lint/typecheck/test/build passed; npm audit 0 vulnerabilities |
+
+The distributed tests verify rank/world-size validation, environment parsing,
+Gloo/NCCL capability reporting, no silent CPU fallback for explicit CUDA
+requests, launcher environment creation, and that process-group initialization
+does not happen during inspection.
+
 ## Core Milestone 2 / Feature 4 Validation
 
 Hugging Face and QLoRA Runtime Validation Matrix adds focused runtime tests

@@ -18,24 +18,25 @@ Core Track:
 Active
 
 Last completed Core action:
-Core Milestone 2 / Feature 4:
-Hugging Face and QLoRA Runtime Validation Matrix
+Core Milestone 4 / Feature 5:
+Resume and Artifact Handoff
 
 Next recommended Core action:
-Core Milestone 2 / Feature 5:
-Experiment Tracking and Reproducible Run Manifests
+Core Milestone 4 / Feature 6:
+External Hardware Validation
 
 Approval:
 Not granted
 ```
 
 Core Milestone 1 Features 1, 2, and 3 are implemented. Core Milestone 2 /
-Features 1 through 4 are implemented. The next recommended
+Features 1 through 6 are implemented. Core Milestone 3 / Features 1 through 9
+are implemented. Core Milestone 4 / Features 1 through 5 are implemented. The next recommended
 implementation feature is not approved automatically:
 
 ```text
-Core Milestone 2 / Feature 5:
-Experiment Tracking and Reproducible Run Manifests
+Core Milestone 4 / Feature 6:
+External Hardware Validation
 ```
 
 ## Core Milestone 1: Model Lifecycle and Configuration Foundation
@@ -186,7 +187,7 @@ Feature progress:
 
 ## Core Milestone 2: Fine-Tuning and PEFT Foundation
 
-- Status: Features 1 through 6 complete; Core Milestone 3 / Feature 1 recommended but not approved.
+- Status: Features 1 through 6 complete.
 - Goal: stabilize full-parameter SFT first, then add optional PEFT only through
   a tested dependency boundary.
 - Excluded now: production QLoRA claims without bitsandbytes runtime evidence,
@@ -206,7 +207,7 @@ Feature progress:
 
 ## Core Milestone 3: Distributed Runtime Foundation
 
-- Status: Planned, not approved.
+- Status: Features 1 through 9 complete. Real two-GPU CUDA DDP remains pending external hardware.
 - Goal: prepare process/runtime contracts for future DDP without implementing
   FSDP or multi-node behavior in one patch.
 
@@ -214,7 +215,31 @@ Feature progress:
 
 | Feature | Status | Evidence |
 | ------- | ------ | -------- |
-| Feature 1: Distributed Runtime and Process Abstraction | Recommended | Needed before DDP, multi-GPU PEFT, and distributed checkpoint validation |
+| Feature 1: Distributed Runtime and Process Abstraction | Complete | `arclm.distributed`, config/env parsing, runtime inspection, backend checks, device resolution, no process-group side effects; `tests/distributed` passed |
+| Feature 2: Distributed Config Validation | Complete | `validate_distributed_setup`, structured validation issues/results, CUDA/NCCL/rendezvous/local-rank policy tests; no process group started |
+| Feature 3: CPU Process-Group Runtime Tests | Complete | `init_process_group`, `destroy_process_group`, `process_group_context`, single-process Gloo lifecycle, and two CPU subprocesses joining one Gloo group; no launcher API |
+| Feature 4: Multiprocessing Launcher | Complete | `launch_processes`, bounded spawn workers, structured success/failure/timeout results, optional process-group init, and simple example |
+| Feature 5: Single-GPU Distributed Smoke Boundary | Complete | `SingleGpuBoundaryInfo`, CUDA-marked smoke boundary tests, GTX 1050 Ti one-worker process-group + CUDA backward runtime, Windows TCPStore compatibility, and simple example |
+| Feature 6: External Multi-GPU Validation Matrix | Complete | `ExternalValidationTarget`, external release-gate matrix, registered markers, skipped provider-independent gates, and simple example |
+| Feature 7: DDP Trainer Integration | Complete | `Trainer(..., distributed_config=...)`, DDP wrapping, `DistributedSampler`, rank-zero checkpoint writes, two CPU/Gloo training processes, and simple example |
+| Feature 8: Distributed Checkpoint and Resume Hardening | Complete | `save_checkpoint(..., synchronize=True)`, distributed checkpoint metadata, synchronized distributed load, and two CPU/Gloo resume with new trainer objects |
+| Feature 9: External Two-GPU CUDA DDP Validation Gate | Complete as gate; external runtime pending | `tests/gpu/test_two_gpu_ddp_runtime.py` selects a real two-GPU CUDA/NCCL DDP train-checkpoint-resume test and skips locally with an exact hardware reason |
+
+## Core Milestone 4: FSDP Foundation
+
+- Status: Features 1 through 5 complete. Feature 6 is recommended, not approved.
+- Goal: add FSDP capability checks and sharded-training contracts only after DDP gates exist.
+
+Feature progress:
+
+| Feature | Status | Evidence |
+| ------- | ------ | -------- |
+| Feature 1: FSDP Config and Capability Checks | Complete | `FSDPCapabilityInfo`, `inspect_fsdp_capability()`, `validate_fsdp_capability()`, CUDA/NCCL/hardware checks, public import tests; no model wrapping |
+| Feature 2: FSDP Model Wrapping Boundary | Complete | `FSDPWrapConfig`, `FSDPWrapInfo`, `FSDPWrappedModel`, `wrap_fsdp_model()`, strict process-group/rank/device checks, mocked positive wrap test; no Trainer integration |
+| Feature 3: Sharded Checkpoint Policy | Complete | `FSDPCheckpointPolicy`, `FSDPCheckpointPlan`, `plan_fsdp_sharded_checkpoint()`, safe relative manifest/shard paths, no optimizer state, no resume |
+| Feature 4: Optimizer-State Handling | Complete | `FSDPCheckpointPolicy` defaults to sharded optimizer-state planning; `FSDPCheckpointPlan` includes safe per-rank optimizer shard paths; no writer |
+| Feature 5: Resume and Artifact Handoff | Complete | `FSDPCheckpointPolicy` defaults to synchronized resume and rank-zero artifact metadata handoff; `FSDPCheckpointPlan` exposes all-rank resume and rank-zero handoff intent; no writer |
+| Feature 6: External Hardware Validation | Recommended | Requires at least two suitable CUDA GPUs; not approved automatically |
 
 ## Web Milestone 3: Training and Evaluation Dashboard
 

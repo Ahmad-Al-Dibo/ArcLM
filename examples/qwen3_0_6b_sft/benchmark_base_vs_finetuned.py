@@ -1,4 +1,4 @@
-"""Small functional benchmark for the Qwen3 SFT example."""
+"""Small structured-output benchmark for the Qwen3 SFT example."""
 
 from __future__ import annotations
 
@@ -14,14 +14,14 @@ DEFAULT_OUTPUT = EXAMPLE_DIR / "output" / "benchmark_results.json"
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compare base and fine-tuned example outputs.")
+    parser = argparse.ArgumentParser(description="Compare base and fine-tuned structured JSON outputs.")
     parser.add_argument("--prompts", default=str(DEFAULT_PROMPTS))
     parser.add_argument("--base-outputs", default=str(DEFAULT_BASE))
     parser.add_argument("--finetuned-outputs", default=str(DEFAULT_FINETUNED))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     args = parser.parse_args()
 
-    print("This is a small functional benchmark, not a full model evaluation.")
+    print("This is a small structured-output benchmark, not a full model evaluation.")
     results = compare_outputs(
         prompts_path=Path(args.prompts),
         base_outputs_path=Path(args.base_outputs),
@@ -40,47 +40,88 @@ def compare_outputs(prompts_path: Path, base_outputs_path: Path, finetuned_outpu
     finetuned = {row["id"]: row for row in read_jsonl_required(finetuned_outputs_path)}
     results = []
     for prompt_id, prompt in prompts.items():
-        expected = prompt.get("expected_keywords", [])
+        required_keys = prompt.get("required_keys", [])
+        expected_tags = prompt.get("expected_tags", [])
+        required_task = prompt.get("required_task")
         base_text = base.get(prompt_id, {}).get("generated_text", "")
         finetuned_text = finetuned.get(prompt_id, {}).get("generated_text", "")
+        base_check = validate_structured_output(base_text, required_keys, required_task, expected_tags)
+        finetuned_check = validate_structured_output(
+            finetuned_text,
+            required_keys,
+            required_task,
+            expected_tags,
+        )
         results.append({
             "id": prompt_id,
             "prompt": prompt["prompt"],
-            "expected_keywords": expected,
+            "required_task": required_task,
+            "required_keys": required_keys,
+            "expected_tags": expected_tags,
             "base_output": base_text,
             "finetuned_output": finetuned_text,
-            "base_score": keyword_score(base_text, expected),
-            "finetuned_score": keyword_score(finetuned_text, expected),
-            "base_answer_length": len(base_text.split()),
-            "finetuned_answer_length": len(finetuned_text.split()),
-            "base_follows_instruction": follows_instruction(prompt["prompt"], base_text),
-            "finetuned_follows_instruction": follows_instruction(prompt["prompt"], finetuned_text),
+            "base_valid_json": base_check["valid_json"],
+            "finetuned_valid_json": finetuned_check["valid_json"],
+            "base_score": base_check["score"],
+            "finetuned_score": finetuned_check["score"],
+            "base_errors": base_check["errors"],
+            "finetuned_errors": finetuned_check["errors"],
         })
     return results
 
 
-def keyword_score(text: str, expected_keywords):
-    if not expected_keywords:
-        return 0.0
-    normalized = text.lower()
-    found = sum(1 for keyword in expected_keywords if keyword.lower() in normalized)
-    return found / len(expected_keywords)
+def validate_structured_output(text: str, required_keys, required_task, expected_tags):
+    errors = []
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return {"valid_json": False, "score": 0.0, "errors": ["invalid_json"]}
 
+    if not isinstance(parsed, dict):
+        return {"valid_json": False, "score": 0.0, "errors": ["json_is_not_object"]}
 
-def follows_instruction(prompt: str, answer: str):
-    if not answer.strip():
-        return False
-    if "one sentence" in prompt.lower():
-        sentence_marks = sum(answer.count(mark) for mark in ".!?")
-        return sentence_marks <= 2
-    return len(answer.split()) <= 160
+    score_parts = []
+    missing_keys = [key for key in required_keys if key not in parsed]
+    if missing_keys:
+        errors.append(f"missing_keys:{','.join(missing_keys)}")
+    score_parts.append(1.0 if not missing_keys else 0.0)
+
+    if required_task:
+        task_matches = parsed.get("task") == required_task
+        if not task_matches:
+            errors.append("task_mismatch")
+        score_parts.append(1.0 if task_matches else 0.0)
+
+    tags = parsed.get("tags", [])
+    if not isinstance(tags, list):
+        errors.append("tags_not_list")
+        score_parts.append(0.0)
+    elif expected_tags:
+        normalized_tags = {str(tag).lower() for tag in tags}
+        found = sum(1 for tag in expected_tags if str(tag).lower() in normalized_tags)
+        score_parts.append(found / len(expected_tags))
+
+    answer = parsed.get("answer")
+    answer_ok = isinstance(answer, str) and bool(answer.strip())
+    if not answer_ok:
+        errors.append("answer_missing")
+    score_parts.append(1.0 if answer_ok else 0.0)
+
+    score = sum(score_parts) / len(score_parts) if score_parts else 0.0
+    return {"valid_json": True, "score": score, "errors": errors}
 
 
 def print_table(results):
     print()
-    print(f"{'Prompt ID':<24} {'Base Score':<14} {'Fine-tuned Score':<18}")
+    print(f"{'Prompt ID':<24} {'Base JSON':<10} {'Base Score':<12} {'Fine JSON':<10} {'Fine Score':<12}")
     for row in results:
-        print(f"{row['id']:<24} {row['base_score']:<14.2f} {row['finetuned_score']:<18.2f}")
+        print(
+            f"{row['id']:<24} "
+            f"{str(row['base_valid_json']):<10} "
+            f"{row['base_score']:<12.2f} "
+            f"{str(row['finetuned_valid_json']):<10} "
+            f"{row['finetuned_score']:<12.2f}"
+        )
 
 
 def read_jsonl_required(path: Path):

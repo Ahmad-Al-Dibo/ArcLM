@@ -36,7 +36,12 @@ Deze voorbeelden hebben extra dependencies of modeldownloads nodig:
 
 ## Geavanceerde Workflow
 
-- `qwen3_0_6b_sft/`: grotere Qwen SFT workflow.
+- `qwen3_0_6b_sft/`: Qwen3-0.6B LoRA SFT workflow voor gestructureerde JSON-output.
+
+## Voorbeeldmatrix
+
+Zie `EXAMPLE_MATRIX.md` voor een overzicht per moeilijkheidsgraad, taaktype,
+hardware-eis, internet-eis en optionele dependencies.
 
 ## Let Op
 

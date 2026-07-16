@@ -150,3 +150,14 @@ Hyperparameter Search Foundation added no dependencies.
   databases, and cloud workers are not dependencies of this feature.
 - `import arclm` remains lightweight because `arclm.search` is a domain import,
   not a root import side effect.
+
+## Core Milestone 3 / Feature 1 Dependency Result
+
+Distributed Runtime and Process Abstraction added no dependencies.
+
+- It uses the existing required PyTorch dependency.
+- `torch.distributed` is imported only when `arclm.distributed` runtime helpers
+  are used.
+- No Accelerate, DeepSpeed, MPI, Ray, launch framework, or cloud dependency was
+  added.
+- `import arclm` remains lightweight.

@@ -1,4 +1,4 @@
-"""Fine-tune Qwen/Qwen3-0.6B with ArcLM train_sft."""
+"""Fine-tune Qwen/Qwen3-0.6B for structured JSON output."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ DEFAULT_OUTPUT = EXAMPLE_DIR / "output" / "qwen3_0_6b_sft_lora"
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run ArcLM SFT on Qwen/Qwen3-0.6B.")
+    parser = argparse.ArgumentParser(description="Run ArcLM SFT on Qwen/Qwen3-0.6B for structured JSON output.")
     parser.add_argument("--model", default="Qwen/Qwen3-0.6B")
     parser.add_argument("--dataset", default=str(DEFAULT_DATA))
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT))

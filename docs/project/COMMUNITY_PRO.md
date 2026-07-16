@@ -64,6 +64,11 @@ Core Milestone 2 / Feature 6 adds local sequential hyperparameter search to
 Community. Parallel search, distributed search, cloud workers, Web-controlled
 tuning, and external sweep providers remain future Shared Core or Pro work.
 
+Core Milestone 3 / Feature 1 adds the small `arclm.distributed` process/runtime
+abstraction as Shared Core infrastructure. DDP, FSDP, multi-GPU orchestration,
+distributed checkpoints, cloud launchers, and production operations remain
+Pro-oriented or separately approved work.
+
 ## What Pro Adds
 
 Pro adds scale and operations: multi-GPU orchestration, PEFT automation, production serving, dashboards, cloud deployment, advanced evaluation suites, team governance, and enterprise controls.

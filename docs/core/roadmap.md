@@ -197,7 +197,7 @@ Not verified:
 
 The canonical matrix is [runtime-validation-matrix.md](runtime-validation-matrix.md).
 
-## Next Recommended Implementation Feature
+## Historical Tracking Feature Result
 
 ```text
 Core Milestone 2 / Feature 5:
@@ -268,10 +268,10 @@ Not implemented:
 ## Next Recommended Implementation Feature
 
 ```text
-Core Milestone 3 / Feature 1:
-Distributed Runtime and Process Abstraction
+Core Milestone 3 / Feature 2:
+Distributed Config Validation
 ```
 
-Reason: local training, fine-tuning, PEFT, tracking, and search now have stable
-single-process contracts. Distributed work should start with process/runtime
-abstractions before DDP, FSDP, or multi-GPU PEFT are implemented.
+Reason: `arclm.distributed` now provides a small process/runtime abstraction.
+The next step should harden distributed configuration policies before ArcLM
+starts process groups, wraps models in DDP, or claims multi-GPU behavior.

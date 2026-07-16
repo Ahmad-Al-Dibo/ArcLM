@@ -1,4 +1,4 @@
-"""Generate Qwen3-0.6B answers after ArcLM SFT."""
+"""Generate Qwen3-0.6B structured JSON answers after ArcLM SFT."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ DEFAULT_OUTPUT = EXAMPLE_DIR / "output" / "finetuned_outputs.jsonl"
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Test the fine-tuned Qwen3-0.6B model.")
+    parser = argparse.ArgumentParser(description="Test the fine-tuned Qwen3-0.6B model on structured JSON prompts.")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--adapter", default=str(DEFAULT_ADAPTER))
     parser.add_argument("--prompts", default=str(DEFAULT_PROMPTS))

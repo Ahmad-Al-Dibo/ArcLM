@@ -1,4 +1,5 @@
-{"id":"sft_definition","prompt":"Explain supervised fine-tuning in one sentence.","expected_keywords":["pretrained","instruction","response"]}
-{"id":"assistant_mask","prompt":"What is assistant-only loss masking?","expected_keywords":["loss","assistant","tokens"]}
-{"id":"continued_pretraining","prompt":"What is continued pre-training?","expected_keywords":["plain text","next-token","domain"]}
-{"id":"sft_vs_continue","prompt":"What is the difference between SFT and continued pre-training?","expected_keywords":["instruction","plain text","training"]}
+{"id":"catalogue_summary","prompt":"Summarize ArcLM for a product catalogue.","required_task":"product_summary","required_keys":["task","answer","confidence","tags"],"expected_tags":["ai-framework","fine-tuning"]}
+{"id":"support_ticket","prompt":"Extract a support ticket from this text: The training job failed because CUDA ran out of memory.","required_task":"support_ticket","required_keys":["task","answer","confidence","tags"],"expected_tags":["training","cuda"]}
+{"id":"invoice_json","prompt":"Classify this customer request: I need the model to always return JSON for invoices.","required_task":"request_classification","required_keys":["task","answer","confidence","tags"],"expected_tags":["structured-output","json"]}
+{"id":"validation_note","prompt":"Create a short implementation note for adding validation after generation.","required_task":"implementation_note","required_keys":["task","answer","confidence","tags"],"expected_tags":["validation","generation"]}
+{"id":"crm_note","prompt":"Turn this into a CRM note: Customer wants Qwen fine-tuned for structured outputs.","required_task":"crm_note","required_keys":["task","answer","confidence","tags"],"expected_tags":["customer-request","qwen"]}

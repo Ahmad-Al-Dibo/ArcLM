@@ -1,48 +1,68 @@
-# Qwen3-0.6B Fine-Tuning Met ArcLM
+# Qwen3-0.6B Structured-Output Fine-Tuning
 
-Dit voorbeeld laat een grotere SFT workflow zien met `Qwen/Qwen3-0.6B`.
+This example fine-tunes `Qwen/Qwen3-0.6B` for a customer-style structured-output
+task.
 
-Het voorbeeld doet dit:
+The target behavior is:
 
-1. Laadt het base model via Hugging Face.
-2. Genereert baseline antwoorden.
-3. Traint op een kleine chat-style dataset met `train_sft`.
-4. Slaat standaard een LoRA adapter op.
-5. Laadt de adapter bovenop het base model.
-6. Genereert opnieuw antwoorden.
-7. Draait een kleine functionele benchmark.
+```json
+{
+  "task": "product_summary",
+  "answer": "ArcLM is a local AI framework for training, fine-tuning, evaluating, and running language models.",
+  "confidence": "high",
+  "tags": ["ai-framework", "local-training", "fine-tuning"]
+}
+```
 
-Dit is een demo, geen serieuze model-evaluatie. De dataset is heel klein, dus het model kan tekst onthouden in plaats van echt robuust gedrag leren.
+The example uses ArcLM SFT with LoRA by default. It is meant for a real
+customer demo shape, not for a production-quality model release.
 
-## Installatie
+## What It Does
+
+1. Loads the base Qwen model through Hugging Face.
+2. Generates baseline structured-output attempts.
+3. Fine-tunes on JSON-output examples with assistant-only loss.
+4. Saves a LoRA adapter.
+5. Loads the adapter on top of the base model.
+6. Generates fine-tuned outputs.
+7. Validates that generated text is JSON with required keys.
+8. Compares base and fine-tuned structure scores.
+
+## Install
 
 ```bash
 pip install -e ".[peft]"
 ```
 
-Voor Qwen3 is een moderne `transformers` versie nodig. Deze workflow gebruikt standaard geen `bitsandbytes`.
+This workflow needs Hugging Face `transformers` and PEFT. The first run may
+download `Qwen/Qwen3-0.6B`, so internet access and disk space are needed for the
+initial model fetch.
 
-## PowerShell
+## Run
+
+PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe examples/qwen3_0_6b_sft/test_base_model.py
 .\.venv\Scripts\python.exe examples/qwen3_0_6b_sft/train_qwen3_0_6b_sft.py
 .\.venv\Scripts\python.exe examples/qwen3_0_6b_sft/test_finetuned_model.py
+.\.venv\Scripts\python.exe examples/qwen3_0_6b_sft/validate_structured_outputs.py
 .\.venv\Scripts\python.exe examples/qwen3_0_6b_sft/benchmark_base_vs_finetuned.py
 ```
 
-## Cross Platform
+Cross platform:
 
 ```bash
 python examples/qwen3_0_6b_sft/test_base_model.py
 python examples/qwen3_0_6b_sft/train_qwen3_0_6b_sft.py
 python examples/qwen3_0_6b_sft/test_finetuned_model.py
+python examples/qwen3_0_6b_sft/validate_structured_outputs.py
 python examples/qwen3_0_6b_sft/benchmark_base_vs_finetuned.py
 ```
 
-## Fine-Tuning Script
+## Fine-Tuning API
 
-Het script gebruikt de publieke ArcLM API:
+The training script uses the public ArcLM API:
 
 ```python
 from arclm import train_sft
@@ -64,59 +84,57 @@ result = train_sft(
 )
 ```
 
-## Output
+## Dataset Format
 
-De scripts schrijven onder:
+Use JSONL records with chat messages. The assistant response should be the
+exact structure you want the model to learn:
+
+```json
+{"messages":[{"role":"system","content":"You convert user requests into strict JSON. Return only valid JSON with keys: task, answer, confidence, tags."},{"role":"user","content":"Summarize ArcLM for a product catalogue."},{"role":"assistant","content":"{\"task\":\"product_summary\",\"answer\":\"ArcLM is a local AI framework for training, fine-tuning, evaluating, and running language models.\",\"confidence\":\"high\",\"tags\":[\"ai-framework\",\"local-training\",\"fine-tuning\"]}"}]}
+```
+
+Keep the examples consistent. If the customer needs another structure, change
+all assistant examples to that exact schema.
+
+## Output Files
+
+Files are written under:
 
 ```text
 examples/qwen3_0_6b_sft/output/
 ```
 
-Belangrijke output:
+Important outputs:
 
 - `base_outputs.jsonl`
 - `qwen3_0_6b_sft_lora/`
 - `finetuned_outputs.jsonl`
 - `benchmark_results.json`
 
-## Assistant-Only Loss
+## Validation
 
-Met `assistant_only_loss=True` telt alleen het antwoord van de assistant mee voor de loss. User/system tokens blijven context, maar hun labels worden op `-100` gezet.
+`validate_structured_outputs.py` checks:
 
-## Dataset Vervangen
+- generated text is valid JSON
+- JSON is an object
+- required keys exist: `task`, `answer`, `confidence`, `tags`
+- `answer` is a non-empty string
+- `confidence` is `low`, `medium`, or `high`
+- `tags` is a list of strings
 
-Gebruik JSONL records met messages:
+This is important: fine-tuning can improve structure, but production workflows
+should still validate generated JSON and retry or reject invalid responses.
 
-```json
-{"messages":[{"role":"user","content":"Vraag"},{"role":"assistant","content":"Antwoord"}]}
+## Memory Notes
+
+For small GPUs:
+
+```text
+use_lora=True
+batch_size=1
+gradient_accumulation_steps=8
+max_length=512 or 1024
 ```
 
-Of instruction/output:
-
-```json
-{"instruction":"Vraag","output":"Antwoord"}
-```
-
-Houd voorbeelden schoon, feitelijk en consistent met het gedrag dat je wilt leren.
-
-## Problemen
-
-`CUDA out of memory`
-
-Gebruik LoRA, houd `batch_size=1`, verlaag `max_length`, of gebruik een kleiner model.
-
-`Missing PEFT`
-
-Installeer met:
-
-```bash
-pip install -e ".[peft]"
-```
-
-`Hugging Face download warnings`
-
-De eerste run downloadt modelbestanden. Controleer internet, schijfruimte en eventuele Hugging Face toegang.
-
-## Speciale Versie
-
-Dit voorbeeld hoort bij de speciale ArcLM-versie. Deel adapters, datasets of geavanceerde scripts niet publiek zonder toestemming.
+If CUDA memory is still too small, run on CPU for a smoke test or use a smaller
+model for development.

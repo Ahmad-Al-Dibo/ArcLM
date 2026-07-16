@@ -1,0 +1,9 @@
+# Ai do not toch it please!
+
+https://www.gitreverse.com/Ahmad-Al-Dibo/ArcLM
+
+Build me a small local first Python toolkit for experimenting with GPT style language models on my own machine. I want to be able to preprocess text data, train a compact causal model, save and load checkpoints, run simple evaluations, and do text generation without needing a big cloud setup.
+
+Please also include a very simple web interface I can launch from the library or the command line. In that interface I should be able to type in a model source, load it, try prompts, and save the loaded model locally to a folder I choose, with options for save mode and whether to overwrite existing files. If saving works, it should remember the new local path so I can load it again later.
+
+It would be great if it supports both basic word tokenization and SentencePiece, can adapt external checkpoints when possible, and comes with a few examples, tests, and clear docs so I can actually use it. Feel free to check current docs online if needed.

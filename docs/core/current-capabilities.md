@@ -42,6 +42,7 @@ simulated user-local dataset roots are ignored and left unchanged.
 | Data pipeline | Implemented and verified for local files | Dataset unit tests pass | JSON/JSONL/CSV/TXT/list, cleaning, dedup, pipeline tests pass | Provenance/versioning/manifest layer missing |
 | Inference | Partially implemented | CLI/package/loader tests plus artifact forward-pass runtime pass | Native checkpoint inference and final artifact model forward pass verified | Generation options and external inference lack focused runtime coverage |
 | Experiment tracking | Implemented and verified | Tracking and public API tests pass | Local run lifecycle, trainer callback, fine-tuning/QLoRA metadata, inspect/validate/list/compare verified | External tracking services remain compatibility-only |
+| Distributed runtime | Implemented and verified for process abstraction only | Distributed and public API tests pass | CPU baseline confirms `torch.distributed` and Gloo availability without initializing a process group | No process-group runtime, DDP, FSDP, or multi-GPU training |
 | Architectures | Partially implemented | Native causal LM covered indirectly | GPT-style ArcLM/MiniGPT tested | LLaMA/Mistral/BERT/T5/MoE/vision/multimodal are not native |
 | Hardware validation | Partially verified | GPU tests exist and skip correctly in CPU env | GTX 1050 Ti validation recorded separately | Multi-GPU, DDP, FSDP, native BF16 acceleration need cloud validation |
 | Packaging | Implemented and verified | Wheel build and import tests pass | `pip wheel . --no-deps` passed | `python -m build` needs dev dependency in release env |
@@ -63,6 +64,7 @@ simulated user-local dataset roots are ignored and left unchanged.
 | `from arclm.peft import LoRAConfig, QLoRAConfig, QuantizationConfig, apply_lora, save_adapter_artifact` | Implemented and verified | PEFT, runtime-matrix, and public API tests | Stable for Core Milestone 2 / Features 2-4 | Real bitsandbytes QLoRA runtime and other PEFT methods remain pending |
 | `from arclm.tracking import RunTracker, create_run, inspect_run, validate_run` | Implemented and verified | Tracking and public API tests | Stable for Core Milestone 2 / Feature 5 | External tracking services are compatibility-only |
 | `from arclm.search import create_search, inspect_search, validate_search` | Implemented and verified | Search and public API tests | Stable for Core Milestone 2 / Feature 6 | Parallel/distributed search, pruning, Bayesian search, and Web UI are not implemented |
+| `from arclm.distributed import DistributedConfig, get_distributed_info` | Implemented and verified | Distributed and public API tests | Stable for Core Milestone 3 / Feature 1 | Process-group initialization, DDP, FSDP, and multi-GPU runtime remain future work |
 | `from arclm.models import ArcLM, AutoModel` | Partially implemented | Import tested | `ArcLM` stable, `AutoModel` partial | Avoid overclaiming architecture support |
 | `from arclm.tokenizers import Tokenizer, AutoTokenizer` | Partially implemented | Import tested | Native tokenizer stable, auto partial | `__all__` duplication should be cleaned later |
 | `from arclm.web import create_app` | Implemented for paused Web API | Public API tests | Optional | Must not affect Core imports |
@@ -164,7 +166,8 @@ simulated user-local dataset roots are ignored and left unchanged.
 | Public API | Implemented and verified | Broad root exports and duplicates | Confusing imports | Harden | 2 |
 | Configuration | Implemented first lifecycle slice | No versioning | Future migrations need care | Harden | 2 |
 | Model lifecycle | Implemented first lifecycle slice | External runtime matrix incomplete | External model workflows can still drift | Harden | 1 |
-| Training | Implemented and verified | Distributed/task-specific gaps | Overclaiming | Keep as-is | 5 |
+| Training | Implemented and verified | DDP/FSDP trainer integration absent | Overclaiming | Keep as-is | 5 |
+| Distributed runtime | Implemented and verified for process abstraction only | Process-group lifecycle and launcher validation absent | Overclaiming distributed training | Harden | 5 |
 | Checkpoints | Implemented and verified for current scope | Mid-epoch data position and signed integrity absent | Future reproducibility overclaiming | Harden later | 3 |
 | Evaluation | Implemented and verified | Benchmarks/distributed absent | Overclaiming | Keep as-is | 6 |
 | SFT | Implemented and verified for native CPU | Optional HF/GPU runtime matrix | Adapter drift | Harden later | 4 |
@@ -183,8 +186,8 @@ Milestone 2 / Features 1 through 6 are implemented and verified at their
 stated evidence levels. The next recommended Core feature is:
 
 ```text
-Core Milestone 3 / Feature 1:
-Distributed Runtime and Process Abstraction
+Core Milestone 3 / Feature 2:
+Distributed Config Validation
 ```
 
 This is not approved automatically.

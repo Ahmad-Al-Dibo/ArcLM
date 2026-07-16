@@ -601,3 +601,24 @@ Search is Community local functionality. Bayesian optimization, pruning,
 parallel trials, distributed search, cloud workers, Web UI controls, and
 external sweep providers remain deferred. Real bitsandbytes QLoRA runtime
 validation remains a separate pending optional gate.
+
+## DEC-026: Distributed Runtime Contract Before DDP/FSDP
+
+Status: Accepted for Core Milestone 3 / Feature 1.
+
+ArcLM needs a safe process/runtime contract before it can add DDP, FSDP,
+distributed checkpoints, multi-GPU PEFT, or distributed hyperparameter search.
+
+Decision:
+
+ArcLM adds `arclm.distributed` with `DistributedConfig`,
+`DistributedRuntimeInfo`, backend capability inspection, launcher environment
+creation, and explicit device resolution. The feature does not initialize
+process groups, spawn processes, wrap models, or alter the single-device
+trainer.
+
+Consequences:
+
+Distributed runtime inspection is now a stable Core boundary. DDP, FSDP,
+multi-GPU checkpoint/resume, distributed samplers, and external multi-GPU
+validation remain deferred until separately approved.

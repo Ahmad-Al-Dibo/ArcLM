@@ -25,8 +25,8 @@ on native and tiny Hugging Face models, QLoRA boundary/configuration, final
 model artifacts, PEFT adapter artifacts, native causal-LM inference, and local
 run manifests and search manifests.
 
-The next recommended Core feature is Core Milestone 3 / Feature 1:
-Distributed Runtime and Process Abstraction. It is not approved automatically.
+The next recommended Core feature is Core Milestone 3 / Feature 2:
+Distributed Config Validation. It is not approved automatically.
 
 Use [current-capabilities.md](current-capabilities.md) as the canonical Core
 matrix.
