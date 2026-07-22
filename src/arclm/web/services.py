@@ -10,6 +10,7 @@ from importlib import metadata
 from typing import Any
 
 import arclm
+from arclm.diagnostics_runtime import build_runtime_diagnostics, optional_dependency_status
 
 from .schemas import (
     Capability,
@@ -42,38 +43,23 @@ def get_environment() -> EnvironmentResponse:
     We vragen CUDA-details alleen op als torch zelf zegt dat CUDA beschikbaar
     is. Daardoor blijft CPU-only gebruik rustig en voorspelbaar.
     """
+    diagnostics = build_runtime_diagnostics()
     torch = _load_torch()
-    cuda_available = False
-    cuda_runtime = None
-    device_count = 0
-    gpus: list[GpuInfo] = []
-    bf16_supported: bool | None = None
-
-    if torch is not None:
-        cuda_runtime = getattr(getattr(torch, "version", None), "cuda", None)
-        cuda_available = bool(torch.cuda.is_available())
-        if cuda_available:
-            device_count = int(torch.cuda.device_count())
-            bf16_supported = bool(torch.cuda.is_bf16_supported())
-            for index in range(device_count):
-                props = torch.cuda.get_device_properties(index)
-                gpus.append(
-                    GpuInfo(
-                        name=str(torch.cuda.get_device_name(index)),
-                        vram_bytes=int(getattr(props, "total_memory", 0)),
-                        compute_capability=tuple(torch.cuda.get_device_capability(index)),
-                    )
-                )
+    cuda_available = bool(diagnostics["cuda_available"])
+    cuda_runtime = diagnostics["cuda_version"]
+    device_count = int(diagnostics["gpu_count"])
+    gpus = [GpuInfo(**gpu) for gpu in diagnostics["gpus"]]
+    bf16_supported: bool | None = bool(torch.cuda.is_bf16_supported()) if torch is not None and cuda_available else None
 
     available_devices = ["cpu"]
     if cuda_available:
         available_devices.extend(f"cuda:{index}" for index in range(device_count))
 
     return EnvironmentResponse(
-        arclm_version=arclm.__version__,
-        python_version=platform_module.python_version(),
-        platform=platform_module.system(),
-        pytorch_version=getattr(torch, "__version__", None) if torch is not None else None,
+        arclm_version=str(diagnostics["arclm_version"]),
+        python_version=str(diagnostics["python_version"]),
+        platform=str(diagnostics["operating_system"]),
+        pytorch_version=diagnostics["pytorch_version"],
         cuda_available=cuda_available,
         cuda_runtime=cuda_runtime,
         device_count=device_count,
@@ -81,6 +67,15 @@ def get_environment() -> EnvironmentResponse:
         preferred_device="cuda:0" if cuda_available else "cpu",
         gpus=gpus,
         bf16_supported=bf16_supported,
+    )
+
+
+def get_system_diagnostics(*, workspace: dict[str, Any], active_compute_operation: str = "idle") -> dict[str, Any]:
+    """Return safe diagnostics for the browser-facing system endpoint."""
+    return build_runtime_diagnostics(
+        include_paths=False,
+        workspace=workspace,
+        active_compute_operation=active_compute_operation,
     )
 
 

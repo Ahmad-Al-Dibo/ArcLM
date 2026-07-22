@@ -31,10 +31,11 @@ def test_main_help_discovers_existing_commands():
     assert "train" in output
     assert "eval" in output
     assert "generate" in output
+    assert "doctor" in output
 
 
 def test_subcommand_help_returns_success():
-    for command in ("train", "eval", "generate"):
+    for command in ("train", "eval", "generate", "doctor"):
         result = run_cli(command, "--help")
 
         assert result.returncode == 0
@@ -79,4 +80,24 @@ def test_generate_missing_model_reports_clear_error_without_traceback():
     assert result.returncode == 1
     assert "Error" in output
     assert "missing-model.pth" in output
+    assert "Traceback" not in output
+
+
+def test_doctor_reports_safe_runtime_without_traceback():
+    result = run_cli("doctor")
+    output = combined_output(result)
+
+    assert result.returncode == 0
+    assert "ArcLM version:" in output
+    assert "Optional integrations:" in output
+    assert "Traceback" not in output
+
+
+def test_doctor_json_reports_safe_runtime_without_traceback():
+    result = run_cli("doctor", "--json")
+    output = combined_output(result)
+
+    assert result.returncode == 0
+    assert '"arclm_version"' in output
+    assert '"optional_dependencies"' in output
     assert "Traceback" not in output

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { readStorage, writeStorage } from "@/lib/storage";
 
 export type InterfaceMode = "simple" | "advanced";
@@ -13,23 +13,36 @@ interface InterfaceModeContextValue {
 }
 
 const InterfaceModeContext = createContext<InterfaceModeContextValue | null>(null);
+const modeListeners = new Set<() => void>();
 
 function isInterfaceMode(value: string | null): value is InterfaceMode {
   return value === "simple" || value === "advanced";
 }
 
+function getModeSnapshot(): InterfaceMode {
+  const stored = readStorage(modeStorageKey);
+  return isInterfaceMode(stored) ? stored : "simple";
+}
+
+function subscribeMode(listener: () => void) {
+  modeListeners.add(listener);
+  return () => {
+    modeListeners.delete(listener);
+  };
+}
+
+function notifyModeListeners() {
+  for (const listener of modeListeners) {
+    listener();
+  }
+}
+
 export function InterfaceModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<InterfaceMode>(() => {
-    const stored = readStorage(modeStorageKey);
-    if (isInterfaceMode(stored)) {
-      return stored;
-    }
-    return "simple";
-  });
+  const mode = useSyncExternalStore(subscribeMode, getModeSnapshot, (): InterfaceMode => "simple");
 
   function setMode(nextMode: InterfaceMode) {
-    setModeState(nextMode);
     writeStorage(modeStorageKey, nextMode);
+    notifyModeListeners();
   }
 
   const value = useMemo(() => ({ mode, setMode }), [mode]);

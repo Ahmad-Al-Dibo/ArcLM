@@ -93,6 +93,9 @@ def test_system_status_is_safe_and_counts_workspace(tmp_path):
     assert data["python_version"]
     assert data["backend_health"]["status"] == "ok"
     assert data["workspace"]["project_count"] == 1
+    assert data["active_compute_operation"] == "idle"
+    assert data["diagnostics"]["path_details_exposed"] is False
+    assert isinstance(data["warnings"], list)
     assert "transformers" in data["optional_dependencies"]
     assert "HOME" not in str(data)
     assert str(tmp_path) not in str(data)
@@ -267,6 +270,8 @@ def test_native_tokenizer_creation_inspection_and_delete(tmp_path):
     assert created.status_code == 200, created.text
     tokenizer = created.json()
     assert tokenizer["type"] == "native"
+    assert tokenizer["tokenizer_type"] == "word"
+    assert tokenizer["sentencepiece_model_type"] is None
     assert tokenizer["vocab_size"] > 1
     assert str(tmp_path) not in str(tokenizer)
 
@@ -296,3 +301,54 @@ def test_native_tokenizer_creation_inspection_and_delete(tmp_path):
     )
     assert deleted.status_code == 200
     assert client.get(f"/api/projects/{project['id']}/tokenizers/{tokenizer['id']}").status_code == 404
+
+
+def test_sentencepiece_tokenizer_creation_and_inspection(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    dataset = _dataset(client, project["id"])
+
+    created = client.post(
+        f"/api/projects/{project['id']}/tokenizers/native",
+        json={
+            "name": "sentencepiece-tokenizer",
+            "dataset_id": dataset["id"],
+            "tokenizer_type": "sentencepiece",
+            "sentencepiece_model_type": "bpe",
+            "max_vocab": 32,
+            "text_fields": ["instruction", "response"],
+        },
+    )
+    assert created.status_code == 200, created.text
+    tokenizer = created.json()
+    assert tokenizer["type"] == "native"
+    assert tokenizer["tokenizer_type"] == "sentencepiece"
+    assert tokenizer["sentencepiece_model_type"] == "bpe"
+    assert tokenizer["vocab_size"] > 1
+    assert str(tmp_path) not in str(tokenizer)
+
+    listing = client.get(f"/api/projects/{project['id']}/tokenizers").json()
+    assert listing["tokenizers"][0]["tokenizer_type"] == "sentencepiece"
+
+    inspection = client.post(
+        f"/api/projects/{project['id']}/tokenizers/{tokenizer['id']}/inspect",
+        json={"text": "Explain tokenization."},
+    )
+    assert inspection.status_code == 200, inspection.text
+    data = inspection.json()
+    assert data["tokenizer_class"] == "SentencePieceTokenizer"
+    assert data["token_count"] >= 1
+    assert data["token_ids"]
+
+    rejected = client.post(
+        f"/api/projects/{project['id']}/tokenizers/native",
+        json={
+            "name": "bad-tokenizer",
+            "dataset_id": dataset["id"],
+            "tokenizer_type": "sentencepiece",
+            "sentencepiece_model_type": "unsupported",
+            "max_vocab": 32,
+            "text_fields": ["instruction", "response"],
+        },
+    )
+    assert rejected.status_code == 422

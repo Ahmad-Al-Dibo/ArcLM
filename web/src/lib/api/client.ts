@@ -1,8 +1,15 @@
 import type {
   CapabilitiesResponse,
+  CheckpointListResponse,
+  CheckpointDeleteRequest,
+  CheckpointMetadataResponse,
+  CheckpointValidationResponse,
   DatasetManifestReportResponse,
   DatasetManifestResponse,
   DatasetPasteRequest,
+  DatasetRecordInspectionRequest,
+  DatasetRecordTokenInspectionResponse,
+  DatasetReportRequest,
   DatasetReportResponse,
   DatasetUploadRequest,
   DatasetValidationRequest,
@@ -22,7 +29,22 @@ import type {
   DatasetSummary,
   DatasetWarning,
   EnvironmentResponse,
+  EvaluationCompareRequest,
+  EvaluationComparisonResponse,
+  EvaluationCreateRequest,
+  EvaluationListResponse,
+  EvaluationMetadataResponse,
+  EvaluationReportResponse,
+  GenerationCreateRequest,
+  GenerationDeleteRequest,
+  GenerationListResponse,
+  GenerationMetadataResponse,
   HealthResponse,
+  ModelListResponse,
+  NativeModelDeleteRequest,
+  NativeModelRequest,
+  NativeModelUpdateRequest,
+  NativeModelValidationResponse,
   PipelineInspectionRequest,
   PipelineInspectionStatusResponse,
   PipelineTraceResponse,
@@ -33,15 +55,20 @@ import type {
   ProjectListResponse,
   ProjectStatusResponse,
   ProjectUpdateRequest,
+  RunListResponse,
+  RunLogResponse,
   StudioDatasetMetadata,
+  StudioModelMetadata,
   StudioProject,
+  StudioRunMetadata,
   StudioTokenizerMetadata,
   SystemStatusResponse,
   TextLengthStatistics,
   TokenizerCreateRequest,
   TokenizerInspectionResponse,
   TokenizerInspectRequest,
-  TokenizerListResponse
+  TokenizerListResponse,
+  TrainingRunRequest
 } from "./schemas";
 import { apiEndpoints } from "./endpoints";
 
@@ -495,8 +522,11 @@ export class ArcLMApiClient {
     return this.request<DatasetValidationResponse>(apiEndpoints.projectDatasetValidate(projectId, datasetId), { method: "POST", body: payload });
   }
 
-  createProjectDatasetReport(projectId: string, datasetId: string) {
-    return this.request<DatasetManifestReportResponse>(apiEndpoints.projectDatasetReport(projectId, datasetId), { method: "POST" });
+  createProjectDatasetReport(projectId: string, datasetId: string, payload?: DatasetReportRequest) {
+    return this.request<DatasetManifestReportResponse>(
+      apiEndpoints.projectDatasetReport(projectId, datasetId),
+      payload === undefined ? { method: "POST" } : { method: "POST", body: payload }
+    );
   }
 
   getProjectDatasetManifest(projectId: string, datasetId: string) {
@@ -529,6 +559,134 @@ export class ArcLMApiClient {
 
   deleteProjectTokenizer(projectId: string, tokenizerId: string, confirm = true) {
     return this.request<StudioTokenizerMetadata>(apiEndpoints.projectTokenizer(projectId, tokenizerId), { method: "DELETE", body: { confirm } });
+  }
+
+  inspectProjectDatasetRecords(projectId: string, datasetId: string, payload: DatasetRecordInspectionRequest) {
+    return this.request<DatasetRecordTokenInspectionResponse>(apiEndpoints.projectDatasetInspect(projectId, datasetId), { method: "POST", body: payload });
+  }
+
+  listProjectModels(projectId: string) {
+    return this.request<ModelListResponse>(apiEndpoints.projectModels(projectId));
+  }
+
+  validateNativeModel(projectId: string, payload: NativeModelRequest) {
+    return this.request<NativeModelValidationResponse>(apiEndpoints.projectModelValidate(projectId), { method: "POST", body: payload });
+  }
+
+  estimateNativeModel(projectId: string, payload: NativeModelRequest) {
+    return this.request<NativeModelValidationResponse>(apiEndpoints.projectModelEstimate(projectId), { method: "POST", body: payload });
+  }
+
+  createNativeModel(projectId: string, payload: NativeModelRequest) {
+    return this.request<StudioModelMetadata>(apiEndpoints.projectModelNative(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectModel(projectId: string, modelId: string) {
+    return this.request<StudioModelMetadata>(apiEndpoints.projectModel(projectId, modelId));
+  }
+
+  updateProjectModel(projectId: string, modelId: string, payload: NativeModelUpdateRequest) {
+    return this.request<StudioModelMetadata>(apiEndpoints.projectModel(projectId, modelId), { method: "PATCH", body: payload });
+  }
+
+  deleteProjectModel(projectId: string, modelId: string, payload: NativeModelDeleteRequest) {
+    return this.request<StudioModelMetadata>(apiEndpoints.projectModel(projectId, modelId), { method: "DELETE", body: payload });
+  }
+
+  listProjectRuns(projectId: string) {
+    return this.request<RunListResponse>(apiEndpoints.projectRuns(projectId));
+  }
+
+  createProjectRun(projectId: string, payload: TrainingRunRequest) {
+    return this.request<StudioRunMetadata>(apiEndpoints.projectRuns(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectRun(projectId: string, runId: string) {
+    return this.request<StudioRunMetadata>(apiEndpoints.projectRun(projectId, runId));
+  }
+
+  getProjectRunMetrics(projectId: string, runId: string) {
+    return this.request<RunLogResponse>(apiEndpoints.projectRunMetrics(projectId, runId));
+  }
+
+  getProjectRunEvents(projectId: string, runId: string) {
+    return this.request<RunLogResponse>(apiEndpoints.projectRunEvents(projectId, runId));
+  }
+
+  cancelProjectRun(projectId: string, runId: string) {
+    return this.request<StudioRunMetadata>(apiEndpoints.projectRunCancel(projectId, runId), { method: "POST" });
+  }
+
+  listProjectRunCheckpoints(projectId: string, runId: string) {
+    return this.request<CheckpointListResponse>(apiEndpoints.projectRunCheckpoints(projectId, runId));
+  }
+
+  getProjectRunCheckpoint(projectId: string, runId: string, checkpointId: string) {
+    return this.request<CheckpointMetadataResponse>(apiEndpoints.projectRunCheckpoint(projectId, runId, checkpointId));
+  }
+
+  listProjectCheckpoints(projectId: string) {
+    return this.request<CheckpointListResponse>(apiEndpoints.projectCheckpoints(projectId));
+  }
+
+  getProjectCheckpoint(projectId: string, checkpointId: string) {
+    return this.request<CheckpointMetadataResponse>(apiEndpoints.projectCheckpoint(projectId, checkpointId));
+  }
+
+  validateProjectCheckpoint(projectId: string, checkpointId: string) {
+    return this.request<CheckpointValidationResponse>(apiEndpoints.projectCheckpointValidate(projectId, checkpointId), { method: "POST" });
+  }
+
+  deleteProjectCheckpoint(projectId: string, checkpointId: string, payload: CheckpointDeleteRequest) {
+    return this.request<CheckpointMetadataResponse>(apiEndpoints.projectCheckpoint(projectId, checkpointId), { method: "DELETE", body: payload });
+  }
+
+  inspectProjectCheckpoint(projectId: string, checkpointId: string, payload: PipelineInspectionRequest) {
+    return this.request<PipelineTraceResponse>(apiEndpoints.projectCheckpointInspect(projectId, checkpointId), { method: "POST", body: payload });
+  }
+
+  listProjectEvaluations(projectId: string) {
+    return this.request<EvaluationListResponse>(apiEndpoints.projectEvaluations(projectId));
+  }
+
+  createProjectEvaluation(projectId: string, payload: EvaluationCreateRequest) {
+    return this.request<EvaluationMetadataResponse>(apiEndpoints.projectEvaluations(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectEvaluation(projectId: string, evaluationId: string) {
+    return this.request<EvaluationMetadataResponse>(apiEndpoints.projectEvaluation(projectId, evaluationId));
+  }
+
+  getProjectEvaluationEvents(projectId: string, evaluationId: string) {
+    return this.request<RunLogResponse>(apiEndpoints.projectEvaluationEvents(projectId, evaluationId));
+  }
+
+  getProjectEvaluationReport(projectId: string, evaluationId: string) {
+    return this.request<EvaluationReportResponse>(apiEndpoints.projectEvaluationReport(projectId, evaluationId));
+  }
+
+  cancelProjectEvaluation(projectId: string, evaluationId: string) {
+    return this.request<EvaluationMetadataResponse>(apiEndpoints.projectEvaluationCancel(projectId, evaluationId), { method: "POST" });
+  }
+
+  compareProjectEvaluations(projectId: string, payload: EvaluationCompareRequest) {
+    return this.request<EvaluationComparisonResponse>(apiEndpoints.projectEvaluationCompare(projectId), { method: "POST", body: payload });
+  }
+
+  listProjectGenerations(projectId: string) {
+    return this.request<GenerationListResponse>(apiEndpoints.projectGenerations(projectId));
+  }
+
+  createProjectGeneration(projectId: string, payload: GenerationCreateRequest) {
+    return this.request<GenerationMetadataResponse>(apiEndpoints.projectGenerations(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectGeneration(projectId: string, generationId: string) {
+    return this.request<GenerationMetadataResponse>(apiEndpoints.projectGeneration(projectId, generationId));
+  }
+
+  deleteProjectGeneration(projectId: string, generationId: string, payload: GenerationDeleteRequest) {
+    return this.request<GenerationMetadataResponse>(apiEndpoints.projectGeneration(projectId, generationId), { method: "DELETE", body: payload });
   }
 
   async getPipelineInspectionStatus() {

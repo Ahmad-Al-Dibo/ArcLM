@@ -1,4 +1,4 @@
-import { StudioOverviewPage } from "@/features/studio/studio";
+import { StudioOverviewPage } from "@/features/studio/overview";
 
 export default function Home() {
   return <StudioOverviewPage />;

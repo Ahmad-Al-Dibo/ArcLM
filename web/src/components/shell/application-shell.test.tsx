@@ -47,6 +47,15 @@ describe("interface mode", () => {
       expect(screen.getByRole("button", { name: "Simple" }).getAttribute("aria-pressed")).toBe("true");
     });
   });
+
+  it("loads stored Advanced mode after the first client render", async () => {
+    window.localStorage.setItem("arclm-interface-mode", "advanced");
+    renderShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Advanced" }).getAttribute("aria-pressed")).toBe("true");
+    });
+  });
 });
 
 describe("sidebar navigation", () => {
@@ -58,7 +67,7 @@ describe("sidebar navigation", () => {
     }
 
     expect(screen.getAllByRole("link", { name: /Inspect Pipeline/ })[0].getAttribute("aria-current")).toBe("page");
-    expect(screen.getAllByText("Coming later").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Coming later")).toBeNull();
   });
 
   it("collapses and persists the desktop sidebar preference", () => {
@@ -115,11 +124,11 @@ describe("top bar, breadcrumbs, and route pages", () => {
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
-  it("shows honest planned state and no fake dashboard data", () => {
-    renderShell("/models");
+  it("shows honest Studio 3 route state and no fake dashboard data", () => {
+    renderShell("/projects/project_abc/checkpoints");
 
-    expect(screen.getByText("Not available in this build")).toBeTruthy();
-    expect(screen.getByText(/No model builder endpoint exists in this phase/)).toBeTruthy();
+    expect(screen.getByText("Available in this build")).toBeTruthy();
+    expect(screen.getByText(/Project Checkpoint Manager lives at/)).toBeTruthy();
     expect(screen.queryByText(/GPU:/i)).toBeNull();
     expect(screen.queryByText(/loss/i)).toBeNull();
     expect(screen.queryByText(/accuracy/i)).toBeNull();

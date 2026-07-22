@@ -84,6 +84,13 @@ class WebConfig:
     max_upload_size: int = 25 * 1024 * 1024
     max_paste_size: int = 2 * 1024 * 1024
     max_tokenizer_text_length: int = 20_000
+    max_dataset_inspection_records: int = 20
+    max_dataset_inspection_tokens: int = 256
+    max_active_training_jobs: int = 1
+    max_evaluation_examples: int = 256
+    max_generation_prompt_chars: int = 8_000
+    max_generation_new_tokens: int = 128
+    max_generation_history: int = 100
 
     def __post_init__(self) -> None:
         """Controleert of de configuratie veilig en bruikbaar is."""
@@ -144,6 +151,13 @@ class WebConfig:
             "max_upload_size": self.max_upload_size,
             "max_paste_size": self.max_paste_size,
             "max_tokenizer_text_length": self.max_tokenizer_text_length,
+            "max_dataset_inspection_records": self.max_dataset_inspection_records,
+            "max_dataset_inspection_tokens": self.max_dataset_inspection_tokens,
+            "max_active_training_jobs": self.max_active_training_jobs,
+            "max_evaluation_examples": self.max_evaluation_examples,
+            "max_generation_prompt_chars": self.max_generation_prompt_chars,
+            "max_generation_new_tokens": self.max_generation_new_tokens,
+            "max_generation_history": self.max_generation_history,
         }
         for name, value in positive_limits.items():
             if not isinstance(value, int) or value <= 0:
@@ -151,3 +165,5 @@ class WebConfig:
 
         if self.default_preview_rows > self.max_preview_rows:
             raise ConfigurationError("default_preview_rows must not exceed max_preview_rows")
+        if self.max_active_training_jobs != 1:
+            raise ConfigurationError("max_active_training_jobs is currently limited to 1")

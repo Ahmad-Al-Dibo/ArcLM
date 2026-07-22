@@ -74,87 +74,87 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     title: "Model",
-    href: "/models",
+    href: "/projects",
     shortLabel: "MO",
     section: "Build",
-    description: "Model building is coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Configure native ArcLM causal language models inside a project.",
+    status: "available",
+    milestone: "ArcLM Web Studio 2",
     domain: "Models",
-    backend: "No model builder endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["No model architecture builders are implemented.", "No training path is started."],
-    plannedCapabilities: ["Model configuration review", "Checkpoint metadata"]
+    backend: "Project Model Builder lives at /projects/[projectId]/model.",
+    simpleNote: "Open a project to configure a native ArcLM model.",
+    advancedNotes: ["Native ArcLM only.", "No external model downloads."],
+    plannedCapabilities: ["Model configuration review", "Parameter estimates"]
   },
   {
     title: "Training",
-    href: "/training",
+    href: "/projects",
     shortLabel: "TR",
     section: "Train",
-    description: "Training dashboards are coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Start local native training jobs from project data.",
+    status: "available",
+    milestone: "ArcLM Web Studio 2",
     domain: "Training",
-    backend: "No training job endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["No background workers.", "No logs, jobs, or checkpoints are created."],
-    plannedCapabilities: ["Training jobs", "Run monitoring", "Checkpoint manager"]
+    backend: "Project Training Studio lives at /projects/[projectId]/train.",
+    simpleNote: "Open a project to start a native training run.",
+    advancedNotes: ["One local job at a time.", "No distributed training UI."],
+    plannedCapabilities: ["Training jobs", "Run monitoring", "Checkpoint metadata"]
   },
   {
     title: "Runs",
-    href: "/training",
+    href: "/projects",
     shortLabel: "RU",
     section: "Train",
-    description: "Run tracking UI is coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Inspect local training run history and metrics.",
+    status: "available",
+    milestone: "ArcLM Web Studio 2",
     domain: "Runs",
-    backend: "No run dashboard endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["Existing tracking APIs remain Python-side.", "No browser controls are active."],
-    plannedCapabilities: ["Run list", "Metadata comparison"]
+    backend: "Runs pages live at /projects/[projectId]/runs.",
+    simpleNote: "Open a project to view training runs.",
+    advancedNotes: ["Uses polling.", "Shows persisted metrics and events."],
+    plannedCapabilities: ["Run list", "Run details", "Cancellation"]
   },
   {
     title: "Checkpoints",
-    href: "/models",
+    href: "/projects",
     shortLabel: "CK",
     section: "Train",
-    description: "Checkpoint management UI is coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Manage project native checkpoints.",
+    status: "available",
+    milestone: "ArcLM Web Studio 3",
     domain: "Checkpoints",
-    backend: "No checkpoint manager endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["No filesystem browsing.", "No checkpoint deletion UI."],
-    plannedCapabilities: ["Checkpoint list", "Reload checks"]
+    backend: "Project Checkpoint Manager lives at /projects/[projectId]/checkpoints.",
+    simpleNote: "Open a project to validate, inspect, evaluate, generate from, or delete checkpoints.",
+    advancedNotes: ["No filesystem browsing.", "No checkpoint binary downloads."],
+    plannedCapabilities: ["Checkpoint list", "Reload checks", "Safe deletion"]
   },
   {
     title: "Evaluate",
-    href: "/evaluation",
+    href: "/projects",
     shortLabel: "EV",
     section: "Use",
-    description: "Evaluation Studio is coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Run native checkpoint evaluations.",
+    status: "available",
+    milestone: "ArcLM Web Studio 3",
     domain: "Evaluation",
-    backend: "No evaluation page endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["No fake metrics are shown.", "Evaluation reports remain Python/API artifacts."],
+    backend: "Evaluation Studio lives at /projects/[projectId]/evaluate.",
+    simpleNote: "Open a project to queue bounded native evaluations and view reports.",
+    advancedNotes: ["No fake metrics are shown.", "Reports come from EvaluationReport.to_dict()."],
     plannedCapabilities: ["Evaluation report viewer", "Metric comparison"]
   },
   {
     title: "Generate",
-    href: "/inference",
+    href: "/projects",
     shortLabel: "GE",
     section: "Use",
-    description: "Generation playground is coming later.",
-    status: "planned",
-    milestone: "Future Studio phase",
+    description: "Generate text from compatible native checkpoints.",
+    status: "available",
+    milestone: "ArcLM Web Studio 3",
     domain: "Generation",
-    backend: "No generation playground endpoint exists in this phase.",
-    simpleNote: "Coming later.",
-    advancedNotes: ["No prompts are stored.", "No model downloads."],
-    plannedCapabilities: ["Prompt playground", "Generation settings"]
+    backend: "Generation Playground lives at /projects/[projectId]/generate.",
+    simpleNote: "Open a project to run bounded native text completion.",
+    advancedNotes: ["No external models.", "No streaming or attention capture."],
+    plannedCapabilities: ["Prompt playground", "Generation settings", "History"]
   },
   {
     title: "Inspect Pipeline",
@@ -222,6 +222,24 @@ export function getNavigationItem(pathname: string) {
   }
   if (pathname.startsWith("/projects/") && pathname.endsWith("/tokenizer")) {
     return navigationItems.find((item) => item.title === "Tokenizer") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.endsWith("/model")) {
+    return navigationItems.find((item) => item.title === "Model") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.endsWith("/train")) {
+    return navigationItems.find((item) => item.title === "Training") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.includes("/runs")) {
+    return navigationItems.find((item) => item.title === "Runs") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.includes("/checkpoints")) {
+    return navigationItems.find((item) => item.title === "Checkpoints") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && (pathname.endsWith("/evaluate") || pathname.includes("/evaluations"))) {
+    return navigationItems.find((item) => item.title === "Evaluate") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.endsWith("/generate")) {
+    return navigationItems.find((item) => item.title === "Generate") ?? navigationItems[0];
   }
   if (pathname.startsWith("/projects/")) {
     return navigationItems.find((item) => item.href === "/projects") ?? navigationItems[0];

@@ -1,4 +1,4 @@
-import { SystemPage } from "@/features/studio/studio";
+import { SystemPage } from "@/features/studio/system-page";
 
 export default function Page() {
   return <SystemPage />;

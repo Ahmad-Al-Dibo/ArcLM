@@ -1,6 +1,6 @@
 # Speciale ArcLM Versie
 
-Release candidate: `0.9.0`.
+Release candidate: `0.10.0`.
 
 Deze repository is een private/speciale ArcLM-editie. De baseline is native-first: eigen ArcLM/PyTorch code vormt de kern; Hugging Face, PEFT, Web en preprocessing zijn optionele integraties.
 
@@ -21,6 +21,81 @@ arclm.web
 ```
 
 Legacy modules blijven compatibility-only zolang tests en gebruikers ze nodig hebben. `MiniGPT` blijft voorlopig een deprecated alias naar `ArcLM`; er is geen tweede implementatie. `arclm.pipeline_v2` is geen tweede pipeline meer, maar alleen een deprecated re-export pad.
+
+## ArcLM 1.0 Readiness Pass 1
+
+Status: stabilisatie richting publieke release, geen versie bump. Web Studio
+1-3 heeft de native visuele workflow compleet gemaakt:
+
+```text
+Project -> Dataset -> Validation/report -> Tokenizer -> Token inspection
+-> Native model -> Training run -> Checkpoint -> Evaluation
+-> Generation -> Pipeline inspection
+```
+
+Readiness beleid:
+
+| Area | Status | Basis | Remaining limitation |
+| --- | --- | --- | --- |
+| Native public APIs | Stable candidate | Public API, smoke and full-suite tests pass for datasets, tokenizers, model, training, checkpoints, evaluation, generation and inspection. | Root exports blijven breed; post-release root API trim blijft technical debt. |
+| Web Studio workflow | Beta | Local FastAPI and Next.js tests cover project, data, tokenizer, model, run, checkpoint, evaluation, generation and inspection paths. | Single-process local app; no auth, database, streaming or production serving. |
+| Diagnostics | Beta | `/api/system/status` and `arclm doctor` share safe runtime diagnostics. | Hardware-specific CUDA/multi-GPU paths blijven afhankelijk van lokale hardware. |
+| Optional integrations | Beta/Experimental | Availability is detected without importing heavy optional packages. | Hugging Face/PEFT/QLoRA runtime claims blijven model- and hardware-specific. |
+| Deprecated compatibility paths | Deprecated but retained | Compatibility tests cover old imports. | Retain through 1.x; removal should only be considered for 2.0 with migration notes. |
+| Workspace/privacy safety | Stable candidate | Workspace IDs are backend-generated, path traversal is rejected, browser responses hide internal paths, and `workspace/` is ignored by Git. | Local generated prompts/generation records are intentionally stored under the configured workspace with bounded retention. |
+
+`arclm doctor` is native-only and reports ArcLM version, import path, Python
+executable/version, PyTorch/CUDA/GPU status, optional integration availability
+and warnings. The browser-facing system endpoint does not expose user paths,
+environment variables, secrets, command-line arguments, dataset contents,
+checkpoint binaries, tokenizer binaries, embeddings or logits.
+
+Public API stability inventory:
+
+| Classification | APIs |
+| --- | --- |
+| Stable candidate | `ArcLM`, `TrainingConfig`, `Trainer`, `load_dataset`, `validate_records`, `create_dataset_manifest`, `build_dataset_report`, `Tokenizer`, `SentencePieceTokenizer`, `Generator`, `Evaluator`, `build_evaluation_report`, `SmartLoader`, native checkpoint helpers |
+| Beta | `inspect_text`, `PipelineTrace`, `ModelCapabilityReport`, `model_support_matrix`, `RunTracker`, local FastAPI `create_app`, Web Studio endpoints |
+| Experimental | External HF causal-LM loading boundaries, QLoRA/quantization runtime helpers, distributed runtime helpers, advanced preprocessing/search surfaces |
+| Deprecated | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders`, `MiniGPT`, Flask simple interface |
+| Unsupported | Native BERT/T5/LLaMA/Mistral/Qwen implementations, diffusion, multimodal, RLHF/DPO/GRPO, OpenAI-compatible APIs, production serving, attention-map capture, WebSockets/streaming generation |
+
+Release recommendation after this pass should prefer `0.10.0` unless a final
+manual release review decides Web Studio 1-3 are small enough to remain under
+the original `0.9.0` release candidate. A `1.0.0 RC` should wait until clean
+wheel workflow, Studio journey, docs and deprecation policy are manually
+reviewed together.
+
+## ArcLM 0.10.0 Release Candidate
+
+ArcLM `0.10.0` is the honest release line for the completed native Studio
+workflow. It is not a `1.0.0` claim. The release gate uses a clean installed
+wheel, `arclm[web]`, a temporary workspace and real Uvicorn HTTP requests for:
+
+```text
+Project -> Dataset -> Validation/report -> Word tokenizer -> Record inspection
+-> Native model config -> CPU training -> Checkpoint -> Evaluation
+-> Generation -> Checkpoint pipeline inspection
+```
+
+Project progress is derived from real artifacts only. There is no editable
+progress percentage. The release smoke verifies the stages become Ready as
+their dataset, tokenizer, model, completed run, compatible checkpoint,
+completed evaluation, generation record and inspection trace appear.
+
+Privacy and workspace behavior:
+
+- `workspace/` is ignored by Git and must not be packaged.
+- Studio responses and diagnostics do not expose internal workspace paths,
+  environment variables, secrets, checkpoint tensor binaries, tokenizer
+  binaries, embeddings or logits.
+- Studio does not download external models or upload data to remote services.
+- Checkpoint metadata and evaluation reports are exportable as safe JSON
+  payloads through existing read endpoints.
+
+Release recommendation: ship this work as `0.10.0` after manual review. Keep
+`1.0.0 RC` for a later pass after the full Studio journey, docs, deprecation
+policy and clean-install gates have been reviewed together.
 
 ## Transparent Pipeline Inspection
 
@@ -137,10 +212,75 @@ IDs, token count, unknown-token count, decoded text and round-trip status. The
 SentencePiece creation endpoint is not exposed in this phase because the
 current safe Studio flow only covers the native tokenizer.
 
-Non-goals for Web Studio 1: no training jobs, background workers, dashboards,
-checkpoint manager, Evaluation Studio, Generation Playground, Model Builder,
-WebSockets, streaming logs, attention maps, authentication, database, cloud
-storage, shell execution, external downloads or arbitrary filesystem browsing.
+Web Studio 1 blijft de basis voor projecten, data en tokenizers.
+
+## ArcLM Web Studio 2
+
+Web Studio 2 voegt een lokale native model- en training flow toe bovenop de
+bestaande ArcLM core:
+
+```text
+Project -> Dataset -> Tokenizer -> Native model config -> Training config -> Run -> Checkpoints
+```
+
+Publieke web API:
+
+| Area | Endpoints | Behavior | Limitations |
+| --- | --- | --- | --- |
+| Native Model Builder | `GET/POST/PATCH/DELETE /api/projects/{project_id}/models...`, `POST /models/native/validate`, `POST /models/native/estimate` | Slaat native ArcLM configuratie en metadata op, valideert via echte `ArcLM` constructie, vereist een ready project-tokenizer, telt parameters via tijdelijke modelinstantie en labelt memory estimates als approximate. | Geen externe model families, geen downloads, geen willekeurige Python classes, geen modelgewichten opslaan bij configuratie. |
+| Explicit dataset tokenization | `POST /api/projects/{project_id}/datasets/{dataset_id}/report`, `POST /api/projects/{project_id}/datasets/{dataset_id}/inspect` | Browser kiest expliciet een project-tokenizer; backend valideert eigenaarschap/status, report identity bevat dataset/tokenizer/max sequence length, record inspectie is begrensd en gebruikt canonical tokenizer encode/decode. | Geen remote tokenizers, geen volledige dataset dumps, geen embeddings/logits, schema-validatie blijft mogelijk zonder tokenizer. |
+| Training jobs | `GET/POST /api/projects/{project_id}/runs`, `GET /runs/{run_id}`, metrics/events/cancel/checkpoints endpoints | In-process background thread start canonical native `Trainer`; run metadata, configuration, `metrics.jsonl`, `events.jsonl` en checkpoint metadata blijven onder de project workspace. | Maximaal 1 actieve job per app-instantie; geen queue, automatische resume, subprocess-isolatie, Evaluation Studio of Generation Playground. |
+| Run lifecycle | `queued`, `starting`, `running`, `cancelling`, `cancelled`, `completed`, `failed`, `interrupted` | Stale active runs worden bij app start `interrupted`; cancellation is cooperatief en stopt op een veilige Trainer callback boundary. | Cancellation is niet instant; browser krijgt geen raw tracebacks en geen checkpoint binaries. |
+
+Frontend routes:
+
+```text
+/projects/[projectId]/model
+/projects/[projectId]/train
+/projects/[projectId]/runs
+/projects/[projectId]/runs/[runId]
+```
+
+De Training Studio exposeert alleen `native_causal_lm` als Web Studio 2 job
+type. Native full fine-tuning, SFT en LoRA blijven Python APIs, maar zijn nog
+geen afzonderlijk gevalideerde web-job workflows. Deferred: WebSockets/streaming
+logs, attention maps, authentication, database, cloud storage, shell execution,
+external downloads and arbitrary filesystem browsing.
+
+## ArcLM Web Studio 3
+
+Web Studio 3 sluit de native projectloop af met read-only checkpoint,
+evaluation en generation tools bovenop bestaande ArcLM APIs:
+
+```text
+Project -> Runs -> Checkpoints -> Validate/Inspect/Evaluate/Generate
+```
+
+Geverifieerde web API:
+
+| Area | Endpoints | Behavior | Limitations |
+| --- | --- | --- | --- |
+| Checkpoint Manager | `GET /api/projects/{project_id}/checkpoints`, `GET/DELETE /checkpoints/{checkpoint_id}`, `POST /checkpoints/{checkpoint_id}/validate`, `POST /checkpoints/{checkpoint_id}/inspect` | Toont project-brede native checkpoints uit run outputs, valideert via canonical checkpoint reload, verwijdert alleen met expliciete bevestiging en inspecteert via `arclm.inspect_text`. | Geen willekeurige checkpointpaden, downloads, tensor dumps of externe model tracing. |
+| Evaluation Studio | `GET/POST /api/projects/{project_id}/evaluations`, report/events/cancel/compare endpoints | Start bounded native evaluation jobs in-process, bewaart metadata/events/reports onder de project workspace en gebruikt canonical `Evaluator` plus `EvaluationReport.to_dict()`. | Geen queue, distributed evaluation, fake metrics of custom metric upload vanuit de browser. |
+| Generation Playground | `GET/POST /api/projects/{project_id}/generations`, `GET/DELETE /generations/{generation_id}` | Genereert tekst uit compatible native checkpoints met begrensde prompt en token limits, bewaart bounded local history en gebruikt canonical native `Generator`. | Geen streaming, attention maps, externe modellen, modelbeheer of browser-side model loading. |
+
+Frontend routes:
+
+```text
+/projects/[projectId]/checkpoints
+/projects/[projectId]/checkpoints/[checkpointId]
+/projects/[projectId]/checkpoints/[checkpointId]/inspect
+/projects/[projectId]/evaluate
+/projects/[projectId]/evaluations
+/projects/[projectId]/evaluations/[evaluationId]
+/projects/[projectId]/generate
+```
+
+Native model/tokenizer/checkpoint ownership blijft server-side in de lokale
+workspace. Browser requests sturen alleen project IDs, backend-generated
+checkpoint/evaluation/generation IDs en bounded form fields. De Studio 3 UI
+voegt geen training features, externe model downloads, WebSockets, streaming,
+attention capture, auth of databases toe.
 
 ## ArcLM 0.8 Causal LM Workbench
 
@@ -163,17 +303,11 @@ Face/PEFT integraties en geen native ArcLM checkpoints.
 | GPT-2 reference | `hf-internal-testing/tiny-random-gpt2` | External Hugging Face | causal LM | Passed | Not tested | Passed | Not supported | Not tested | Not tested | Passed | Passed | Not tested | Compatible | Boundary/mocked tiny path only; no large weight download or real runtime claim. |
 | Selected Qwen | `Qwen/Qwen3-0.6B` | External Hugging Face | causal LM | Not tested | Not tested | Not tested | Not supported | Not tested | Not tested | Not tested | Not tested | Not tested | Experimental | Exact model path is recognized; real load/forward/generation/SFT/LoRA/CUDA are unvalidated unless locally available. |
 
-Drie officiele beginner examples:
-
-```text
-examples/22_beginner_data_tokenization.py
-examples/23_beginner_train_tiny_native_model.py
-examples/24_beginner_reload_generate_inspect.py
-```
-
-Deze examples zijn CPU-vriendelijk, gebruiken geen externe downloads en tonen
-alleen de native happy path. Advanced Qwen/GPT-2 examples blijven optionele
-integraties en zijn geen bewijs voor universele modelondersteuning.
+ArcLM bevat drie CPU-vriendelijke beginner workflows voor data/tokenization,
+tiny native training en checkpoint reload/generation/inspection. Ze gebruiken
+geen externe downloads en tonen alleen het native happy path. Advanced
+Qwen/GPT-2 workflows blijven optionele integraties en zijn geen bewijs voor
+universele modelondersteuning.
 
 ## ArcLM 0.9 Data, SFT and Evaluation
 
@@ -196,44 +330,37 @@ Nieuwe compacte APIs:
 | Evaluation report | `build_evaluation_report`, `EvaluationReport` | Wraps canonical `EvaluationResult` metrics with examples, batches, token count, model/checkpoint/dataset identity, timestamp, device, dtype and warnings; supports `to_dict()`, `to_json()`, `summary()`. | Does not recalculate metrics; diagnostics should interpret the report rather than duplicate metrics. |
 | Reproducibility metadata | `arclm.tracking.set_reproducible_seed`, `build_reproducibility_metadata` | Records seed coverage for Python, NumPy, Torch CPU and CUDA when available, plus dataset/tokenizer/model fingerprints and checkpoint/run format versions. | Deterministic equality is not guaranteed across hardware, PyTorch builds, CUDA kernels or optional backends. |
 
-Official 0.9 example:
-
-```text
-examples/25_data_sft_evaluation_workflow.py
-```
-
-It runs on CPU without external downloads and writes a local
-`examples/_outputs/arclm_09_data_sft_eval/reproducibility_report.json` when
-executed. The generated output directory is runtime data and is not part of the
-package.
+The official 0.9 workflow runs on CPU without external downloads and produces a
+local reproducibility report when executed. Generated output directories are
+runtime data and are not part of the package.
 
 ## Canonical Feature Status
 
-| Feature | Canonical module | Public API | Status | Tests | Example | Dependencies | Known limitations |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Dataset loading | `arclm.datasets.loader` | `load_dataset`, `DatasetLoader`, `StreamingDataset` | Stable | `tests/unit/datasets`, `tests/public_api/test_datasets_api.py` | `examples/03_data_processing.py` | Required core deps | Local files/lists only; no HF Dataset/WebDataset integration. |
-| Dataset validation, manifests and reports | `arclm.datasets.validation` | `validate_records`, `create_dataset_manifest`, `build_dataset_report` | Stable | `tests/unit/test_data_sft_evaluation_09.py` | `examples/25_data_sft_evaluation_workflow.py` | Required core deps | Lightweight local metadata only; no remote dataset registry and no full record contents in manifests. |
-| Dataset processing | `arclm.datasets.processing`, `arclm.datasets.pipeline` | `DataProcessor`, `ProcessedDataset`, `DataPipeline` | Stable | `tests/unit/test_data_processor.py`, `tests/unit/datasets` | `examples/03_data_processing.py` | Required core deps | `DataProcessor.load` delegates loading to `DatasetLoader`; processing stays in-memory and local. |
-| Dataset cleaning and dedup | `arclm.datasets.cleaning`, `arclm.datasets.deduplication` | `NormalizeWhitespace`, `ExactDeduplicator` | Stable | `tests/unit/datasets` | `examples/03_data_processing.py` | Required core deps | Exact/local rules only; no dataset version store. |
-| Native model | `arclm.models` | `ArcLM`, `AutoModel` | Stable | `tests/models`, smoke tests | `examples/01_quickstart.py` | `torch` | Native support is GPT-style causal LM only. |
-| Transparent pipeline inspection | `arclm.inspection` | `inspect_text`, `PipelineTrace` | Beta | `tests/unit/test_inspection.py` | `examples/21_native_happy_path_inspection.py` | `torch` | One native generation step only; no attention maps, web streaming or external HF tracing. |
-| `MiniGPT` alias | `arclm.models` | `MiniGPT` | Deprecated | lifecycle/model tests | None for new code | `torch` | Alias to `ArcLM` for compatibility; do not use in new docs/examples. |
-| Tokenizers | `arclm.tokenizers` | `Tokenizer`, `SentencePieceTokenizer`, `AutoTokenizer` | Beta | public/import and smoke tests | `examples/02_tokenization.py` | `sentencepiece` | HF tokenizer behavior is optional/external-path dependent. |
-| Training | `arclm.training` | `Trainer`, `TrainingConfig`, `train_model` | Stable | `tests/unit/training`, `tests/smoke`, CLI tests | `examples/04_pretraining.py` | `torch` | Single-device core; real multi-GPU training is not stable. |
-| Checkpoints and artifacts | `arclm.checkpoints`, `arclm.lifecycle` | `SmartLoader`, `inspect_checkpoint`, `save_model_artifact` | Stable | `tests/checkpoints`, `tests/models` | `examples/12_smart_loader.py` | `torch`, optional `safetensors` | Trusted local checkpoint boundary; external matrix incomplete. |
-| Fine-tuning and SFT | `arclm.finetuning` | `FullFineTuner`, `SFTTrainer`, `train_sft`, `fine_tune`, `validate_sft_records` | Stable | `tests/unit/finetuning`, smoke tests, `tests/unit/test_data_sft_evaluation_09.py` | `examples/07_native_sft.py`, `examples/25_data_sft_evaluation_workflow.py` | `torch`, optional HF stack | Native CPU verified; external/HF runtime remains optional and model-specific. |
-| External inference | `arclm.inference.external` facade, `arclm.inference._external_loading` implementation | `inspect_model_source`, `load_any_model`, `predict_external`, `save_loaded_model` | Beta | `tests/unit/test_external_engine.py`, integration tests | `examples/11_inference.py` | `torch`, optional `transformers`/`peft` | Flow is source validation -> optional deps -> tokenizer -> causal LM -> device -> generation; supports native ArcLM and HF causal LM/LoRA paths, not universal model loading. |
-| Native inference | `arclm.inference.engine`, `arclm.inference.generation` | `load_model`, `predict`, `Generator` | Stable | smoke, public API tests | `examples/11_inference.py` | `torch` | Native checkpoint generation only. |
-| Evaluation and diagnostics | `arclm.evaluation` | `Evaluator`, `EvaluationReport`, `build_evaluation_report`, `Accuracy`, `Perplexity`, diagnostic report helpers | Stable | `tests/unit/evaluation`, smoke tests, `tests/unit/test_data_sft_evaluation_09.py` | `examples/13_diagnostics.py`, `examples/25_data_sft_evaluation_workflow.py` | `torch` | Reports wrap canonical metrics; diagnostics interpret reports and should not recalculate metrics independently. |
-| LoRA | `arclm.peft` | `LoRAConfig`, `apply_lora`, `save_adapter_artifact` | Stable | `tests/peft/test_lora_finetuning_runtime.py` | `examples/09_lora_sft.py` | `torch`, optional `peft` for external adapters | Native ArcLM Linear-layer LoRA runtime verified; external PEFT and QLoRA remain model/hardware-specific. |
-| QLoRA and quantization | `arclm.peft` | `QLoRAConfig`, `QuantizationConfig`, `load_quantized_model` | Experimental | `tests/peft`, `tests/quantization` | Advanced examples | Optional `transformers`, `bitsandbytes` | Boundary and skips verified; real bitsandbytes GPU runtime pending. |
-| Distributed runtime | `arclm.distributed` | `DistributedConfig`, DDP/FSDP capability helpers | Experimental | `tests/distributed`, GPU skip gates | `examples/20_ddp_cpu_trainer.py` | `torch.distributed` | CPU/Gloo boundary verified; real CUDA DDP/FSDP not complete. |
-| Tracking | `arclm.tracking` | `RunTracker`, `create_run`, `inspect_run` | Beta | `tests/tracking` | None dedicated | Required core deps | Local manifests only; external services are compatibility-only. |
-| Hyperparameter search | `arclm.search` | `create_search`, `SearchSpace`, `compare_trials` | Beta | `tests/search` | None dedicated | Required core deps | Sequential local trials; no parallel/Bayesian/pruning engine. |
-| Preprocess pipeline | `arclm.preprocess` | preprocess config/pipeline helpers | Experimental | `tests/unit/test_preprocess_pipeline.py` | `examples/10_preprocess_pipeline.py` | Optional preprocess deps | Older JSONL pipeline; not the main dataset API. |
-| FastAPI Web API | `arclm.web` | `create_app`, `WebConfig`, `/api/system/status`, `/api/projects`, project dataset/tokenizer endpoints, `POST /api/inspection/text` | Beta | `tests/web`, public API tests | `python -m arclm web-api` | Optional `fastapi`, `uvicorn` | Local Studio/data/tokenizer/native inspection API; not production serving, training jobs or arbitrary filesystem access. |
-| Next.js frontend | `web/` | `/`, `/projects`, `/projects/new`, `/projects/[projectId]`, `/projects/[projectId]/data`, `/projects/[projectId]/tokenizer`, `/system`, `/learn/pipeline`, npm scripts | Experimental | frontend tests exist in repo | `web/` | Node/npm stack | Optional Studio UI foundation; training, model builder, evaluation/generation pages and web jobs are intentionally deferred. |
-| Flask simple interface | `arclm.simple_interface` | `run_simple_interface` | Deprecated | compatibility/web tests | `python -m arclm --run simple-interface` | Optional `flask` | Compatibility-only; not canonical. |
-| Legacy import shims | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders` | Old import paths | Deprecated | `tests/compatibility`, package-structure tests | None for new code | Same deps as canonical modules | Keep small re-export shims; `pipeline_v2` is compatibility-only, not a second pipeline. |
-| Native BERT/T5/LLaMA/Mistral/MoE/vision/multimodal | None | None | Unsupported | Absence recorded in status/tests | None | N/A | Use external HF causal LM paths where compatible; no native implementation. |
-| RLHF/DPO/GRPO/production serving/OpenAI-compatible API/GGUF/ONNX/TensorRT | None | None | Unsupported | Absence recorded in status/docs | None | N/A | Out of current baseline scope. |
+| Feature | Canonical module | Public API | Status | Dependencies | Known limitations |
+| --- | --- | --- | --- | --- | --- |
+| Dataset loading | `arclm.datasets` | `load_dataset`, `DatasetLoader`, `StreamingDataset` | Stable | Required core deps | Local files/lists only; no HF Dataset/WebDataset integration. |
+| Dataset validation, manifests and reports | `arclm.datasets` | `validate_records`, `create_dataset_manifest`, `build_dataset_report` | Stable | Required core deps | Lightweight local metadata only; no remote dataset registry and no full record contents in manifests. |
+| Dataset processing | `arclm.datasets` | `DataProcessor`, `ProcessedDataset`, `DataPipeline` | Stable | Required core deps | `DataProcessor.load` delegates loading to `DatasetLoader`; processing stays in-memory and local. |
+| Dataset cleaning and dedup | `arclm.datasets.cleaning`, `arclm.datasets.deduplication` | `NormalizeWhitespace`, `ExactDeduplicator` | Stable | Required core deps | Exact/local rules only; no dataset version store. |
+| Native model | `arclm.models` | `ArcLM`, `AutoModel` | Stable | `torch` | Native support is GPT-style causal LM only. |
+| Transparent pipeline inspection | `arclm.inspection` | `inspect_text`, `PipelineTrace` | Beta | `torch` | One native generation step only; no attention maps, web streaming or external HF tracing. |
+| `MiniGPT` alias | `arclm.models` | `MiniGPT` | Deprecated | `torch` | Alias to `ArcLM` for compatibility; do not use in new projects. |
+| Tokenizers | `arclm.tokenizers` | `Tokenizer`, `SentencePieceTokenizer`, `AutoTokenizer` | Beta | `sentencepiece` | HF tokenizer behavior is optional/external-path dependent. |
+| Training | `arclm.training` | `Trainer`, `TrainingConfig`, `train_model` | Stable | `torch` | Single-device core; real multi-GPU training is not stable. |
+| Checkpoints and artifacts | `arclm.checkpoints`, `arclm.lifecycle` | `SmartLoader`, `inspect_checkpoint`, `save_model_artifact` | Stable | `torch`, optional `safetensors` | Trusted local checkpoint boundary; external matrix incomplete. |
+| Fine-tuning and SFT | `arclm.finetuning` | `FullFineTuner`, `SFTTrainer`, `train_sft`, `fine_tune`, `validate_sft_records` | Stable | `torch`, optional HF stack | Native CPU verified; external/HF runtime remains optional and model-specific. |
+| External inference | `arclm.inference.external` | `inspect_model_source`, `load_any_model`, `predict_external`, `save_loaded_model` | Beta | `torch`, optional `transformers`/`peft` | Supports native ArcLM and HF causal LM/LoRA paths, not universal model loading. |
+| Native inference | `arclm.inference` | `load_model`, `predict`, `Generator` | Stable | `torch` | Native checkpoint generation only. |
+| Evaluation and diagnostics | `arclm.evaluation` | `Evaluator`, `EvaluationReport`, `build_evaluation_report`, `Accuracy`, `Perplexity`, diagnostic helpers | Stable | `torch` | Reports wrap canonical metrics; diagnostics interpret reports and should not recalculate metrics independently. |
+| LoRA | `arclm.peft` | `LoRAConfig`, `apply_lora`, `save_adapter_artifact` | Stable | `torch`, optional `peft` for external adapters | Native ArcLM Linear-layer LoRA runtime verified; external PEFT and QLoRA remain model/hardware-specific. |
+| QLoRA and quantization | `arclm.peft` | `QLoRAConfig`, `QuantizationConfig`, `load_quantized_model` | Experimental | Optional `transformers`, `bitsandbytes` | Boundary behavior exists; real bitsandbytes GPU runtime pending. |
+| Distributed runtime | `arclm.distributed` | `DistributedConfig`, DDP/FSDP capability helpers | Experimental | `torch.distributed` | CPU/Gloo boundary exists; real CUDA DDP/FSDP is not complete. |
+| Tracking | `arclm.tracking` | `RunTracker`, `create_run`, `inspect_run` | Beta | Required core deps | Local manifests only; external services are compatibility-only. |
+| Hyperparameter search | `arclm.search` | `create_search`, `SearchSpace`, `compare_trials` | Beta | Required core deps | Sequential local trials; no parallel/Bayesian/pruning engine. |
+| Preprocess pipeline | `arclm.preprocess` | preprocess config/pipeline helpers | Experimental | Optional preprocess deps | Older JSONL pipeline; not the main dataset API. |
+| FastAPI Web API | `arclm.web` | `create_app`, `WebConfig`, `/api/system/status`, `/api/projects`, project dataset/tokenizer/model/run endpoints, `POST /api/inspection/text` | Beta | Optional `fastapi`, `uvicorn` | Local Studio API only; native training jobs are single-process/threaded and not production serving. |
+| Next.js frontend | Optional Studio frontend | Project, data, tokenizer, model, train, runs, checkpoints, evaluation, generation, system and pipeline-learning pages | Experimental | Node/npm stack | Optional Studio UI; streaming logs, attention maps, auth, database, external downloads and production serving are deferred. |
+| Flask simple interface | `arclm.simple_interface` | `run_simple_interface` | Deprecated | Optional `flask` | Compatibility-only; not canonical. |
+| Legacy import shims | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders` | Old import paths | Deprecated | Same deps as canonical modules | Keep small re-export shims; `pipeline_v2` is compatibility-only, not a second pipeline. |
+| Native BERT/T5/LLaMA/Mistral/MoE/vision/multimodal | None | None | Unsupported | N/A | Use external HF causal LM paths where compatible; no native implementation. |
+| RLHF/DPO/GRPO/production serving/OpenAI-compatible API/GGUF/ONNX/TensorRT | None | None | Unsupported | N/A | Out of current baseline scope. |

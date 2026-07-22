@@ -1739,6 +1739,22 @@ button {
   align-items: center;
 }
 
+.studio-progress-list {
+  display: grid;
+  gap: 8px;
+}
+
+.studio-progress-item {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.8fr) auto minmax(0, 2fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--arclm-border);
+  border-radius: var(--arclm-radius-sm);
+  padding: 10px 12px;
+  background: var(--arclm-surface);
+}
+
 .studio-list-item {
   width: 100%;
   display: grid;
@@ -1829,6 +1845,11 @@ button {
   .studio-two-column {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .studio-progress-item {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .dashboard-connection,

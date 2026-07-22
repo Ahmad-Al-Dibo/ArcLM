@@ -12,14 +12,11 @@ import type {
   SystemStatusResponse,
   TokenizerInspectionResponse
 } from "@/lib/api/schemas";
-import {
-  DataStudioPage,
-  NewProjectPage,
-  ProjectsPage,
-  StudioOverviewPage,
-  SystemPage,
-  TokenizerLabPage
-} from "./studio";
+import { DataStudioPage } from "./data-studio";
+import { StudioOverviewPage } from "./overview";
+import { NewProjectPage, ProjectOverviewPage, ProjectsPage } from "./projects-page";
+import { SystemPage } from "./system-page";
+import { TokenizerLabPage } from "./tokenizer-lab";
 import { createApiClient } from "@/lib/api/client";
 
 type StudioClient = ReturnType<typeof createApiClient>;
@@ -59,6 +56,8 @@ const tokenizer: StudioTokenizerMetadata = {
   project_id: project.id,
   name: "native-tokenizer",
   type: "native",
+  tokenizer_type: "word",
+  sentencepiece_model_type: null,
   vocab_size: 32,
   created_at: 4,
   source_dataset_id: dataset.id,
@@ -84,7 +83,10 @@ function system(): SystemStatusResponse {
       fastapi: { package: "fastapi", available: true }
     },
     backend_health: { status: "ok", service: "arclm-web-api", version: "0.9.0" },
-    workspace: { available: true, project_count: 1, active_dataset_count: 1, active_tokenizer_count: 1 }
+    workspace: { available: true, project_count: 1, active_dataset_count: 1, active_tokenizer_count: 1 },
+    active_compute_operation: "idle",
+    warnings: ["CUDA is not available; GPU-specific validation remains untested in this environment."],
+    diagnostics: { path_details_exposed: false }
   };
 }
 
@@ -155,8 +157,19 @@ function client(overrides: Partial<StudioClient> = {}): StudioClient {
       sft_validation: null
     }),
     createProjectDatasetReport: vi.fn().mockResolvedValue(report()),
+    inspectProjectDatasetRecords: vi.fn().mockResolvedValue({
+      dataset_id: dataset.id,
+      tokenizer: { id: tokenizer.id, name: tokenizer.name },
+      maximum_sequence_length: 256,
+      records: [{ record_index: 0, token_ids: [1, 2], token_count: 2, unknown_token_count: 0, would_be_truncated: false }]
+    }),
     deleteProjectDataset: vi.fn().mockResolvedValue(dataset),
     listProjectTokenizers: vi.fn().mockResolvedValue({ tokenizers: [tokenizer], count: 1 }),
+    listProjectModels: vi.fn().mockResolvedValue({ models: [], count: 0 }),
+    listProjectRuns: vi.fn().mockResolvedValue({ runs: [], count: 0 }),
+    listProjectCheckpoints: vi.fn().mockResolvedValue({ checkpoints: [], count: 0 }),
+    listProjectEvaluations: vi.fn().mockResolvedValue({ evaluations: [], count: 0 }),
+    listProjectGenerations: vi.fn().mockResolvedValue({ generations: [], count: 0 }),
     createNativeTokenizer: vi.fn().mockResolvedValue(tokenizer),
     inspectProjectTokenizer: vi.fn().mockResolvedValue(tokenizerInspection()),
     deleteProjectTokenizer: vi.fn().mockResolvedValue(tokenizer),
@@ -170,6 +183,7 @@ function renderStudio(ui: ReactElement) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  window.localStorage.clear();
 });
 
 describe("ArcLM Studio pages", () => {
@@ -177,9 +191,19 @@ describe("ArcLM Studio pages", () => {
     renderStudio(<StudioOverviewPage client={client()} />);
 
     expect(await screen.findByText("ArcLM Studio")).toBeTruthy();
+    expect(screen.getByText("First run guide")).toBeTruthy();
     expect(screen.getByText("ArcLM 0.9.0")).toBeTruthy();
     expect(screen.getByText("1 projects")).toBeTruthy();
     expect(screen.getByText("Arabic Tiny LM")).toBeTruthy();
+  });
+
+  it("shows derived project workflow progress and recommended next action", async () => {
+    renderStudio(<ProjectOverviewPage projectId={project.id} client={client()} />);
+
+    expect(await screen.findByText("Recommended next step")).toBeTruthy();
+    expect(screen.getAllByText("Model").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Open Model Builder").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Project workflow progress")).toBeTruthy();
   });
 
   it("shows backend unavailable state", async () => {
@@ -232,8 +256,15 @@ describe("ArcLM Studio pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Validate" }));
     expect(await screen.findByText("Validation passed")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate report" }));
+    fireEvent.click(screen.getByRole("button", { name: "Generate token report" }));
     expect(await screen.findByText("Manifest JSON")).toBeTruthy();
+    await waitFor(() => expect(api.createProjectDatasetReport).toHaveBeenCalledWith(project.id, dataset.id, {
+      tokenizer_id: tokenizer.id,
+      maximum_sequence_length: 256
+    }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Inspect record tokens" }));
+    expect(await screen.findByText("Record token inspection")).toBeTruthy();
 
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "Delete dataset" }));
@@ -245,8 +276,14 @@ describe("ArcLM Studio pages", () => {
     renderStudio(<TokenizerLabPage projectId={project.id} client={api} />);
 
     expect(await screen.findByText(/native-tokenizer/)).toBeTruthy();
+    expect(screen.getByLabelText("Tokenizer type")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Tokenizer type"), { target: { value: "sentencepiece" } });
+    fireEvent.change(screen.getByLabelText("SentencePiece model"), { target: { value: "unigram" } });
     fireEvent.click(screen.getByRole("button", { name: "Create native tokenizer" }));
-    await waitFor(() => expect(api.createNativeTokenizer).toHaveBeenCalled());
+    await waitFor(() => expect(api.createNativeTokenizer).toHaveBeenCalledWith(project.id, expect.objectContaining({
+      tokenizer_type: "sentencepiece",
+      sentencepiece_model_type: "unigram"
+    })));
 
     fireEvent.click(screen.getByRole("button", { name: "Inspect text" }));
     expect(await screen.findByText("Tokenizer inspection")).toBeTruthy();
@@ -263,6 +300,8 @@ describe("ArcLM Studio pages", () => {
 
     expect(await screen.findByText("Runtime")).toBeTruthy();
     expect(screen.getByText("0.9.0")).toBeTruthy();
+    expect(screen.getByText("Active compute")).toBeTruthy();
+    expect(screen.getByText("Path details exposed")).toBeTruthy();
     expect(screen.getByText("transformers")).toBeTruthy();
     expect(screen.queryByText(/Users/)).toBeNull();
   });

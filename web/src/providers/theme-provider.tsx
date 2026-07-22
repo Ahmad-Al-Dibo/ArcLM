@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { applyTheme, isThemeChoice, type ThemeChoice } from "@/lib/theme";
 import { readStorage, removeStorage, writeStorage } from "@/lib/storage";
 
@@ -12,25 +12,41 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+const themeListeners = new Set<() => void>();
+
+function getThemeSnapshot(): ThemeChoice {
+  const stored = readStorage(themeStorageKey);
+  return isThemeChoice(stored) ? stored : "system";
+}
+
+function subscribeTheme(listener: () => void) {
+  themeListeners.add(listener);
+  return () => {
+    themeListeners.delete(listener);
+  };
+}
+
+function notifyThemeListeners() {
+  for (const listener of themeListeners) {
+    listener();
+  }
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeChoice>(() => {
-    const stored = readStorage(themeStorageKey);
-    return isThemeChoice(stored) ? stored : "system";
-  });
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, (): ThemeChoice => "system");
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
   function setTheme(nextTheme: ThemeChoice) {
-    setThemeState(nextTheme);
     applyTheme(nextTheme);
     if (nextTheme === "system") {
       removeStorage(themeStorageKey);
     } else {
       writeStorage(themeStorageKey, nextTheme);
     }
+    notifyThemeListeners();
   }
 
   const value = useMemo(() => ({ theme, setTheme }), [theme]);

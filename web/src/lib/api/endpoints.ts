@@ -25,6 +25,47 @@ export const apiEndpoints = {
     `/api/projects/${encodeURIComponent(projectId)}/tokenizers/${encodeURIComponent(tokenizerId)}`,
   projectTokenizerInspect: (projectId: string, tokenizerId: string) =>
     `/api/projects/${encodeURIComponent(projectId)}/tokenizers/${encodeURIComponent(tokenizerId)}/inspect`,
+  projectModels: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/models`,
+  projectModelNative: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/models/native`,
+  projectModelValidate: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/models/native/validate`,
+  projectModelEstimate: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/models/native/estimate`,
+  projectModel: (projectId: string, modelId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/models/${encodeURIComponent(modelId)}`,
+  projectDatasetInspect: (projectId: string, datasetId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/datasets/${encodeURIComponent(datasetId)}/inspect`,
+  projectRuns: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/runs`,
+  projectRun: (projectId: string, runId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}`,
+  projectRunMetrics: (projectId: string, runId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}/metrics`,
+  projectRunEvents: (projectId: string, runId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}/events`,
+  projectRunCancel: (projectId: string, runId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}/cancel`,
+  projectRunCheckpoints: (projectId: string, runId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}/checkpoints`,
+  projectRunCheckpoint: (projectId: string, runId: string, checkpointId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}/checkpoints/${encodeURIComponent(checkpointId)}`,
+  projectCheckpoints: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/checkpoints`,
+  projectCheckpoint: (projectId: string, checkpointId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/checkpoints/${encodeURIComponent(checkpointId)}`,
+  projectCheckpointValidate: (projectId: string, checkpointId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/checkpoints/${encodeURIComponent(checkpointId)}/validate`,
+  projectCheckpointInspect: (projectId: string, checkpointId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/checkpoints/${encodeURIComponent(checkpointId)}/inspect`,
+  projectEvaluations: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/evaluations`,
+  projectEvaluation: (projectId: string, evaluationId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/evaluations/${encodeURIComponent(evaluationId)}`,
+  projectEvaluationEvents: (projectId: string, evaluationId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/evaluations/${encodeURIComponent(evaluationId)}/events`,
+  projectEvaluationReport: (projectId: string, evaluationId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/evaluations/${encodeURIComponent(evaluationId)}/report`,
+  projectEvaluationCancel: (projectId: string, evaluationId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/evaluations/${encodeURIComponent(evaluationId)}/cancel`,
+  projectEvaluationCompare: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/evaluations/compare`,
+  projectGenerations: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/generations`,
+  projectGeneration: (projectId: string, generationId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/generations/${encodeURIComponent(generationId)}`,
   pipelineInspection: "/api/inspection/text",
   pipelineInspectionStatus: "/api/inspection/status",
   datasets: "/api/datasets",

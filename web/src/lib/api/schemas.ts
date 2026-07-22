@@ -63,6 +63,9 @@ export type SystemStatusResponse = {
   optional_dependencies: Record<string, OptionalDependencyStatus>;
   backend_health: HealthResponse;
   workspace: StudioWorkspaceStatus;
+  active_compute_operation: string;
+  warnings: string[];
+  diagnostics: Record<string, unknown>;
 };
 
 export type StudioProject = {
@@ -159,8 +162,11 @@ export type DatasetValidationResponse = {
 };
 
 export type DatasetManifestReportResponse = {
+  dataset_id?: string | null;
   manifest: Record<string, unknown>;
   report: Record<string, unknown>;
+  tokenizer?: Record<string, unknown> | null;
+  report_identity?: Record<string, unknown> | null;
 };
 
 export type DatasetManifestResponse = {
@@ -176,6 +182,8 @@ export type StudioTokenizerMetadata = {
   project_id: string;
   name: string;
   type: "native";
+  tokenizer_type?: "word" | "sentencepiece";
+  sentencepiece_model_type?: "bpe" | "unigram" | "char" | "word" | null;
   vocab_size: number;
   created_at: number;
   source_dataset_id: string;
@@ -192,6 +200,8 @@ export type TokenizerListResponse = {
 export type TokenizerCreateRequest = {
   name: string;
   dataset_id: string;
+  tokenizer_type?: "word" | "sentencepiece";
+  sentencepiece_model_type?: "bpe" | "unigram" | "char" | "word";
   max_vocab?: number;
   text_fields?: string[];
 };
@@ -211,6 +221,219 @@ export type TokenizerInspectionResponse = {
   tokenizer_class: string;
   vocab_size: number;
   warnings: string[];
+};
+
+export type DatasetReportRequest = {
+  tokenizer_id?: string | null;
+  maximum_sequence_length?: number | null;
+};
+
+export type DatasetRecordInspectionRequest = {
+  tokenizer_id: string;
+  record_indexes: number[];
+  text_fields: string[];
+  maximum_sequence_length?: number | null;
+  max_records?: number;
+  max_tokens_per_record?: number;
+};
+
+export type DatasetRecordTokenInspectionResponse = {
+  dataset_id: string;
+  tokenizer: Record<string, unknown>;
+  maximum_sequence_length: number | null;
+  records: Array<Record<string, unknown>>;
+};
+
+export type StudioModelMetadata = {
+  id: string;
+  project_id: string;
+  name: string;
+  source: "native_arclm";
+  task: "causal_language_modeling";
+  status: "configured";
+  created_at: number;
+  updated_at: number;
+  tokenizer_id: string;
+  dataset_id: string | null;
+  configuration: Record<string, unknown>;
+  parameter_count: number;
+  estimated_memory: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
+};
+
+export type ModelListResponse = {
+  models: StudioModelMetadata[];
+  count: number;
+};
+
+export type NativeModelRequest = {
+  name?: string;
+  tokenizer_id: string;
+  dataset_id?: string | null;
+  configuration: Record<string, unknown>;
+};
+
+export type NativeModelUpdateRequest = {
+  name?: string | null;
+  configuration?: Record<string, unknown> | null;
+};
+
+export type NativeModelDeleteRequest = {
+  confirm: boolean;
+};
+
+export type NativeModelValidationResponse = {
+  valid: boolean;
+  configuration: Record<string, unknown>;
+  parameter_count: number;
+  estimated_memory: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
+  warnings: string[];
+};
+
+export type TrainingRunRequest = {
+  name?: string;
+  dataset_id: string;
+  tokenizer_id: string;
+  model_id: string;
+  training_type?: "native_causal_lm";
+  epochs?: number;
+  batch_size?: number;
+  learning_rate?: number;
+  weight_decay?: number;
+  gradient_accumulation_steps?: number;
+  gradient_clip_norm?: number | null;
+  optimizer?: "adamw" | "adam" | "sgd";
+  scheduler?: "constant" | "linear" | "cosine";
+  warmup_steps?: number;
+  validation_split?: number;
+  maximum_sequence_length?: number | null;
+  seed?: number;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32" | "fp16" | "bf16";
+  checkpoint_interval?: number;
+  maximum_checkpoints_to_keep?: number;
+};
+
+export type StudioRunMetadata = {
+  id: string;
+  project_id: string;
+  name: string;
+  status: "queued" | "starting" | "running" | "cancelling" | "cancelled" | "completed" | "failed" | "interrupted";
+  training_type: string;
+  created_at: number;
+  updated_at: number;
+  started_at: number | null;
+  completed_at: number | null;
+  dataset_id: string;
+  tokenizer_id: string;
+  model_id: string;
+  current_epoch: number;
+  total_epochs: number;
+  current_step: number;
+  total_steps: number | null;
+  latest_metrics: Record<string, unknown>;
+  latest_checkpoint_id: string | null;
+  device: string;
+  dtype: string;
+  error: Record<string, unknown> | null;
+  warnings: string[];
+  configuration: Record<string, unknown>;
+};
+
+export type RunListResponse = {
+  runs: StudioRunMetadata[];
+  count: number;
+};
+
+export type RunLogResponse = {
+  items: Array<Record<string, unknown>>;
+  count: number;
+};
+
+export type CheckpointListResponse = {
+  checkpoints: Array<Record<string, unknown>>;
+  count: number;
+};
+
+export type CheckpointMetadataResponse = {
+  checkpoint: Record<string, unknown>;
+};
+
+export type CheckpointValidationResponse = {
+  valid: boolean;
+  checkpoint: Record<string, unknown>;
+  reload_status: string;
+  warnings: string[];
+};
+
+export type CheckpointDeleteRequest = {
+  confirm: boolean;
+  checkpoint_name?: string | null;
+};
+
+export type EvaluationCreateRequest = {
+  checkpoint_id: string;
+  dataset_id: string;
+  tokenizer_id: string;
+  split?: string;
+  batch_size?: number;
+  maximum_sequence_length?: number | null;
+  maximum_examples?: number;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32" | "fp16" | "bf16";
+  seed?: number;
+  selected_metrics?: string[];
+};
+
+export type EvaluationListResponse = {
+  evaluations: Array<Record<string, unknown>>;
+  count: number;
+};
+
+export type EvaluationMetadataResponse = {
+  evaluation: Record<string, unknown>;
+};
+
+export type EvaluationReportResponse = {
+  report: Record<string, unknown>;
+};
+
+export type EvaluationCompareRequest = {
+  evaluation_ids: string[];
+};
+
+export type EvaluationComparisonResponse = {
+  compatible: boolean;
+  warnings: string[];
+  rows: Array<Record<string, unknown>>;
+  csv: string;
+};
+
+export type GenerationCreateRequest = {
+  checkpoint_id: string;
+  prompt: string;
+  max_new_tokens?: number;
+  temperature?: number;
+  top_k?: number | null;
+  top_p?: number | null;
+  seed?: number | null;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32" | "fp16" | "bf16";
+  include_token_details?: boolean;
+};
+
+export type GenerationDeleteRequest = {
+  confirm: boolean;
+};
+
+export type GenerationListResponse = {
+  generations: Array<Record<string, unknown>>;
+  count: number;
+};
+
+export type GenerationMetadataResponse = {
+  generation: Record<string, unknown>;
 };
 
 export type Capability = {

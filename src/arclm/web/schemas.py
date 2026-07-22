@@ -266,8 +266,11 @@ class DatasetValidationResponse(BaseModel):
 class DatasetManifestReportResponse(BaseModel):
     """Dataset manifest plus token report."""
 
+    dataset_id: str | None = None
     manifest: dict[str, Any]
     report: dict[str, Any]
+    tokenizer: dict[str, Any] | None = None
+    report_identity: dict[str, Any] | None = None
 
 
 class DatasetManifestResponse(BaseModel):
@@ -282,6 +285,37 @@ class DatasetReportResponse(BaseModel):
     report: dict[str, Any]
 
 
+class DatasetReportRequest(BaseModel):
+    """Generate token statistics with an explicit tokenizer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tokenizer_id: str | None = None
+    maximum_sequence_length: int | None = None
+
+
+class DatasetRecordInspectionRequest(BaseModel):
+    """Inspect selected dataset records with a project tokenizer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tokenizer_id: str
+    record_indexes: list[int] = Field(default_factory=list)
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+    maximum_sequence_length: int | None = None
+    max_records: int = 20
+    max_tokens_per_record: int = 256
+
+
+class DatasetRecordTokenInspectionResponse(BaseModel):
+    """Bounded token inspection for selected dataset records."""
+
+    dataset_id: str
+    tokenizer: dict[str, Any]
+    maximum_sequence_length: int | None = None
+    records: list[dict[str, Any]]
+
+
 class StudioTokenizerMetadata(BaseModel):
     """Project tokenizer metadata."""
 
@@ -289,6 +323,8 @@ class StudioTokenizerMetadata(BaseModel):
     project_id: str
     name: str
     type: Literal["native"]
+    tokenizer_type: Literal["word", "sentencepiece"] = "word"
+    sentencepiece_model_type: Literal["bpe", "unigram", "char", "word"] | None = None
     vocab_size: int
     created_at: float
     source_dataset_id: str
@@ -311,6 +347,8 @@ class TokenizerCreateRequest(BaseModel):
 
     name: str
     dataset_id: str
+    tokenizer_type: Literal["word", "sentencepiece"] = "word"
+    sentencepiece_model_type: Literal["bpe", "unigram", "char", "word"] = "bpe"
     max_vocab: int = 2000
     text_fields: list[str] = Field(default_factory=lambda: ["text"])
 
@@ -344,6 +382,264 @@ class TokenizerInspectionResponse(BaseModel):
     tokenizer_class: str
     vocab_size: int
     warnings: list[str] = Field(default_factory=list)
+
+
+class StudioModelMetadata(BaseModel):
+    """Native ArcLM model configuration metadata."""
+
+    id: str
+    project_id: str
+    name: str
+    source: Literal["native_arclm"]
+    task: Literal["causal_language_modeling"]
+    status: Literal["configured"]
+    created_at: float
+    updated_at: float
+    tokenizer_id: str
+    dataset_id: str | None = None
+    configuration: dict[str, Any]
+    parameter_count: int
+    estimated_memory: dict[str, Any]
+    capabilities: dict[str, Any]
+
+
+class ModelListResponse(BaseModel):
+    """Project model configuration list."""
+
+    models: list[StudioModelMetadata]
+    count: int
+
+
+class NativeModelRequest(BaseModel):
+    """Create or validate a native ArcLM model configuration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = "Tiny ArcLM"
+    tokenizer_id: str
+    dataset_id: str | None = None
+    configuration: dict[str, Any] = Field(default_factory=dict)
+
+
+class NativeModelUpdateRequest(BaseModel):
+    """Update a stored native model configuration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = None
+    configuration: dict[str, Any] | None = None
+
+
+class NativeModelDeleteRequest(BaseModel):
+    """Confirm model deletion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+
+
+class NativeModelValidationResponse(BaseModel):
+    """Validation and estimate response."""
+
+    valid: bool
+    configuration: dict[str, Any]
+    parameter_count: int
+    estimated_memory: dict[str, Any]
+    capabilities: dict[str, Any]
+    warnings: list[str] = Field(default_factory=list)
+
+
+class TrainingRunRequest(BaseModel):
+    """Create a local native training run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = "Native training run"
+    dataset_id: str
+    tokenizer_id: str
+    model_id: str
+    training_type: Literal["native_causal_lm"] = "native_causal_lm"
+    epochs: int = 1
+    batch_size: int = 1
+    learning_rate: float = 1e-3
+    weight_decay: float = 0.0
+    gradient_accumulation_steps: int = 1
+    gradient_clip_norm: float | None = 1.0
+    optimizer: Literal["adamw", "adam", "sgd"] = "adamw"
+    scheduler: Literal["constant", "linear", "cosine"] = "constant"
+    warmup_steps: int = 0
+    validation_split: float = 0.0
+    maximum_sequence_length: int | None = None
+    seed: int = 42
+    device: Literal["auto", "cpu", "cuda"] = "auto"
+    precision: Literal["fp32", "fp16", "bf16"] = "fp32"
+    checkpoint_interval: int = 1
+    maximum_checkpoints_to_keep: int = 3
+
+
+class StudioRunMetadata(BaseModel):
+    """Persistent training run metadata."""
+
+    id: str
+    project_id: str
+    name: str
+    status: Literal["queued", "starting", "running", "cancelling", "cancelled", "completed", "failed", "interrupted"]
+    training_type: str
+    created_at: float
+    updated_at: float
+    started_at: float | None = None
+    completed_at: float | None = None
+    dataset_id: str
+    tokenizer_id: str
+    model_id: str
+    current_epoch: int
+    total_epochs: int
+    current_step: int
+    total_steps: int | None = None
+    latest_metrics: dict[str, Any]
+    latest_checkpoint_id: str | None = None
+    device: str
+    dtype: str
+    error: dict[str, Any] | None = None
+    warnings: list[str] = Field(default_factory=list)
+    configuration: dict[str, Any]
+
+
+class RunListResponse(BaseModel):
+    """Project training runs."""
+
+    runs: list[StudioRunMetadata]
+    count: int
+
+
+class RunLogResponse(BaseModel):
+    """Bounded metrics or events response."""
+
+    items: list[dict[str, Any]]
+    count: int
+
+
+class CheckpointListResponse(BaseModel):
+    """Training checkpoint metadata list."""
+
+    checkpoints: list[dict[str, Any]]
+    count: int
+
+
+class CheckpointMetadataResponse(BaseModel):
+    """One checkpoint metadata object."""
+
+    checkpoint: dict[str, Any]
+
+
+class CheckpointValidationResponse(BaseModel):
+    """Result of explicit native checkpoint validation."""
+
+    valid: bool
+    checkpoint: dict[str, Any]
+    reload_status: str
+    warnings: list[str] = Field(default_factory=list)
+
+
+class CheckpointDeleteRequest(BaseModel):
+    """Confirm deletion of one checkpoint directory."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+    checkpoint_name: str | None = None
+
+
+class EvaluationCreateRequest(BaseModel):
+    """Create a bounded background evaluation job."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    checkpoint_id: str
+    dataset_id: str
+    tokenizer_id: str
+    split: str = "all"
+    batch_size: int = 1
+    maximum_sequence_length: int | None = None
+    maximum_examples: int = 64
+    device: Literal["auto", "cpu", "cuda"] = "cpu"
+    precision: Literal["fp32", "fp16", "bf16"] = "fp32"
+    seed: int = 42
+    selected_metrics: list[str] = Field(default_factory=lambda: ["loss", "perplexity", "accuracy"])
+
+
+class EvaluationListResponse(BaseModel):
+    """Project evaluation list."""
+
+    evaluations: list[dict[str, Any]]
+    count: int
+
+
+class EvaluationMetadataResponse(BaseModel):
+    """One evaluation record."""
+
+    evaluation: dict[str, Any]
+
+
+class EvaluationReportResponse(BaseModel):
+    """Stored canonical EvaluationReport."""
+
+    report: dict[str, Any]
+
+
+class EvaluationCompareRequest(BaseModel):
+    """Compare completed evaluation IDs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    evaluation_ids: list[str]
+
+
+class EvaluationComparisonResponse(BaseModel):
+    """Comparison table plus compatibility warning."""
+
+    compatible: bool
+    warnings: list[str] = Field(default_factory=list)
+    rows: list[dict[str, Any]]
+    csv: str
+
+
+class GenerationCreateRequest(BaseModel):
+    """Bounded native generation request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    checkpoint_id: str
+    prompt: str
+    max_new_tokens: int = 32
+    temperature: float = 1.0
+    top_k: int | None = None
+    top_p: float | None = None
+    seed: int | None = None
+    device: Literal["auto", "cpu", "cuda"] = "cpu"
+    precision: Literal["fp32", "fp16", "bf16"] = "fp32"
+    include_token_details: bool = False
+
+
+class GenerationDeleteRequest(BaseModel):
+    """Confirm deletion of one generation history record."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+
+
+class GenerationListResponse(BaseModel):
+    """Project generation history."""
+
+    generations: list[dict[str, Any]]
+    count: int
+
+
+class GenerationMetadataResponse(BaseModel):
+    """One generation record."""
+
+    generation: dict[str, Any]
 
 
 class DatasetField(BaseModel):
@@ -518,6 +814,9 @@ class SystemStatusResponse(BaseModel):
     optional_dependencies: dict[str, OptionalDependencyStatus]
     backend_health: HealthResponse
     workspace: StudioWorkspaceStatus
+    active_compute_operation: str = "idle"
+    warnings: list[str] = Field(default_factory=list)
+    diagnostics: dict[str, Any] = Field(default_factory=dict)
 
 
 class Capability(BaseModel):

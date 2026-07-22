@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-import platform as platform_module
-from importlib.util import find_spec
 from threading import Lock
 from typing import Any
 
 import arclm
+from arclm.diagnostics_runtime import optional_dependency_status
 from arclm.exceptions import ArcLMError, ConfigurationError
 
 from .config import WebConfig
@@ -24,6 +23,9 @@ from .schemas import (
     DatasetManifestResponse,
     DatasetPasteRequest,
     DatasetReportResponse,
+    DatasetReportRequest,
+    DatasetRecordInspectionRequest,
+    DatasetRecordTokenInspectionResponse,
     DatasetRootCreateRequest,
     DatasetRootInfo,
     DatasetRootListResponse,
@@ -33,7 +35,21 @@ from .schemas import (
     DatasetValidationResponse,
     EnvironmentResponse,
     ErrorResponse,
+    EvaluationCompareRequest,
+    EvaluationComparisonResponse,
+    EvaluationCreateRequest,
+    EvaluationListResponse,
+    EvaluationMetadataResponse,
+    EvaluationReportResponse,
     HealthResponse,
+    CheckpointListResponse,
+    CheckpointDeleteRequest,
+    CheckpointMetadataResponse,
+    CheckpointValidationResponse,
+    GenerationCreateRequest,
+    GenerationDeleteRequest,
+    GenerationListResponse,
+    GenerationMetadataResponse,
     PipelineInspectionRequest,
     PipelineInspectionStatusResponse,
     PipelineTraceResponse,
@@ -44,8 +60,17 @@ from .schemas import (
     ProjectListResponse,
     ProjectStatusResponse,
     ProjectUpdateRequest,
+    ModelListResponse,
+    NativeModelDeleteRequest,
+    NativeModelRequest,
+    NativeModelUpdateRequest,
+    NativeModelValidationResponse,
+    RunListResponse,
+    RunLogResponse,
     StudioDatasetMetadata,
+    StudioModelMetadata,
     StudioProject,
+    StudioRunMetadata,
     StudioTokenizerMetadata,
     SystemStatusResponse,
     TokenizerCreateRequest,
@@ -53,8 +78,11 @@ from .schemas import (
     TokenizerInspectionResponse,
     TokenizerInspectRequest,
     TokenizerListResponse,
+    TrainingRunRequest,
 )
-from .services import get_capabilities, get_environment, get_project_status
+from .services import get_capabilities, get_environment, get_project_status, get_system_diagnostics
+from .studio3 import Studio3Coordinator
+from .studio_training import StudioTrainingCoordinator
 from .workspace import StudioWorkspace, WorkspaceApiError
 
 logger = logging.getLogger(__name__)
@@ -100,22 +128,6 @@ def _error_payload(code: str, message: str, details: dict[str, Any] | None = Non
     return {"error": payload}
 
 
-def _optional_dependency_status() -> dict[str, dict[str, Any]]:
-    """Checks optional packages without importing them."""
-    packages = [
-        "transformers",
-        "datasets",
-        "accelerate",
-        "peft",
-        "bitsandbytes",
-        "safetensors",
-        "fastapi",
-        "uvicorn",
-        "sentencepiece",
-    ]
-    return {package: {"package": package, "available": find_spec(package) is not None} for package in packages}
-
-
 def create_app(config: WebConfig | None = None, *, model: Any | None = None, tokenizer: Any | None = None):
     """Maakt de lokale ArcLM Web API.
 
@@ -149,6 +161,16 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     app.state.arclm_tokenizer = tokenizer
     app.state.arclm_inspection_lock = Lock()
     app.state.studio_workspace = StudioWorkspace(web_config)
+    app.state.training_coordinator = StudioTrainingCoordinator(
+        app.state.studio_workspace,
+        max_active_jobs=web_config.max_active_training_jobs,
+    )
+    app.state.studio_compute_lock = Lock()
+    app.state.studio3_coordinator = Studio3Coordinator(
+        app.state.studio_workspace,
+        training_coordinator=app.state.training_coordinator,
+        compute_lock=app.state.studio_compute_lock,
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -298,21 +320,38 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     @app.get("/api/system/status", response_model=SystemStatusResponse)
     def system_status() -> SystemStatusResponse:
         """Geeft veilige ArcLM Studio runtime- en workspace-informatie terug."""
-        env = get_environment()
+        workspace_status = app.state.studio_workspace.status()
+        if app.state.training_coordinator.has_active_job():
+            active_compute = "training"
+        elif app.state.studio3_coordinator.has_active_evaluation():
+            active_compute = "evaluation"
+        else:
+            active_compute = "idle"
+        diagnostics = get_system_diagnostics(
+            workspace=workspace_status,
+            active_compute_operation=active_compute,
+        )
         return SystemStatusResponse(
-            arclm_version=env.arclm_version,
-            python_version=env.python_version,
-            pytorch_version=env.pytorch_version,
-            operating_system=env.platform,
-            cpu=platform_module.processor() or None,
-            cuda_available=env.cuda_available,
-            cuda_version=env.cuda_runtime,
-            gpu_name=env.gpus[0].name if env.gpus else None,
-            gpu_count=env.device_count,
-            current_device=env.preferred_device,
-            optional_dependencies=_optional_dependency_status(),
+            arclm_version=diagnostics["arclm_version"],
+            python_version=diagnostics["python_version"],
+            pytorch_version=diagnostics["pytorch_version"],
+            operating_system=diagnostics["operating_system"],
+            cpu=diagnostics["cpu"],
+            cuda_available=diagnostics["cuda_available"],
+            cuda_version=diagnostics["cuda_version"],
+            gpu_name=diagnostics["gpu_name"],
+            gpu_count=diagnostics["gpu_count"],
+            current_device=diagnostics["current_device"],
+            optional_dependencies=optional_dependency_status(),
             backend_health=HealthResponse(status="ok", service="arclm-web-api", version=arclm.__version__),
-            workspace=app.state.studio_workspace.status(),
+            workspace=workspace_status,
+            active_compute_operation=active_compute,
+            warnings=list(diagnostics["warnings"]),
+            diagnostics={
+                "gpu_count": diagnostics["gpu_count"],
+                "optional_dependency_count": len(diagnostics["optional_dependencies"]),
+                "path_details_exposed": False,
+            },
         )
 
     @app.get("/api/inspection/status", response_model=PipelineInspectionStatusResponse)
@@ -401,6 +440,191 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         )
         return StudioProject(**project.to_dict())
 
+    @app.get("/api/projects/{project_id}/models", response_model=ModelListResponse)
+    def list_project_models(project_id: str) -> ModelListResponse:
+        """Lists native ArcLM model configurations for one project."""
+        models = [StudioModelMetadata(**item.to_dict()) for item in app.state.studio_workspace.list_models(project_id)]
+        return ModelListResponse(models=models, count=len(models))
+
+    @app.post("/api/projects/{project_id}/models/native/validate", response_model=NativeModelValidationResponse)
+    def validate_project_native_model(project_id: str, payload: NativeModelRequest) -> dict[str, Any]:
+        """Validates a native model config through the real ArcLM constructor."""
+        return app.state.studio_workspace.validate_native_model(project_id, payload.configuration, payload.tokenizer_id)
+
+    @app.post("/api/projects/{project_id}/models/native/estimate", response_model=NativeModelValidationResponse)
+    def estimate_project_native_model(project_id: str, payload: NativeModelRequest) -> dict[str, Any]:
+        """Returns exact parameter count and approximate memory estimates."""
+        return app.state.studio_workspace.estimate_native_model(project_id, payload.configuration, payload.tokenizer_id)
+
+    @app.post("/api/projects/{project_id}/models/native", response_model=StudioModelMetadata)
+    def create_project_native_model(project_id: str, payload: NativeModelRequest) -> StudioModelMetadata:
+        """Stores native ArcLM model configuration metadata without weights."""
+        model = app.state.studio_workspace.create_native_model(
+            project_id,
+            name=payload.name,
+            tokenizer_id=payload.tokenizer_id,
+            dataset_id=payload.dataset_id,
+            configuration=payload.configuration,
+        )
+        return StudioModelMetadata(**model.to_dict())
+
+    @app.get("/api/projects/{project_id}/models/{model_id}", response_model=StudioModelMetadata)
+    def read_project_model(project_id: str, model_id: str) -> StudioModelMetadata:
+        """Reads one native model configuration."""
+        return StudioModelMetadata(**app.state.studio_workspace.get_model(project_id, model_id).to_dict())
+
+    @app.patch("/api/projects/{project_id}/models/{model_id}", response_model=StudioModelMetadata)
+    def update_project_model(project_id: str, model_id: str, payload: NativeModelUpdateRequest) -> StudioModelMetadata:
+        """Updates safe native model fields."""
+        model = app.state.studio_workspace.update_model(project_id, model_id, name=payload.name, configuration=payload.configuration)
+        return StudioModelMetadata(**model.to_dict())
+
+    @app.delete("/api/projects/{project_id}/models/{model_id}", response_model=StudioModelMetadata)
+    def delete_project_model(project_id: str, model_id: str, payload: NativeModelDeleteRequest) -> StudioModelMetadata:
+        """Deletes model config metadata only after confirmation."""
+        model = app.state.studio_workspace.delete_model(project_id, model_id, confirm=payload.confirm)
+        return StudioModelMetadata(**model.to_dict())
+
+    @app.get("/api/projects/{project_id}/runs", response_model=RunListResponse)
+    def list_project_runs(project_id: str) -> RunListResponse:
+        """Lists persistent training runs for a project."""
+        runs = [StudioRunMetadata(**item.to_dict()) for item in app.state.studio_workspace.list_runs(project_id)]
+        return RunListResponse(runs=runs, count=len(runs))
+
+    @app.post("/api/projects/{project_id}/runs", response_model=StudioRunMetadata)
+    def create_project_run(project_id: str, payload: TrainingRunRequest) -> StudioRunMetadata:
+        """Creates and starts a local native training run in the background."""
+        run = app.state.training_coordinator.create_run(project_id, payload.model_dump())
+        return StudioRunMetadata(**run.to_dict())
+
+    @app.get("/api/projects/{project_id}/runs/{run_id}", response_model=StudioRunMetadata)
+    def read_project_run(project_id: str, run_id: str) -> StudioRunMetadata:
+        """Reads one training run metadata snapshot."""
+        return StudioRunMetadata(**app.state.studio_workspace.get_run(project_id, run_id).to_dict())
+
+    @app.get("/api/projects/{project_id}/runs/{run_id}/metrics", response_model=RunLogResponse)
+    def read_project_run_metrics(project_id: str, run_id: str, limit: int = 200) -> RunLogResponse:
+        """Reads bounded metrics from metrics.jsonl."""
+        items = app.state.studio_workspace.read_run_jsonl(project_id, run_id, "metrics.jsonl", limit)
+        return RunLogResponse(items=items, count=len(items))
+
+    @app.get("/api/projects/{project_id}/runs/{run_id}/events", response_model=RunLogResponse)
+    def read_project_run_events(project_id: str, run_id: str, limit: int = 200) -> RunLogResponse:
+        """Reads bounded events from events.jsonl."""
+        items = app.state.studio_workspace.read_run_jsonl(project_id, run_id, "events.jsonl", limit)
+        return RunLogResponse(items=items, count=len(items))
+
+    @app.post("/api/projects/{project_id}/runs/{run_id}/cancel", response_model=StudioRunMetadata)
+    def cancel_project_run(project_id: str, run_id: str) -> StudioRunMetadata:
+        """Requests cooperative cancellation at a safe Trainer callback boundary."""
+        run = app.state.training_coordinator.cancel(project_id, run_id)
+        return StudioRunMetadata(**run.to_dict())
+
+    @app.get("/api/projects/{project_id}/runs/{run_id}/checkpoints", response_model=CheckpointListResponse)
+    def list_project_run_checkpoints(project_id: str, run_id: str) -> CheckpointListResponse:
+        """Lists metadata for checkpoints generated by a run."""
+        checkpoints = app.state.studio_workspace.list_run_checkpoints(project_id, run_id)
+        return CheckpointListResponse(checkpoints=checkpoints, count=len(checkpoints))
+
+    @app.get("/api/projects/{project_id}/runs/{run_id}/checkpoints/{checkpoint_id}", response_model=CheckpointMetadataResponse)
+    def read_project_run_checkpoint(project_id: str, run_id: str, checkpoint_id: str) -> CheckpointMetadataResponse:
+        """Reads one checkpoint metadata object without returning binary contents."""
+        return CheckpointMetadataResponse(
+            checkpoint=app.state.studio_workspace.get_run_checkpoint(project_id, run_id, checkpoint_id)
+        )
+
+    @app.get("/api/projects/{project_id}/checkpoints", response_model=CheckpointListResponse)
+    def list_project_checkpoints(project_id: str) -> CheckpointListResponse:
+        """Lists project-wide checkpoint metadata using safe generated IDs."""
+        checkpoints = app.state.studio3_coordinator.list_checkpoints(project_id)
+        return CheckpointListResponse(checkpoints=checkpoints, count=len(checkpoints))
+
+    @app.get("/api/projects/{project_id}/checkpoints/{checkpoint_id}", response_model=CheckpointMetadataResponse)
+    def read_project_checkpoint(project_id: str, checkpoint_id: str) -> CheckpointMetadataResponse:
+        """Reads safe checkpoint details without returning model binaries."""
+        return CheckpointMetadataResponse(checkpoint=app.state.studio3_coordinator.get_checkpoint(project_id, checkpoint_id))
+
+    @app.post("/api/projects/{project_id}/checkpoints/{checkpoint_id}/validate", response_model=CheckpointValidationResponse)
+    def validate_project_checkpoint(project_id: str, checkpoint_id: str) -> dict[str, Any]:
+        """Validates native checkpoint reload compatibility explicitly."""
+        return app.state.studio3_coordinator.validate_checkpoint(project_id, checkpoint_id)
+
+    @app.delete("/api/projects/{project_id}/checkpoints/{checkpoint_id}", response_model=CheckpointMetadataResponse)
+    def delete_project_checkpoint(project_id: str, checkpoint_id: str, payload: CheckpointDeleteRequest) -> CheckpointMetadataResponse:
+        """Deletes exactly one checkpoint after explicit confirmation."""
+        checkpoint = app.state.studio3_coordinator.delete_checkpoint(
+            project_id,
+            checkpoint_id,
+            confirm=payload.confirm,
+            checkpoint_name=payload.checkpoint_name,
+        )
+        return CheckpointMetadataResponse(checkpoint=checkpoint)
+
+    @app.post("/api/projects/{project_id}/checkpoints/{checkpoint_id}/inspect", response_model=PipelineTraceResponse)
+    def inspect_project_checkpoint(project_id: str, checkpoint_id: str, payload: PipelineInspectionRequest) -> dict[str, Any]:
+        """Inspects a native checkpoint through canonical arclm.inspect_text."""
+        return app.state.studio3_coordinator.inspect_checkpoint(project_id, checkpoint_id, payload.model_dump())
+
+    @app.get("/api/projects/{project_id}/evaluations", response_model=EvaluationListResponse)
+    def list_project_evaluations(project_id: str) -> EvaluationListResponse:
+        """Lists stored evaluation jobs for a project."""
+        evaluations = app.state.studio3_coordinator.list_evaluations(project_id)
+        return EvaluationListResponse(evaluations=evaluations, count=len(evaluations))
+
+    @app.post("/api/projects/{project_id}/evaluations", response_model=EvaluationMetadataResponse)
+    def create_project_evaluation(project_id: str, payload: EvaluationCreateRequest) -> EvaluationMetadataResponse:
+        """Queues a bounded background evaluation job."""
+        evaluation = app.state.studio3_coordinator.create_evaluation(project_id, payload.model_dump())
+        return EvaluationMetadataResponse(evaluation=evaluation)
+
+    @app.post("/api/projects/{project_id}/evaluations/compare", response_model=EvaluationComparisonResponse)
+    def compare_project_evaluations(project_id: str, payload: EvaluationCompareRequest) -> dict[str, Any]:
+        """Compares completed evaluations only when conditions match."""
+        return app.state.studio3_coordinator.compare_evaluations(project_id, payload.evaluation_ids)
+
+    @app.get("/api/projects/{project_id}/evaluations/{evaluation_id}", response_model=EvaluationMetadataResponse)
+    def read_project_evaluation(project_id: str, evaluation_id: str) -> EvaluationMetadataResponse:
+        """Reads one evaluation metadata snapshot."""
+        return EvaluationMetadataResponse(evaluation=app.state.studio3_coordinator.get_evaluation(project_id, evaluation_id))
+
+    @app.get("/api/projects/{project_id}/evaluations/{evaluation_id}/events", response_model=RunLogResponse)
+    def read_project_evaluation_events(project_id: str, evaluation_id: str, limit: int = 200) -> RunLogResponse:
+        """Reads bounded evaluation events."""
+        items = app.state.studio3_coordinator.get_evaluation_events(project_id, evaluation_id, limit)
+        return RunLogResponse(items=items, count=len(items))
+
+    @app.get("/api/projects/{project_id}/evaluations/{evaluation_id}/report", response_model=EvaluationReportResponse)
+    def read_project_evaluation_report(project_id: str, evaluation_id: str) -> EvaluationReportResponse:
+        """Reads the stored canonical EvaluationReport."""
+        return EvaluationReportResponse(report=app.state.studio3_coordinator.get_evaluation_report(project_id, evaluation_id))
+
+    @app.post("/api/projects/{project_id}/evaluations/{evaluation_id}/cancel", response_model=EvaluationMetadataResponse)
+    def cancel_project_evaluation(project_id: str, evaluation_id: str) -> EvaluationMetadataResponse:
+        """Requests cooperative evaluation cancellation."""
+        return EvaluationMetadataResponse(evaluation=app.state.studio3_coordinator.cancel_evaluation(project_id, evaluation_id))
+
+    @app.get("/api/projects/{project_id}/generations", response_model=GenerationListResponse)
+    def list_project_generations(project_id: str) -> GenerationListResponse:
+        """Lists bounded generation history."""
+        generations = app.state.studio3_coordinator.list_generations(project_id)
+        return GenerationListResponse(generations=generations, count=len(generations))
+
+    @app.post("/api/projects/{project_id}/generations", response_model=GenerationMetadataResponse)
+    def create_project_generation(project_id: str, payload: GenerationCreateRequest) -> GenerationMetadataResponse:
+        """Runs one bounded native checkpoint generation."""
+        return GenerationMetadataResponse(generation=app.state.studio3_coordinator.generate(project_id, payload.model_dump()))
+
+    @app.get("/api/projects/{project_id}/generations/{generation_id}", response_model=GenerationMetadataResponse)
+    def read_project_generation(project_id: str, generation_id: str) -> GenerationMetadataResponse:
+        """Reads one generation history record."""
+        return GenerationMetadataResponse(generation=app.state.studio3_coordinator.get_generation(project_id, generation_id))
+
+    @app.delete("/api/projects/{project_id}/generations/{generation_id}", response_model=GenerationMetadataResponse)
+    def delete_project_generation(project_id: str, generation_id: str, payload: GenerationDeleteRequest) -> GenerationMetadataResponse:
+        """Deletes one generation record after confirmation."""
+        generation = app.state.studio3_coordinator.delete_generation(project_id, generation_id, confirm=payload.confirm)
+        return GenerationMetadataResponse(generation=generation)
+
     @app.get("/api/projects/{project_id}/datasets", response_model=ProjectDatasetListResponse)
     def list_project_datasets(project_id: str) -> ProjectDatasetListResponse:
         """Lists datasets stored in one project."""
@@ -477,9 +701,38 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         )
 
     @app.post("/api/projects/{project_id}/datasets/{dataset_id}/report", response_model=DatasetManifestReportResponse)
-    def create_project_dataset_report(project_id: str, dataset_id: str) -> dict[str, Any]:
+    def create_project_dataset_report(
+        project_id: str,
+        dataset_id: str,
+        payload: DatasetReportRequest | None = None,
+    ) -> dict[str, Any]:
         """Creates dataset manifest and token report via ArcLM APIs."""
+        if payload is not None:
+            return app.state.studio_workspace.create_tokenized_report(
+                project_id,
+                dataset_id,
+                tokenizer_id=payload.tokenizer_id,
+                maximum_sequence_length=payload.maximum_sequence_length,
+            )
         return app.state.studio_workspace.create_manifest_and_report(project_id, dataset_id)
+
+    @app.post("/api/projects/{project_id}/datasets/{dataset_id}/inspect", response_model=DatasetRecordTokenInspectionResponse)
+    def inspect_project_dataset_records(
+        project_id: str,
+        dataset_id: str,
+        payload: DatasetRecordInspectionRequest,
+    ) -> dict[str, Any]:
+        """Tokenizes selected records with an explicit project tokenizer."""
+        return app.state.studio_workspace.inspect_dataset_records(
+            project_id,
+            dataset_id,
+            tokenizer_id=payload.tokenizer_id,
+            record_indexes=payload.record_indexes,
+            text_fields=payload.text_fields,
+            maximum_sequence_length=payload.maximum_sequence_length,
+            max_records=payload.max_records,
+            max_tokens_per_record=payload.max_tokens_per_record,
+        )
 
     @app.get("/api/projects/{project_id}/datasets/{dataset_id}/manifest", response_model=DatasetManifestResponse)
     def read_project_dataset_manifest(project_id: str, dataset_id: str) -> dict[str, Any]:
@@ -506,6 +759,8 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
             name=payload.name,
             max_vocab=payload.max_vocab,
             text_fields=payload.text_fields,
+            tokenizer_type=payload.tokenizer_type,
+            sentencepiece_model_type=payload.sentencepiece_model_type,
         )
         return StudioTokenizerMetadata(**tokenizer.to_dict())
 

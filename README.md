@@ -29,6 +29,12 @@ pip install "arclm[peft]"
 pip install "arclm[preprocess]"
 ```
 
+The local Studio backend is optional:
+
+```bash
+python -m arclm web-api
+```
+
 ## Quick Start
 
 ```python
@@ -68,7 +74,7 @@ The installed console entry point is also `arclm`.
 
 ## Current Limits
 
-ArcLM 0.9.0 does not claim universal Hugging Face support, production serving,
+ArcLM 0.10.0 does not claim universal Hugging Face support, production serving,
 OpenAI-compatible APIs, attention-map capture, streaming generation, guaranteed
 multi-GPU training, real QLoRA runtime validation, native BERT/T5/diffusion,
 vision, audio, multimodal models, RLHF, DPO, or GRPO.

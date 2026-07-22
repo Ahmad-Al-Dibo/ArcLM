@@ -34,6 +34,7 @@ from arclm import (
 )
 from arclm.configs import load_config_json, load_config_yaml
 from arclm.datasets import create_dataloader
+from arclm.diagnostics_runtime import build_runtime_diagnostics, format_runtime_diagnostics, runtime_diagnostics_json
 from arclm.training import train_model
 
 
@@ -228,6 +229,18 @@ def create_web_api_parser(subparsers):
         help="Approved local dataset root for read-only inspection. Can be repeated.",
     )
     parser.set_defaults(func=web_api_command)
+    return parser
+
+
+def create_doctor_parser(subparsers):
+    """Maakt de parser voor veilige lokale diagnostics."""
+    parser = subparsers.add_parser(
+        "doctor",
+        help="Show safe local ArcLM diagnostics",
+        description="Inspect the local ArcLM installation without downloads or optional imports.",
+    )
+    parser.add_argument("--json", action="store_true", help="Print a JSON-safe diagnostic report.")
+    parser.set_defaults(func=doctor_command)
     return parser
 
 
@@ -470,6 +483,16 @@ def web_api_command(args):
     return 0
 
 
+def doctor_command(args):
+    """Print safe native diagnostics for release-readiness checks."""
+    report = build_runtime_diagnostics(include_paths=True)
+    if args.json:
+        print(runtime_diagnostics_json(report))
+    else:
+        print(format_runtime_diagnostics(report))
+    return 0
+
+
 def run_command(args):
     """Voert package runtime helpers uit."""
     if args.run in {"simple-interface", "simple_interface"}:
@@ -508,6 +531,7 @@ Examples:
   arclm train --config config.yaml --data data.txt --output models/model.pth
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "The future is"
+  arclm doctor
   python -m arclm web-api
   python -m arclm --run simple-interface
         """,
@@ -555,6 +579,7 @@ Examples:
     create_eval_parser(subparsers)
     create_generate_parser(subparsers)
     create_web_api_parser(subparsers)
+    create_doctor_parser(subparsers)
 
     args = parser.parse_args()
 
