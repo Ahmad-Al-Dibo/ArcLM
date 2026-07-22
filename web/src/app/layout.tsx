@@ -4,8 +4,8 @@ import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ArcLM Web Interface Foundation",
-  description: "Local frontend foundation for the ArcLM Web Experience."
+  title: "ArcLM Studio",
+  description: "A local visual workspace for preparing data, tokenizers, and ArcLM learning workflows."
 };
 
 export default function RootLayout({

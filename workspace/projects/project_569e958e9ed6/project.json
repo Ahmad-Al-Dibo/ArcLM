@@ -1,0 +1,11 @@
+{
+  "active_dataset_id": "dataset_f6e48f3602cf",
+  "active_tokenizer_id": "tokenizer_031eb36691f8",
+  "arclm_version": "0.9.0",
+  "created_at": 1784725212.3553283,
+  "description": "",
+  "id": "project_569e958e9ed6",
+  "name": "simple-chatbot",
+  "status": "active",
+  "updated_at": 1784725354.0971806
+}

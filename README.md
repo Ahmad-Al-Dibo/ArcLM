@@ -1,55 +1,58 @@
-# ArcLM Speciale Versie
+# ArcLM
 
-ArcLM is een compacte, native-first Python library voor taalmodellen. De kern is bedoeld om LLM-workflows begrijpelijk te maken: data laden, tekst tokenizen, een klein causal language model trainen, checkpoints bewaren, evalueren, fine-tunen en lokaal genereren.
+ArcLM is a compact native-first Python library for educational and research
+language-model workflows. Its core path is intentionally small: load local data,
+tokenize text, train a tiny PyTorch causal language model, save or reload a
+checkpoint, evaluate, generate, and inspect the pipeline.
 
-Deze werkmap is een private/speciale editie voor onderzoek en ontwikkeling. De primaire gebruikers zijn studenten, beginnende onderzoekers en developers die willen begrijpen hoe een LLM-library werkt zonder een grote productstack eromheen.
+ArcLM is aimed at students, early researchers, and developers who want to learn
+how an LLM library fits together without depending on a production serving stack.
 
-## Wat Werkt Nu
-
-- Dataset loading voor JSON, JSONL, CSV, TXT, Python lists en streaming-basis.
-- Dataset cleaning, pipelines en exacte deduplicatie.
-- Native GPT-achtige `ArcLM` modellen met PyTorch.
-- Single-device training, checkpoints, resume, callbacks, schedulers en mixed-precision gates.
-- Full fine-tuning en supervised fine-tuning.
-- Basic lokale inference en evaluation metrics.
-- LoRA/QLoRA foundations, tracking, search en distributed-runtime boundaries met duidelijke beperkingen.
-- Een FastAPI lokale Web API en een optionele Next.js frontend foundation.
-
-Gebruik bij voorkeur domain imports:
-
-```python
-from arclm.datasets import DataPipeline, load_dataset
-from arclm.models import ArcLM
-from arclm.tokenizers import Tokenizer
-from arclm.training import Trainer, train_model
-from arclm.finetuning import train_sft
-from arclm.inference import load_model, predict
-from arclm.checkpoints import SmartLoader
-from arclm.evaluation import Evaluator
-```
-
-## Installatie
-
-Voor lokaal ontwikkelen:
+## Install
 
 ```bash
-pip install -e .
+pip install arclm
 ```
 
-Voor tests en builds:
+For local development in this repository:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Optionele integraties blijven optioneel:
+Optional integrations are installed only when requested:
 
 ```bash
-pip install -e ".[web]"
-pip install -e ".[preprocess]"
-pip install -e ".[hf]"
-pip install -e ".[peft]"
-pip install -e ".[qlora]"
+pip install "arclm[web]"
+pip install "arclm[hf]"
+pip install "arclm[peft]"
+pip install "arclm[preprocess]"
+```
+
+## Quick Start
+
+```python
+from arclm.datasets import load_dataset
+from arclm.models import ArcLM
+from arclm.tokenizers import Tokenizer
+
+records = load_dataset([{"text": "ArcLM trains small native models."}])
+tokenizer = Tokenizer(max_vocab=32)
+tokenizer.build(records[0]["text"])
+
+model = ArcLM(
+    vocab_size=tokenizer.get_vocab_size(),
+    embed_dim=16,
+    block_size=8,
+    num_blocks=1,
+)
+```
+
+The supported core workflow is:
+
+```text
+dataset -> validation/cleaning -> tokenizer -> native ArcLM model -> training
+-> checkpoint -> evaluation -> generation -> pipeline inspection
 ```
 
 ## CLI
@@ -59,26 +62,16 @@ python -m arclm --help
 python -m arclm train --help
 python -m arclm eval --help
 python -m arclm generate --help
-python -m arclm web-api --help
 ```
 
 The installed console entry point is also `arclm`.
 
-## Niet Ondersteund Als Stabiele Feature
+## Current Limits
 
-ArcLM claimt nu geen native LLaMA/Mistral/BERT/T5/MoE/vision/multimodal support, geen RLHF/DPO/GRPO, geen productie-serving, geen OpenAI-compatible API, geen GGUF/ONNX/TensorRT export, en geen volledig gevalideerde multi-GPU/FSDP/real bitsandbytes QLoRA runtime.
+ArcLM 0.9.0 does not claim universal Hugging Face support, production serving,
+OpenAI-compatible APIs, attention-map capture, streaming generation, guaranteed
+multi-GPU training, real QLoRA runtime validation, native BERT/T5/diffusion,
+vision, audio, multimodal models, RLHF, DPO, or GRPO.
 
-## Status
-
-De compacte status- en API-tabel staat in [`docs/special-version.md`](docs/special-version.md). Gebruik die tabel als bron van waarheid voor stable, beta, experimental, deprecated, planned en unsupported gebieden.
-
-## Testen
-
-Gebruik de projectomgeving, niet system Python:
-
-```bash
-.venv-training-core\Scripts\python.exe -m pytest
-.venv-training-core\Scripts\python.exe -m build
-```
-
-Deze speciale editie is private/niet-open-source. Deel de code of geavanceerde onderdelen niet publiek zonder toestemming van de projecteigenaar.
+The compact source of truth for supported, beta, experimental, deprecated, and
+unsupported areas is [`docs/special-version.md`](docs/special-version.md).

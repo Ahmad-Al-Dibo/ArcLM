@@ -24,7 +24,7 @@ function NavigationStatus({ item }: { item: NavigationItem }) {
   if (item.status === "available") {
     return null;
   }
-  return <Badge variant={item.status}>{item.status === "planned" ? "Planned" : "Experimental"}</Badge>;
+  return <Badge variant={item.status}>{item.status === "planned" ? "Coming later" : "Experimental"}</Badge>;
 }
 
 function NavigationLink({
@@ -40,15 +40,10 @@ function NavigationLink({
 }) {
   const active = routeIsActive(pathname, item.href);
   const tooltipId = `nav-tip-${item.shortLabel.toLowerCase()}`;
+  const disabled = item.status === "planned";
 
-  return (
-    <Link
-      href={item.href}
-      className="app-nav-link"
-      aria-current={active ? "page" : undefined}
-      aria-describedby={collapsed ? tooltipId : undefined}
-      onClick={onNavigate}
-    >
+  const content = (
+    <>
       <span className="app-nav-mark" aria-hidden="true">
         {item.shortLabel}
       </span>
@@ -61,6 +56,31 @@ function NavigationLink({
           {item.title}
         </span>
       ) : null}
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <span
+        className="app-nav-link"
+        aria-disabled="true"
+        aria-describedby={collapsed ? tooltipId : undefined}
+        title="Coming later"
+      >
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={item.href}
+      className="app-nav-link"
+      aria-current={active ? "page" : undefined}
+      aria-describedby={collapsed ? tooltipId : undefined}
+      onClick={onNavigate}
+    >
+      {content}
     </Link>
   );
 }
@@ -80,9 +100,9 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
   return (
     <aside className="app-sidebar" data-collapsed={collapsed} aria-label="Primary navigation">
       <div className="app-sidebar-header">
-        <Link href="/" className="app-wordmark" aria-label="ArcLM overview">
+        <Link href="/" className="app-wordmark" aria-label="ArcLM Studio overview">
           <span className="app-wordmark-mark">A</span>
-          {!collapsed ? <span>ArcLM</span> : null}
+          {!collapsed ? <span>ArcLM Studio</span> : null}
         </Link>
         <Button
           variant="ghost"
@@ -100,7 +120,7 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
             {navigationItems
               .filter((item) => item.section === section)
               .map((item) => (
-                <NavigationLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
+                <NavigationLink key={`${item.section}-${item.title}-${item.href}`} item={item} pathname={pathname} collapsed={collapsed} />
               ))}
           </div>
         ))}
@@ -185,7 +205,7 @@ function MobileNavigation({
         <div className="app-mobile-header">
           <span className="app-wordmark">
             <span className="app-wordmark-mark">A</span>
-            <span>ArcLM</span>
+            <span>ArcLM Studio</span>
           </span>
           <Button variant="ghost" size="icon" aria-label="Close navigation" onClick={onClose}>
             x
@@ -198,7 +218,7 @@ function MobileNavigation({
               {navigationItems
                 .filter((item) => item.section === section)
                 .map((item) => (
-                  <NavigationLink key={item.href} item={item} pathname={pathname} onNavigate={onClose} />
+                  <NavigationLink key={`${item.section}-${item.title}-${item.href}`} item={item} pathname={pathname} onNavigate={onClose} />
                 ))}
             </div>
           ))}

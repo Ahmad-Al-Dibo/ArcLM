@@ -1,0 +1,10 @@
+{"instruction":"What is ArcLM?","output":"ArcLM is a compact PyTorch library for building, training, fine-tuning, and running language models locally."}
+{"instruction":"Who is ArcLM designed for?","output":"ArcLM is designed for developers, students, and researchers who want a simple framework for LLM development."}
+{"instruction":"What programming language does ArcLM use?","output":"ArcLM is written in Python and built on top of PyTorch."}
+{"instruction":"Explain ArcLM in one sentence.","output":"ArcLM is a lightweight framework for creating and experimenting with language models."}
+{"instruction":"Can ArcLM train language models?","output":"Yes, ArcLM supports training transformer-based language models from scratch."}
+{"instruction":"Can ArcLM fine-tune pretrained models?","output":"Yes, ArcLM provides tools for fine-tuning compatible pretrained language models."}
+{"instruction":"Does ArcLM support local inference?","output":"Yes, ArcLM allows language models to run locally without requiring cloud services."}
+{"instruction":"What deep learning framework does ArcLM use?","output":"ArcLM uses PyTorch as its deep learning backend."}
+{"instruction":"What type of models does ArcLM focus on?","output":"ArcLM focuses on transformer-based causal language models."}
+{"instruction":"Why use ArcLM?","output":"ArcLM simplifies the workflow of training, evaluating, and deploying language models."}

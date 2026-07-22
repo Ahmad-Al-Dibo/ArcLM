@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,6 +25,7 @@ class ErrorDetail(BaseModel):
 
     code: str
     message: str
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class ErrorResponse(BaseModel):
@@ -107,6 +108,242 @@ class DatasetListResponse(BaseModel):
 
     datasets: list[DatasetSummary]
     count: int
+
+
+class StudioWorkspaceStatus(BaseModel):
+    """Safe ArcLM Studio workspace status."""
+
+    available: bool
+    project_count: int
+    active_dataset_count: int
+    active_tokenizer_count: int
+
+
+class ProjectCreateRequest(BaseModel):
+    """Create an ArcLM Studio project."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    description: str = ""
+
+
+class ProjectUpdateRequest(BaseModel):
+    """Update safe project fields."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = None
+    description: str | None = None
+
+
+class ProjectDeleteRequest(BaseModel):
+    """Confirm project deletion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+    confirm_name: str | None = None
+
+
+class StudioProject(BaseModel):
+    """ArcLM Studio project metadata."""
+
+    id: str
+    name: str
+    description: str
+    created_at: float
+    updated_at: float
+    arclm_version: str
+    status: Literal["active"]
+    active_dataset_id: str | None = None
+    active_tokenizer_id: str | None = None
+
+
+class ProjectListResponse(BaseModel):
+    """Project list response."""
+
+    projects: list[StudioProject]
+    count: int
+
+
+class StudioDatasetMetadata(BaseModel):
+    """Stored project dataset metadata."""
+
+    id: str
+    project_id: str
+    name: str
+    source_type: Literal["upload", "paste"]
+    original_filename: str | None = None
+    stored_format: Literal["txt", "csv", "json", "jsonl"]
+    created_at: float
+    size_bytes: int
+    record_count: int
+    selected_format: str
+    text_fields: list[str]
+    validation_status: Literal["not_validated", "valid", "invalid"]
+    raw_filename: str
+    validation_result: dict[str, Any] | None = None
+    sft_validation_result: dict[str, Any] | None = None
+
+
+class DatasetUploadRequest(BaseModel):
+    """Text upload request after the browser reads a supported file."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    original_filename: str
+    content: str
+    stored_format: Literal["txt", "csv", "json", "jsonl"] | None = None
+    selected_format: str = "plain_text"
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+
+
+class DatasetPasteRequest(BaseModel):
+    """Pasted dataset request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    content: str
+    stored_format: Literal["txt", "csv", "json", "jsonl"]
+    selected_format: str = "plain_text"
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+
+
+class DatasetDeleteRequest(BaseModel):
+    """Confirm dataset deletion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+
+
+class DatasetValidationRequest(BaseModel):
+    """Validate a project dataset."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    selected_format: str = "plain_text"
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+    strict: bool = False
+
+
+class ProjectDatasetListResponse(BaseModel):
+    """Datasets stored inside one Studio project."""
+
+    datasets: list[StudioDatasetMetadata]
+    count: int
+
+
+class ProjectDatasetPreviewRow(BaseModel):
+    """Bounded preview row."""
+
+    index: int
+    values: dict[str, Any]
+
+
+class ProjectDatasetPreviewResponse(BaseModel):
+    """Bounded dataset preview response."""
+
+    dataset: StudioDatasetMetadata
+    fields: list[str]
+    total_records: int
+    preview_limit: int
+    truncated: bool
+    records: list[ProjectDatasetPreviewRow]
+
+
+class DatasetValidationResponse(BaseModel):
+    """Dataset and SFT validation result."""
+
+    dataset: StudioDatasetMetadata
+    validation: dict[str, Any]
+    sft_validation: dict[str, Any] | None = None
+
+
+class DatasetManifestReportResponse(BaseModel):
+    """Dataset manifest plus token report."""
+
+    manifest: dict[str, Any]
+    report: dict[str, Any]
+
+
+class DatasetManifestResponse(BaseModel):
+    """Stored manifest response."""
+
+    manifest: dict[str, Any]
+
+
+class DatasetReportResponse(BaseModel):
+    """Stored dataset report response."""
+
+    report: dict[str, Any]
+
+
+class StudioTokenizerMetadata(BaseModel):
+    """Project tokenizer metadata."""
+
+    id: str
+    project_id: str
+    name: str
+    type: Literal["native"]
+    vocab_size: int
+    created_at: float
+    source_dataset_id: str
+    special_tokens: dict[str, str]
+    status: Literal["ready"]
+    tokenizer_filename: str
+
+
+class TokenizerListResponse(BaseModel):
+    """List project tokenizers."""
+
+    tokenizers: list[StudioTokenizerMetadata]
+    count: int
+
+
+class TokenizerCreateRequest(BaseModel):
+    """Create a native tokenizer from a project dataset."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    dataset_id: str
+    max_vocab: int = 2000
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+
+
+class TokenizerInspectRequest(BaseModel):
+    """Inspect text with a project tokenizer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+
+
+class TokenizerDeleteRequest(BaseModel):
+    """Confirm tokenizer deletion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = False
+
+
+class TokenizerInspectionResponse(BaseModel):
+    """JSON-safe tokenizer inspection result."""
+
+    text: str
+    tokens: list[str]
+    token_ids: list[int]
+    token_count: int
+    unknown_token_count: int
+    decoded_text: str
+    round_trip_matches: bool
+    tokenizer_class: str
+    vocab_size: int
+    warnings: list[str] = Field(default_factory=list)
 
 
 class DatasetField(BaseModel):
@@ -256,6 +493,31 @@ class EnvironmentResponse(BaseModel):
     preferred_device: str
     gpus: list[GpuInfo] = Field(default_factory=list)
     bf16_supported: bool | None = None
+
+
+class OptionalDependencyStatus(BaseModel):
+    """Availability of an optional Python package without importing it."""
+
+    package: str
+    available: bool
+
+
+class SystemStatusResponse(BaseModel):
+    """Safe runtime and workspace status for ArcLM Studio."""
+
+    arclm_version: str
+    python_version: str
+    pytorch_version: str | None = None
+    operating_system: str
+    cpu: str | None = None
+    cuda_available: bool
+    cuda_version: str | None = None
+    gpu_name: str | None = None
+    gpu_count: int
+    current_device: str
+    optional_dependencies: dict[str, OptionalDependencyStatus]
+    backend_health: HealthResponse
+    workspace: StudioWorkspaceStatus
 
 
 class Capability(BaseModel):

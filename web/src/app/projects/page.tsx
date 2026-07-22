@@ -1,5 +1,5 @@
-import { RoutePage } from "@/components/shell/route-page";
+import { ProjectsPage as StudioProjectsPage } from "@/features/studio/studio";
 
 export default function ProjectsPage() {
-  return <RoutePage href="/projects" />;
+  return <StudioProjectsPage />;
 }

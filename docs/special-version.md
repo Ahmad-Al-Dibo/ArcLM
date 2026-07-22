@@ -1,5 +1,7 @@
 # Speciale ArcLM Versie
 
+Release candidate: `0.9.0`.
+
 Deze repository is een private/speciale ArcLM-editie. De baseline is native-first: eigen ArcLM/PyTorch code vormt de kern; Hugging Face, PEFT, Web en preprocessing zijn optionele integraties.
 
 Gebruik nieuwe code bij voorkeur via deze publieke domeinen:
@@ -69,6 +71,76 @@ leerpagina staat op `/learn/pipeline` en visualiseert input, tokens, token
 IDs, input tensor, embedding shape, logits shape, geselecteerde token en
 gegenereerde tekst. Attention maps, streaming en externe-model tracing zijn
 niet geimplementeerd.
+
+## ArcLM Studio Web 1
+
+ArcLM Studio is de optionele lokale webapp voor project-, data- en tokenizer
+voorbereiding. De frontend blijft een client van de FastAPI laag, en de
+backend gebruikt ArcLM publieke APIs voor datasets, validatie, reports en
+tokenizers.
+
+Actieve routes:
+
+```text
+/
+/projects
+/projects/new
+/projects/[projectId]
+/projects/[projectId]/data
+/projects/[projectId]/tokenizer
+/system
+/learn/pipeline
+```
+
+Actieve API endpoints:
+
+```text
+GET    /api/system/status
+GET    /api/projects
+POST   /api/projects
+GET    /api/projects/{project_id}
+PATCH  /api/projects/{project_id}
+DELETE /api/projects/{project_id}
+GET    /api/projects/{project_id}/datasets
+POST   /api/projects/{project_id}/datasets/upload
+POST   /api/projects/{project_id}/datasets/paste
+GET    /api/projects/{project_id}/datasets/{dataset_id}
+GET    /api/projects/{project_id}/datasets/{dataset_id}/preview
+DELETE /api/projects/{project_id}/datasets/{dataset_id}
+POST   /api/projects/{project_id}/datasets/{dataset_id}/validate
+POST   /api/projects/{project_id}/datasets/{dataset_id}/report
+GET    /api/projects/{project_id}/datasets/{dataset_id}/manifest
+GET    /api/projects/{project_id}/datasets/{dataset_id}/report
+GET    /api/projects/{project_id}/tokenizers
+POST   /api/projects/{project_id}/tokenizers/native
+GET    /api/projects/{project_id}/tokenizers/{tokenizer_id}
+POST   /api/projects/{project_id}/tokenizers/{tokenizer_id}/inspect
+DELETE /api/projects/{project_id}/tokenizers/{tokenizer_id}
+```
+
+Workspace storage is confined to the configured `WebConfig.workspace_root`.
+Project, dataset and tokenizer IDs are generated server-side and validated
+before filesystem access. Browser requests never provide absolute paths,
+checkpoint paths or model IDs. Path traversal, encoded traversal and symlink
+escapes are rejected where practical. Uploaded filenames are sanitized and
+stored only as metadata/display names. JSON writes use atomic replacement.
+
+Data Studio supports bounded JSON, JSONL, CSV and TXT upload/paste flows.
+Preview responses are limited, large cells are truncated, validation uses
+`validate_records` and `validate_sft_records`, and report generation uses
+`create_dataset_manifest` and `build_dataset_report`. Token statistics come
+from the canonical tokenizer path used by the report.
+
+Tokenizer Lab supports creating a native ArcLM tokenizer from a project
+dataset and inspecting text through that tokenizer. It reports tokens, token
+IDs, token count, unknown-token count, decoded text and round-trip status. The
+SentencePiece creation endpoint is not exposed in this phase because the
+current safe Studio flow only covers the native tokenizer.
+
+Non-goals for Web Studio 1: no training jobs, background workers, dashboards,
+checkpoint manager, Evaluation Studio, Generation Playground, Model Builder,
+WebSockets, streaming logs, attention maps, authentication, database, cloud
+storage, shell execution, external downloads or arbitrary filesystem browsing.
 
 ## ArcLM 0.8 Causal LM Workbench
 
@@ -159,8 +231,8 @@ package.
 | Tracking | `arclm.tracking` | `RunTracker`, `create_run`, `inspect_run` | Beta | `tests/tracking` | None dedicated | Required core deps | Local manifests only; external services are compatibility-only. |
 | Hyperparameter search | `arclm.search` | `create_search`, `SearchSpace`, `compare_trials` | Beta | `tests/search` | None dedicated | Required core deps | Sequential local trials; no parallel/Bayesian/pruning engine. |
 | Preprocess pipeline | `arclm.preprocess` | preprocess config/pipeline helpers | Experimental | `tests/unit/test_preprocess_pipeline.py` | `examples/10_preprocess_pipeline.py` | Optional preprocess deps | Older JSONL pipeline; not the main dataset API. |
-| FastAPI Web API | `arclm.web` | `create_app`, `WebConfig`, dataset endpoints, `POST /api/inspection/text` | Beta | `tests/web`, public API tests | `python -m arclm web-api` | Optional `fastapi`, `uvicorn` | Local API/status/dataset/native inspection; not production serving. |
-| Next.js frontend | `web/` | `/learn/pipeline`, npm scripts | Experimental | frontend tests exist in repo | `web/` | Node/npm stack | Optional UI foundation; local backend must provide a native model/tokenizer for inspection. |
+| FastAPI Web API | `arclm.web` | `create_app`, `WebConfig`, `/api/system/status`, `/api/projects`, project dataset/tokenizer endpoints, `POST /api/inspection/text` | Beta | `tests/web`, public API tests | `python -m arclm web-api` | Optional `fastapi`, `uvicorn` | Local Studio/data/tokenizer/native inspection API; not production serving, training jobs or arbitrary filesystem access. |
+| Next.js frontend | `web/` | `/`, `/projects`, `/projects/new`, `/projects/[projectId]`, `/projects/[projectId]/data`, `/projects/[projectId]/tokenizer`, `/system`, `/learn/pipeline`, npm scripts | Experimental | frontend tests exist in repo | `web/` | Node/npm stack | Optional Studio UI foundation; training, model builder, evaluation/generation pages and web jobs are intentionally deferred. |
 | Flask simple interface | `arclm.simple_interface` | `run_simple_interface` | Deprecated | compatibility/web tests | `python -m arclm --run simple-interface` | Optional `flask` | Compatibility-only; not canonical. |
 | Legacy import shims | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders` | Old import paths | Deprecated | `tests/compatibility`, package-structure tests | None for new code | Same deps as canonical modules | Keep small re-export shims; `pipeline_v2` is compatibility-only, not a second pipeline. |
 | Native BERT/T5/LLaMA/Mistral/MoE/vision/multimodal | None | None | Unsupported | Absence recorded in status/tests | None | N/A | Use external HF causal LM paths where compatible; no native implementation. |

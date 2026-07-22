@@ -37,6 +37,182 @@ export type EnvironmentResponse = {
   bf16_supported: boolean | null;
 };
 
+export type OptionalDependencyStatus = {
+  package: string;
+  available: boolean;
+};
+
+export type StudioWorkspaceStatus = {
+  available: boolean;
+  project_count: number;
+  active_dataset_count: number;
+  active_tokenizer_count: number;
+};
+
+export type SystemStatusResponse = {
+  arclm_version: string;
+  python_version: string;
+  pytorch_version: string | null;
+  operating_system: string;
+  cpu: string | null;
+  cuda_available: boolean;
+  cuda_version: string | null;
+  gpu_name: string | null;
+  gpu_count: number;
+  current_device: string;
+  optional_dependencies: Record<string, OptionalDependencyStatus>;
+  backend_health: HealthResponse;
+  workspace: StudioWorkspaceStatus;
+};
+
+export type StudioProject = {
+  id: string;
+  name: string;
+  description: string;
+  created_at: number;
+  updated_at: number;
+  arclm_version: string;
+  status: "active";
+  active_dataset_id: string | null;
+  active_tokenizer_id: string | null;
+};
+
+export type ProjectListResponse = {
+  projects: StudioProject[];
+  count: number;
+};
+
+export type ProjectCreateRequest = {
+  name: string;
+  description?: string;
+};
+
+export type ProjectUpdateRequest = {
+  name?: string | null;
+  description?: string | null;
+};
+
+export type ProjectDeleteRequest = {
+  confirm: boolean;
+  confirm_name?: string | null;
+};
+
+export type StudioDatasetMetadata = {
+  id: string;
+  project_id: string;
+  name: string;
+  source_type: "upload" | "paste";
+  original_filename: string | null;
+  stored_format: DatasetFormat;
+  created_at: number;
+  size_bytes: number;
+  record_count: number;
+  selected_format: string;
+  text_fields: string[];
+  validation_status: "not_validated" | "valid" | "invalid";
+  raw_filename: string;
+  validation_result: Record<string, unknown> | null;
+  sft_validation_result: Record<string, unknown> | null;
+};
+
+export type DatasetUploadRequest = {
+  name: string;
+  original_filename: string;
+  content: string;
+  stored_format?: DatasetFormat | null;
+  selected_format?: string;
+  text_fields?: string[];
+};
+
+export type DatasetPasteRequest = {
+  name: string;
+  content: string;
+  stored_format: DatasetFormat;
+  selected_format?: string;
+  text_fields?: string[];
+};
+
+export type DatasetValidationRequest = {
+  selected_format: string;
+  text_fields: string[];
+  strict?: boolean;
+};
+
+export type ProjectDatasetListResponse = {
+  datasets: StudioDatasetMetadata[];
+  count: number;
+};
+
+export type ProjectDatasetPreviewResponse = {
+  dataset: StudioDatasetMetadata;
+  fields: string[];
+  total_records: number;
+  preview_limit: number;
+  truncated: boolean;
+  records: Array<{ index: number; values: Record<string, DatasetPreviewValue> }>;
+};
+
+export type DatasetValidationResponse = {
+  dataset: StudioDatasetMetadata;
+  validation: Record<string, unknown>;
+  sft_validation: Record<string, unknown> | null;
+};
+
+export type DatasetManifestReportResponse = {
+  manifest: Record<string, unknown>;
+  report: Record<string, unknown>;
+};
+
+export type DatasetManifestResponse = {
+  manifest: Record<string, unknown>;
+};
+
+export type DatasetReportResponse = {
+  report: Record<string, unknown>;
+};
+
+export type StudioTokenizerMetadata = {
+  id: string;
+  project_id: string;
+  name: string;
+  type: "native";
+  vocab_size: number;
+  created_at: number;
+  source_dataset_id: string;
+  special_tokens: Record<string, string>;
+  status: "ready";
+  tokenizer_filename: string;
+};
+
+export type TokenizerListResponse = {
+  tokenizers: StudioTokenizerMetadata[];
+  count: number;
+};
+
+export type TokenizerCreateRequest = {
+  name: string;
+  dataset_id: string;
+  max_vocab?: number;
+  text_fields?: string[];
+};
+
+export type TokenizerInspectRequest = {
+  text: string;
+};
+
+export type TokenizerInspectionResponse = {
+  text: string;
+  tokens: string[];
+  token_ids: number[];
+  token_count: number;
+  unknown_token_count: number;
+  decoded_text: string;
+  round_trip_matches: boolean;
+  tokenizer_class: string;
+  vocab_size: number;
+  warnings: string[];
+};
+
 export type Capability = {
   status: CapabilityStatus;
   note: string;

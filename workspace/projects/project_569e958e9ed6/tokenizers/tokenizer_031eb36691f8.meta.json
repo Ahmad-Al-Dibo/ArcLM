@@ -1,0 +1,12 @@
+{
+  "created_at": 1784725354.0823643,
+  "id": "tokenizer_031eb36691f8",
+  "name": "native-tokenizer",
+  "project_id": "project_569e958e9ed6",
+  "source_dataset_id": "dataset_f6e48f3602cf",
+  "special_tokens": {},
+  "status": "ready",
+  "tokenizer_filename": "tokenizer_031eb36691f8.json",
+  "type": "native",
+  "vocab_size": 35
+}

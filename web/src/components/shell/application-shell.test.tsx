@@ -51,14 +51,14 @@ describe("interface mode", () => {
 
 describe("sidebar navigation", () => {
   it("renders approved navigation items with active route indication", () => {
-    renderShell("/training");
+    renderShell("/learn/pipeline");
 
-    for (const item of navigationItems.filter((item) => item.section !== "Internal")) {
+    for (const item of navigationItems.filter((item) => item.section !== "Internal" && item.status === "available")) {
       expect(screen.getAllByRole("link", { name: new RegExp(item.title) }).length).toBeGreaterThan(0);
     }
 
-    expect(screen.getAllByRole("link", { name: /Training/ })[0].getAttribute("aria-current")).toBe("page");
-    expect(screen.getAllByText("Planned").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /Inspect Pipeline/ })[0].getAttribute("aria-current")).toBe("page");
+    expect(screen.getAllByText("Coming later").length).toBeGreaterThan(0);
   });
 
   it("collapses and persists the desktop sidebar preference", () => {
@@ -89,7 +89,7 @@ describe("mobile navigation", () => {
     renderShell();
 
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    const dataLinks = screen.getAllByRole("link", { name: /Data Pipeline/ });
+    const dataLinks = screen.getAllByRole("link", { name: /^Data/ });
     fireEvent.click(dataLinks[dataLinks.length - 1]);
 
     expect(screen.queryByRole("dialog", { name: "Mobile navigation" })).toBeNull();
@@ -100,7 +100,7 @@ describe("top bar, breadcrumbs, and route pages", () => {
   it("renders current page title and breadcrumb semantics", () => {
     renderShell("/data");
 
-    expect(screen.getAllByText("Data Pipeline").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Data").length).toBeGreaterThan(0);
     const breadcrumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(breadcrumbs).toBeTruthy();
     expect(within(breadcrumbs).getByRole("link", { name: "Overview" })).toBeTruthy();
@@ -119,7 +119,7 @@ describe("top bar, breadcrumbs, and route pages", () => {
     renderShell("/models");
 
     expect(screen.getByText("Not available in this build")).toBeTruthy();
-    expect(screen.getByText(/Model registry pages are planned for later/)).toBeTruthy();
+    expect(screen.getByText(/No model builder endpoint exists in this phase/)).toBeTruthy();
     expect(screen.queryByText(/GPU:/i)).toBeNull();
     expect(screen.queryByText(/loss/i)).toBeNull();
     expect(screen.queryByText(/accuracy/i)).toBeNull();

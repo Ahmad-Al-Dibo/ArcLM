@@ -1,5 +1,12 @@
 import type {
   CapabilitiesResponse,
+  DatasetManifestReportResponse,
+  DatasetManifestResponse,
+  DatasetPasteRequest,
+  DatasetReportResponse,
+  DatasetUploadRequest,
+  DatasetValidationRequest,
+  DatasetValidationResponse,
   DatasetField,
   DatasetFormat,
   DatasetInspectionMetadata,
@@ -19,8 +26,22 @@ import type {
   PipelineInspectionRequest,
   PipelineInspectionStatusResponse,
   PipelineTraceResponse,
+  ProjectCreateRequest,
+  ProjectDatasetListResponse,
+  ProjectDatasetPreviewResponse,
+  ProjectDeleteRequest,
+  ProjectListResponse,
   ProjectStatusResponse,
-  TextLengthStatistics
+  ProjectUpdateRequest,
+  StudioDatasetMetadata,
+  StudioProject,
+  StudioTokenizerMetadata,
+  SystemStatusResponse,
+  TextLengthStatistics,
+  TokenizerCreateRequest,
+  TokenizerInspectionResponse,
+  TokenizerInspectRequest,
+  TokenizerListResponse
 } from "./schemas";
 import { apiEndpoints } from "./endpoints";
 
@@ -422,8 +443,92 @@ export class ArcLMApiClient {
     return this.request<CapabilitiesResponse>(apiEndpoints.capabilities);
   }
 
+  getSystemStatus() {
+    return this.request<SystemStatusResponse>(apiEndpoints.systemStatus);
+  }
+
   getProjectStatus() {
     return this.request<ProjectStatusResponse>(apiEndpoints.projectStatus);
+  }
+
+  listProjects() {
+    return this.request<ProjectListResponse>(apiEndpoints.projects);
+  }
+
+  createProject(payload: ProjectCreateRequest) {
+    return this.request<StudioProject>(apiEndpoints.projects, { method: "POST", body: payload });
+  }
+
+  getProject(projectId: string) {
+    return this.request<StudioProject>(apiEndpoints.project(projectId));
+  }
+
+  updateProject(projectId: string, payload: ProjectUpdateRequest) {
+    return this.request<StudioProject>(apiEndpoints.project(projectId), { method: "PATCH", body: payload });
+  }
+
+  deleteProject(projectId: string, payload: ProjectDeleteRequest) {
+    return this.request<StudioProject>(apiEndpoints.project(projectId), { method: "DELETE", body: payload });
+  }
+
+  listProjectDatasets(projectId: string) {
+    return this.request<ProjectDatasetListResponse>(apiEndpoints.projectDatasets(projectId));
+  }
+
+  uploadProjectDataset(projectId: string, payload: DatasetUploadRequest) {
+    return this.request<StudioDatasetMetadata>(apiEndpoints.projectDatasetUpload(projectId), { method: "POST", body: payload });
+  }
+
+  pasteProjectDataset(projectId: string, payload: DatasetPasteRequest) {
+    return this.request<StudioDatasetMetadata>(apiEndpoints.projectDatasetPaste(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectDataset(projectId: string, datasetId: string) {
+    return this.request<StudioDatasetMetadata>(apiEndpoints.projectDataset(projectId, datasetId));
+  }
+
+  getProjectDatasetPreview(projectId: string, datasetId: string) {
+    return this.request<ProjectDatasetPreviewResponse>(apiEndpoints.projectDatasetPreview(projectId, datasetId));
+  }
+
+  validateProjectDataset(projectId: string, datasetId: string, payload: DatasetValidationRequest) {
+    return this.request<DatasetValidationResponse>(apiEndpoints.projectDatasetValidate(projectId, datasetId), { method: "POST", body: payload });
+  }
+
+  createProjectDatasetReport(projectId: string, datasetId: string) {
+    return this.request<DatasetManifestReportResponse>(apiEndpoints.projectDatasetReport(projectId, datasetId), { method: "POST" });
+  }
+
+  getProjectDatasetManifest(projectId: string, datasetId: string) {
+    return this.request<DatasetManifestResponse>(apiEndpoints.projectDatasetManifest(projectId, datasetId));
+  }
+
+  getProjectDatasetReport(projectId: string, datasetId: string) {
+    return this.request<DatasetReportResponse>(apiEndpoints.projectDatasetReport(projectId, datasetId));
+  }
+
+  deleteProjectDataset(projectId: string, datasetId: string, confirm = true) {
+    return this.request<StudioDatasetMetadata>(apiEndpoints.projectDataset(projectId, datasetId), { method: "DELETE", body: { confirm } });
+  }
+
+  listProjectTokenizers(projectId: string) {
+    return this.request<TokenizerListResponse>(apiEndpoints.projectTokenizers(projectId));
+  }
+
+  createNativeTokenizer(projectId: string, payload: TokenizerCreateRequest) {
+    return this.request<StudioTokenizerMetadata>(apiEndpoints.projectTokenizerNative(projectId), { method: "POST", body: payload });
+  }
+
+  getProjectTokenizer(projectId: string, tokenizerId: string) {
+    return this.request<StudioTokenizerMetadata>(apiEndpoints.projectTokenizer(projectId, tokenizerId));
+  }
+
+  inspectProjectTokenizer(projectId: string, tokenizerId: string, payload: TokenizerInspectRequest) {
+    return this.request<TokenizerInspectionResponse>(apiEndpoints.projectTokenizerInspect(projectId, tokenizerId), { method: "POST", body: payload });
+  }
+
+  deleteProjectTokenizer(projectId: string, tokenizerId: string, confirm = true) {
+    return this.request<StudioTokenizerMetadata>(apiEndpoints.projectTokenizer(projectId, tokenizerId), { method: "DELETE", body: { confirm } });
   }
 
   async getPipelineInspectionStatus() {

@@ -70,6 +70,7 @@ class WebConfig:
     expose_docs: bool = True
     dataset_config_path: str | Path | None = None
     dataset_source_management: bool = True
+    workspace_root: str | Path = "workspace"
     dataset_roots: tuple[DatasetRoot, ...] = ()
     max_dataset_roots: int = 20
     max_catalogue_entries: int = 500
@@ -80,6 +81,9 @@ class WebConfig:
     max_field_length: int = 2_000
     max_fields: int = 200
     max_inspection_file_size: int = 10 * 1024 * 1024
+    max_upload_size: int = 25 * 1024 * 1024
+    max_paste_size: int = 2 * 1024 * 1024
+    max_tokenizer_text_length: int = 20_000
 
     def __post_init__(self) -> None:
         """Controleert of de configuratie veilig en bruikbaar is."""
@@ -93,6 +97,8 @@ class WebConfig:
             raise ConfigurationError("dataset_source_management must be a boolean")
         if self.dataset_config_path is not None and not isinstance(self.dataset_config_path, (str, Path)):
             raise ConfigurationError("dataset_config_path must be a string or Path")
+        if not isinstance(self.workspace_root, (str, Path)):
+            raise ConfigurationError("workspace_root must be a string or Path")
         if not self.allowed_origins:
             raise ConfigurationError("allowed_origins must not be empty")
         if "*" in self.allowed_origins:
@@ -135,6 +141,9 @@ class WebConfig:
             "max_field_length": self.max_field_length,
             "max_fields": self.max_fields,
             "max_inspection_file_size": self.max_inspection_file_size,
+            "max_upload_size": self.max_upload_size,
+            "max_paste_size": self.max_paste_size,
+            "max_tokenizer_text_length": self.max_tokenizer_text_length,
         }
         for name, value in positive_limits.items():
             if not isinstance(value, int) or value <= 0:

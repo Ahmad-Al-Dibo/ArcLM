@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import platform as platform_module
+from importlib.util import find_spec
 from threading import Lock
 from typing import Any
 
@@ -15,21 +17,45 @@ from .dataset_sources import DatasetSourceError, DatasetSourceManager
 from .schemas import (
     CapabilitiesResponse,
     DatasetRefreshResponse,
+    DatasetDeleteRequest,
     DatasetInspectionResponse,
     DatasetListResponse,
+    DatasetManifestReportResponse,
+    DatasetManifestResponse,
+    DatasetPasteRequest,
+    DatasetReportResponse,
     DatasetRootCreateRequest,
     DatasetRootInfo,
     DatasetRootListResponse,
     DatasetRootUpdateRequest,
+    DatasetUploadRequest,
+    DatasetValidationRequest,
+    DatasetValidationResponse,
     EnvironmentResponse,
     ErrorResponse,
     HealthResponse,
     PipelineInspectionRequest,
     PipelineInspectionStatusResponse,
     PipelineTraceResponse,
+    ProjectCreateRequest,
+    ProjectDeleteRequest,
+    ProjectDatasetListResponse,
+    ProjectDatasetPreviewResponse,
+    ProjectListResponse,
     ProjectStatusResponse,
+    ProjectUpdateRequest,
+    StudioDatasetMetadata,
+    StudioProject,
+    StudioTokenizerMetadata,
+    SystemStatusResponse,
+    TokenizerCreateRequest,
+    TokenizerDeleteRequest,
+    TokenizerInspectionResponse,
+    TokenizerInspectRequest,
+    TokenizerListResponse,
 )
 from .services import get_capabilities, get_environment, get_project_status
+from .workspace import StudioWorkspace, WorkspaceApiError
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +92,28 @@ def _optional_fastapi() -> tuple[Any, Any, Any, Any, Any, Any, Any]:
     return FastAPI, HTTPException, Request, CORSMiddleware, JSONResponse, StarletteHTTPException, ErrorResponse
 
 
-def _error_payload(code: str, message: str) -> dict[str, dict[str, str]]:
+def _error_payload(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
     """Maakt het vaste foutformaat voor API responses."""
-    return {"error": {"code": code, "message": message}}
+    payload: dict[str, Any] = {"code": code, "message": message}
+    if details:
+        payload["details"] = dict(details)
+    return {"error": payload}
+
+
+def _optional_dependency_status() -> dict[str, dict[str, Any]]:
+    """Checks optional packages without importing them."""
+    packages = [
+        "transformers",
+        "datasets",
+        "accelerate",
+        "peft",
+        "bitsandbytes",
+        "safetensors",
+        "fastapi",
+        "uvicorn",
+        "sentencepiece",
+    ]
+    return {package: {"package": package, "available": find_spec(package) is not None} for package in packages}
 
 
 def create_app(config: WebConfig | None = None, *, model: Any | None = None, tokenizer: Any | None = None):
@@ -103,6 +148,7 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     app.state.arclm_model = model
     app.state.arclm_tokenizer = tokenizer
     app.state.arclm_inspection_lock = Lock()
+    app.state.studio_workspace = StudioWorkspace(web_config)
 
     app.add_middleware(
         CORSMiddleware,
@@ -209,6 +255,14 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
             content=_error_payload(exc.code, exc.message),
         )
 
+    @app.exception_handler(WorkspaceApiError)
+    async def workspace_error_handler(_: Request, exc: WorkspaceApiError):
+        """Zet workspacefouten om naar het vaste foutformaat."""
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_payload(exc.code, exc.message, exc.details),
+        )
+
     @app.exception_handler(InspectionApiError)
     async def inspection_error_handler(_: Request, exc: InspectionApiError):
         """Zet inspectiefouten om naar het vaste foutformaat."""
@@ -240,6 +294,26 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     def capabilities() -> CapabilitiesResponse:
         """Geeft de huidige ArcLM mogelijkheden terug."""
         return get_capabilities()
+
+    @app.get("/api/system/status", response_model=SystemStatusResponse)
+    def system_status() -> SystemStatusResponse:
+        """Geeft veilige ArcLM Studio runtime- en workspace-informatie terug."""
+        env = get_environment()
+        return SystemStatusResponse(
+            arclm_version=env.arclm_version,
+            python_version=env.python_version,
+            pytorch_version=env.pytorch_version,
+            operating_system=env.platform,
+            cpu=platform_module.processor() or None,
+            cuda_available=env.cuda_available,
+            cuda_version=env.cuda_runtime,
+            gpu_name=env.gpus[0].name if env.gpus else None,
+            gpu_count=env.device_count,
+            current_device=env.preferred_device,
+            optional_dependencies=_optional_dependency_status(),
+            backend_health=HealthResponse(status="ok", service="arclm-web-api", version=arclm.__version__),
+            workspace=app.state.studio_workspace.status(),
+        )
 
     @app.get("/api/inspection/status", response_model=PipelineInspectionStatusResponse)
     def inspection_status() -> PipelineInspectionStatusResponse:
@@ -289,6 +363,175 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     def project_status() -> ProjectStatusResponse:
         """Geeft een kleine veilige projectstatus terug."""
         return get_project_status()
+
+    @app.get("/api/projects", response_model=ProjectListResponse)
+    def list_projects() -> ProjectListResponse:
+        """Lists ArcLM Studio projects without exposing filesystem paths."""
+        projects = [StudioProject(**project.to_dict()) for project in app.state.studio_workspace.list_projects()]
+        return ProjectListResponse(projects=projects, count=len(projects))
+
+    @app.post("/api/projects", response_model=StudioProject)
+    def create_project(payload: ProjectCreateRequest) -> StudioProject:
+        """Creates a project under the configured Studio workspace."""
+        project = app.state.studio_workspace.create_project(payload.name, payload.description)
+        return StudioProject(**project.to_dict())
+
+    @app.get("/api/projects/{project_id}", response_model=StudioProject)
+    def read_project(project_id: str) -> StudioProject:
+        """Reads safe project metadata."""
+        return StudioProject(**app.state.studio_workspace.get_project(project_id).to_dict())
+
+    @app.patch("/api/projects/{project_id}", response_model=StudioProject)
+    def update_project(project_id: str, payload: ProjectUpdateRequest) -> StudioProject:
+        """Updates safe project fields."""
+        project = app.state.studio_workspace.update_project(
+            project_id,
+            name=payload.name,
+            description=payload.description,
+        )
+        return StudioProject(**project.to_dict())
+
+    @app.delete("/api/projects/{project_id}", response_model=StudioProject)
+    def delete_project(project_id: str, payload: ProjectDeleteRequest) -> StudioProject:
+        """Deletes a project only after explicit confirmation."""
+        project = app.state.studio_workspace.delete_project(
+            project_id,
+            confirm=payload.confirm,
+            confirm_name=payload.confirm_name,
+        )
+        return StudioProject(**project.to_dict())
+
+    @app.get("/api/projects/{project_id}/datasets", response_model=ProjectDatasetListResponse)
+    def list_project_datasets(project_id: str) -> ProjectDatasetListResponse:
+        """Lists datasets stored in one project."""
+        datasets = [StudioDatasetMetadata(**item.to_dict()) for item in app.state.studio_workspace.list_datasets(project_id)]
+        return ProjectDatasetListResponse(datasets=datasets, count=len(datasets))
+
+    @app.post("/api/projects/{project_id}/datasets/upload", response_model=StudioDatasetMetadata)
+    def upload_project_dataset(project_id: str, payload: DatasetUploadRequest) -> StudioDatasetMetadata:
+        """Stores browser-uploaded text content after safe validation."""
+        dataset = app.state.studio_workspace.add_dataset(
+            project_id,
+            name=payload.name,
+            source_type="upload",
+            content=payload.content,
+            selected_format=payload.selected_format,
+            stored_format=payload.stored_format,
+            original_filename=payload.original_filename,
+            text_fields=payload.text_fields,
+        )
+        return StudioDatasetMetadata(**dataset.to_dict())
+
+    @app.post("/api/projects/{project_id}/datasets/paste", response_model=StudioDatasetMetadata)
+    def paste_project_dataset(project_id: str, payload: DatasetPasteRequest) -> StudioDatasetMetadata:
+        """Stores pasted text data under the project workspace."""
+        dataset = app.state.studio_workspace.add_dataset(
+            project_id,
+            name=payload.name,
+            source_type="paste",
+            content=payload.content,
+            selected_format=payload.selected_format,
+            stored_format=payload.stored_format,
+            original_filename=None,
+            text_fields=payload.text_fields,
+        )
+        return StudioDatasetMetadata(**dataset.to_dict())
+
+    @app.get("/api/projects/{project_id}/datasets/{dataset_id}", response_model=StudioDatasetMetadata)
+    def read_project_dataset(project_id: str, dataset_id: str) -> StudioDatasetMetadata:
+        """Reads project dataset metadata."""
+        return StudioDatasetMetadata(**app.state.studio_workspace.get_dataset(project_id, dataset_id).to_dict())
+
+    @app.get("/api/projects/{project_id}/datasets/{dataset_id}/preview", response_model=ProjectDatasetPreviewResponse)
+    def preview_project_dataset(
+        project_id: str,
+        dataset_id: str,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """Returns a bounded dataset preview."""
+        return app.state.studio_workspace.preview_dataset(project_id, dataset_id, limit)
+
+    @app.delete("/api/projects/{project_id}/datasets/{dataset_id}", response_model=StudioDatasetMetadata)
+    def delete_project_dataset(
+        project_id: str,
+        dataset_id: str,
+        payload: DatasetDeleteRequest,
+    ) -> StudioDatasetMetadata:
+        """Deletes a project dataset only after explicit confirmation."""
+        dataset = app.state.studio_workspace.delete_dataset(project_id, dataset_id, confirm=payload.confirm)
+        return StudioDatasetMetadata(**dataset.to_dict())
+
+    @app.post("/api/projects/{project_id}/datasets/{dataset_id}/validate", response_model=DatasetValidationResponse)
+    def validate_project_dataset(
+        project_id: str,
+        dataset_id: str,
+        payload: DatasetValidationRequest,
+    ) -> dict[str, Any]:
+        """Validates a project dataset through ArcLM public validation APIs."""
+        return app.state.studio_workspace.validate_dataset(
+            project_id,
+            dataset_id,
+            selected_format=payload.selected_format,
+            text_fields=payload.text_fields,
+            strict=payload.strict,
+        )
+
+    @app.post("/api/projects/{project_id}/datasets/{dataset_id}/report", response_model=DatasetManifestReportResponse)
+    def create_project_dataset_report(project_id: str, dataset_id: str) -> dict[str, Any]:
+        """Creates dataset manifest and token report via ArcLM APIs."""
+        return app.state.studio_workspace.create_manifest_and_report(project_id, dataset_id)
+
+    @app.get("/api/projects/{project_id}/datasets/{dataset_id}/manifest", response_model=DatasetManifestResponse)
+    def read_project_dataset_manifest(project_id: str, dataset_id: str) -> dict[str, Any]:
+        """Reads a stored bounded manifest."""
+        return {"manifest": app.state.studio_workspace.get_manifest(project_id, dataset_id)}
+
+    @app.get("/api/projects/{project_id}/datasets/{dataset_id}/report", response_model=DatasetReportResponse)
+    def read_project_dataset_report(project_id: str, dataset_id: str) -> dict[str, Any]:
+        """Reads a stored bounded dataset report."""
+        return {"report": app.state.studio_workspace.get_report(project_id, dataset_id)}
+
+    @app.get("/api/projects/{project_id}/tokenizers", response_model=TokenizerListResponse)
+    def list_project_tokenizers(project_id: str) -> TokenizerListResponse:
+        """Lists native tokenizers stored in a project."""
+        tokenizers = [StudioTokenizerMetadata(**item.to_dict()) for item in app.state.studio_workspace.list_tokenizers(project_id)]
+        return TokenizerListResponse(tokenizers=tokenizers, count=len(tokenizers))
+
+    @app.post("/api/projects/{project_id}/tokenizers/native", response_model=StudioTokenizerMetadata)
+    def create_project_native_tokenizer(project_id: str, payload: TokenizerCreateRequest) -> StudioTokenizerMetadata:
+        """Creates a native ArcLM tokenizer from a project dataset."""
+        tokenizer = app.state.studio_workspace.create_native_tokenizer(
+            project_id,
+            dataset_id=payload.dataset_id,
+            name=payload.name,
+            max_vocab=payload.max_vocab,
+            text_fields=payload.text_fields,
+        )
+        return StudioTokenizerMetadata(**tokenizer.to_dict())
+
+    @app.get("/api/projects/{project_id}/tokenizers/{tokenizer_id}", response_model=StudioTokenizerMetadata)
+    def read_project_tokenizer(project_id: str, tokenizer_id: str) -> StudioTokenizerMetadata:
+        """Reads tokenizer metadata."""
+        return StudioTokenizerMetadata(**app.state.studio_workspace.get_tokenizer(project_id, tokenizer_id).to_dict())
+
+    @app.post("/api/projects/{project_id}/tokenizers/{tokenizer_id}/inspect", response_model=TokenizerInspectionResponse)
+    def inspect_project_tokenizer(
+        project_id: str,
+        tokenizer_id: str,
+        payload: TokenizerInspectRequest,
+    ) -> dict[str, Any]:
+        """Inspects text through a stored native tokenizer."""
+        return app.state.studio_workspace.inspect_tokenizer(project_id, tokenizer_id, payload.text)
+
+    @app.delete("/api/projects/{project_id}/tokenizers/{tokenizer_id}", response_model=StudioTokenizerMetadata)
+    def delete_project_tokenizer(
+        project_id: str,
+        tokenizer_id: str,
+        payload: TokenizerDeleteRequest,
+    ) -> StudioTokenizerMetadata:
+        """Deletes a tokenizer after explicit confirmation."""
+        tokenizer = app.state.studio_workspace.delete_tokenizer(project_id, tokenizer_id, confirm=payload.confirm)
+        return StudioTokenizerMetadata(**tokenizer.to_dict())
 
     @app.get("/api/datasets", response_model=DatasetListResponse)
     def datasets() -> DatasetListResponse:
