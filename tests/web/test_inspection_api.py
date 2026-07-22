@@ -34,16 +34,16 @@ def test_inspection_status_reports_configured_native_objects():
     response = _client(model, tokenizer).get("/api/inspection/status")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "available": True,
-        "model_class": "ArcLM",
-        "tokenizer_class": "Tokenizer",
-        "supports_attention": False,
-        "supports_value_capture": True,
-        "supports_streaming": False,
-        "supports_external_models": False,
-        "message": None,
-    }
+    data = response.json()
+    assert data["available"] is True
+    assert data["initialized"] is True
+    assert data["mode"] == "configured"
+    assert data["model_class"] == "ArcLM"
+    assert data["tokenizer_class"] == "Tokenizer"
+    assert data["supports_attention"] is False
+    assert data["supports_value_capture"] is True
+    assert data["supports_streaming"] is False
+    assert data["supports_external_models"] is False
 
 
 def test_inspection_request_returns_pipeline_trace_without_values_by_default():
@@ -100,7 +100,10 @@ def test_inspection_missing_model_returns_actionable_conflict():
     response = client.post("/api/inspection/text", json={"text": "hello"})
 
     assert status.status_code == 200
-    assert status.json()["available"] is False
+    assert status.json()["available"] is True
+    assert status.json()["initialized"] is False
+    assert status.json()["reason"] == "inspection_source_not_selected"
+    assert status.json()["supported_modes"] == ["demo", "project_model", "checkpoint"]
     assert response.status_code == 409
     assert response.json() == {
         "error": {
@@ -108,6 +111,24 @@ def test_inspection_missing_model_returns_actionable_conflict():
             "message": "The local ArcLM inspection model and tokenizer are not configured.",
         }
     }
+
+
+def test_inspection_demo_mode_works_without_configured_model():
+    client = TestClient(create_app(WebConfig()))
+
+    response = client.post(
+        "/api/inspection/text",
+        json={"source_mode": "demo", "text": "hello arclm", "include_values": True, "max_values": 2},
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["source_mode"] == "demo"
+    assert data["source_label"] == "Educational tiny demo"
+    assert data["model_state"] == "untrained_demo"
+    assert data["model_class"] == "ArcLM"
+    assert data["tokenizer_class"] == "Tokenizer"
+    assert data["values"] is not None
 
 
 def test_inspection_converts_known_trace_errors(monkeypatch):

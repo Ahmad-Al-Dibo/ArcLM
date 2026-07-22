@@ -218,6 +218,177 @@ def test_native_training_run_completes_metrics_events_and_checkpoint(tmp_path):
     assert client.get(f"/api/projects/{project['id']}/runs/{run['id']}/checkpoints/{checkpoint_id}").status_code == 200
 
 
+def test_training_mode_validation_and_run_metadata(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    dataset = _dataset(client, project["id"])
+    tokenizer = _tokenizer(client, project["id"], dataset["id"])
+    model = _model(client, project["id"], dataset["id"], tokenizer)
+
+    validation = client.post(
+        f"/api/projects/{project['id']}/training/pretraining/validate",
+        json={
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+            "device": "cpu",
+            "precision": "fp32",
+        },
+    )
+    assert validation.status_code == 200, validation.text
+    assert validation.json()["valid"] is True
+    assert validation.json()["training_mode"] == "pretraining"
+    assert validation.json()["compatibility"]["status"] == "ready"
+
+    created = client.post(
+        f"/api/projects/{project['id']}/runs",
+        json={
+            "name": "pretraining run",
+            "training_mode": "pretraining",
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+            "epochs": 1,
+            "batch_size": 1,
+            "learning_rate": 0.001,
+            "device": "cpu",
+            "precision": "fp32",
+            "checkpoint_interval": 1,
+            "maximum_sequence_length": 8,
+        },
+    )
+    assert created.status_code == 200, created.text
+    assert created.json()["training_mode"] == "pretraining"
+
+    invalid_mode = client.post(
+        f"/api/projects/{project['id']}/runs",
+        json={
+            "training_mode": "continued_pretraining",
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+        },
+    )
+    assert invalid_mode.status_code == 422
+
+
+def test_fine_tuning_validation_preview_tags_and_label_mask(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    dataset = _dataset(client, project["id"])
+    tokenizer = _tokenizer(client, project["id"], dataset["id"], max_vocab=64)
+    model = _model(client, project["id"], dataset["id"], tokenizer)
+
+    payload = {
+        "fine_tuning_method": "sft",
+        "base_model_id": model["id"],
+        "dataset_id": dataset["id"],
+        "tokenizer_id": tokenizer["id"],
+        "formatting": {
+            "dataset_format": "instruction_response",
+            "instruction_field": "instruction",
+            "response_field": "response",
+            "instruction_tag": "<|instruction|>",
+            "response_tag": "<|response|>",
+            "end_tag": "<|end|>",
+            "end_behavior": "custom_end_tag",
+            "append_end_tag": True,
+            "register_tags_as_special_tokens": False,
+            "train_on_response_only": True,
+            "maximum_sequence_length": 16,
+        },
+        "preview_records": 2,
+    }
+    validation_payload = {key: value for key, value in payload.items() if key != "preview_records"}
+    validation = client.post(f"/api/projects/{project['id']}/training/finetuning/validate", json=validation_payload)
+    assert validation.status_code == 200, validation.text
+    assert validation.json()["valid"] is True
+    assert validation.json()["training_mode"] == "fine_tuning"
+    assert validation.json()["fine_tuning_method"] == "sft"
+    assert validation.json()["compatibility"]["vocabulary_compatible"] is True
+
+    preview = client.post(f"/api/projects/{project['id']}/training/finetuning/preview", json=payload)
+    assert preview.status_code == 200, preview.text
+    row = preview.json()["records"][0]
+    assert "<|instruction|>" in row["formatted_text"]
+    assert "<|response|>" in row["formatted_text"]
+    assert "<|end|>" in row["formatted_text"]
+    assert row["sequence_length"] <= 16
+    assert len(row["token_ids"]) == len(row["label_mask"])
+    assert "ignore" in row["label_mask"]
+    assert "train" in row["label_mask"]
+
+    duplicate = {
+        **validation_payload,
+        "formatting": {
+            **payload["formatting"],
+            "instruction_tag": "<|same|>",
+            "response_tag": "<|same|>",
+        },
+    }
+    rejected = client.post(f"/api/projects/{project['id']}/training/finetuning/validate", json=duplicate)
+    assert rejected.status_code == 200
+    assert rejected.json()["valid"] is False
+    assert rejected.json()["errors"][0]["code"] == "fine_tuning_tag_duplicate"
+
+    special_resize = {
+        **validation_payload,
+        "formatting": {
+            **payload["formatting"],
+            "register_tags_as_special_tokens": True,
+        },
+    }
+    resize = client.post(f"/api/projects/{project['id']}/training/finetuning/validate", json=special_resize)
+    assert resize.status_code == 200
+    assert resize.json()["valid"] is False
+    assert any(error["code"] == "fine_tuning_vocab_resize_required" for error in resize.json()["errors"])
+
+
+def test_tiny_cpu_sft_run_uses_fine_tuning_metadata(tmp_path):
+    client = _client(tmp_path)
+    project = _project(client)
+    dataset = _dataset(client, project["id"], records=4)
+    tokenizer = _tokenizer(client, project["id"], dataset["id"], max_vocab=64)
+    model = _model(client, project["id"], dataset["id"], tokenizer, block_size=32)
+
+    created = client.post(
+        f"/api/projects/{project['id']}/runs",
+        json={
+            "name": "tiny sft",
+            "training_mode": "fine_tuning",
+            "fine_tuning_method": "sft",
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+            "fine_tuning_format": {
+                "dataset_format": "instruction_response",
+                "instruction_field": "instruction",
+                "response_field": "response",
+                "train_on_response_only": True,
+                "maximum_sequence_length": 32,
+            },
+            "epochs": 1,
+            "batch_size": 1,
+            "learning_rate": 0.001,
+            "device": "cpu",
+            "precision": "fp32",
+            "checkpoint_interval": 1,
+            "maximum_sequence_length": 32,
+        },
+    )
+    assert created.status_code == 200, created.text
+    assert created.json()["training_mode"] == "fine_tuning"
+    assert created.json()["fine_tuning_method"] == "sft"
+    run = _wait_run(client, project["id"], created.json()["id"])
+    assert run["status"] == "completed", run
+    assert run["training_mode"] == "fine_tuning"
+    assert run["configuration"]["fine_tuning_format"]["dataset_format"] == "instruction_response"
+
+    checkpoints = client.get(f"/api/projects/{project['id']}/runs/{run['id']}/checkpoints")
+    assert checkpoints.status_code == 200
+    assert checkpoints.json()["count"] >= 1
+
+
 def test_run_checkpoint_list_tolerates_incomplete_checkpoint_directory(tmp_path):
     client = _client(tmp_path)
     project = _project(client)

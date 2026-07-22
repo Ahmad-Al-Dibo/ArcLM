@@ -34,6 +34,12 @@ export const apiEndpoints = {
   projectDatasetInspect: (projectId: string, datasetId: string) =>
     `/api/projects/${encodeURIComponent(projectId)}/datasets/${encodeURIComponent(datasetId)}/inspect`,
   projectRuns: (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}/runs`,
+  projectPretrainingValidate: (projectId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/training/pretraining/validate`,
+  projectFinetuningValidate: (projectId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/training/finetuning/validate`,
+  projectFinetuningPreview: (projectId: string) =>
+    `/api/projects/${encodeURIComponent(projectId)}/training/finetuning/preview`,
   projectRun: (projectId: string, runId: string) =>
     `/api/projects/${encodeURIComponent(projectId)}/runs/${encodeURIComponent(runId)}`,
   projectRunMetrics: (projectId: string, runId: string) =>

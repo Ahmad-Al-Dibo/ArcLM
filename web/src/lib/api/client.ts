@@ -35,6 +35,9 @@ import type {
   EvaluationListResponse,
   EvaluationMetadataResponse,
   EvaluationReportResponse,
+  FineTuningPreviewRequest,
+  FineTuningPreviewResponse,
+  FineTuningValidationRequest,
   GenerationCreateRequest,
   GenerationDeleteRequest,
   GenerationListResponse,
@@ -55,6 +58,7 @@ import type {
   ProjectListResponse,
   ProjectStatusResponse,
   ProjectUpdateRequest,
+  PretrainingValidationRequest,
   RunListResponse,
   RunLogResponse,
   StudioDatasetMetadata,
@@ -68,6 +72,7 @@ import type {
   TokenizerInspectionResponse,
   TokenizerInspectRequest,
   TokenizerListResponse,
+  TrainingModeValidationResponse,
   TrainingRunRequest
 } from "./schemas";
 import { apiEndpoints } from "./endpoints";
@@ -332,8 +337,17 @@ function isPipelineInspectionStatusResponse(value: unknown): value is PipelineIn
   return (
     isRecord(value) &&
     isBoolean(value.available) &&
+    isBoolean(value.initialized) &&
+    (value.mode === null || isString(value.mode)) &&
+    (value.reason === null || isString(value.reason)) &&
+    Array.isArray(value.supported_modes) &&
+    value.supported_modes.every(isString) &&
+    (value.project_id === null || isString(value.project_id)) &&
+    (value.checkpoint_id === null || isString(value.checkpoint_id)) &&
     (value.model_class === null || isString(value.model_class)) &&
     (value.tokenizer_class === null || isString(value.tokenizer_class)) &&
+    (value.device === null || isString(value.device)) &&
+    (value.dtype === null || isString(value.dtype)) &&
     isBoolean(value.supports_attention) &&
     isBoolean(value.supports_value_capture) &&
     isBoolean(value.supports_streaming) &&
@@ -599,6 +613,18 @@ export class ArcLMApiClient {
 
   createProjectRun(projectId: string, payload: TrainingRunRequest) {
     return this.request<StudioRunMetadata>(apiEndpoints.projectRuns(projectId), { method: "POST", body: payload });
+  }
+
+  validateProjectPretraining(projectId: string, payload: PretrainingValidationRequest) {
+    return this.request<TrainingModeValidationResponse>(apiEndpoints.projectPretrainingValidate(projectId), { method: "POST", body: payload });
+  }
+
+  validateProjectFinetuning(projectId: string, payload: FineTuningValidationRequest) {
+    return this.request<TrainingModeValidationResponse>(apiEndpoints.projectFinetuningValidate(projectId), { method: "POST", body: payload });
+  }
+
+  previewProjectFinetuning(projectId: string, payload: FineTuningPreviewRequest) {
+    return this.request<FineTuningPreviewResponse>(apiEndpoints.projectFinetuningPreview(projectId), { method: "POST", body: payload });
   }
 
   getProjectRun(projectId: string, runId: string) {

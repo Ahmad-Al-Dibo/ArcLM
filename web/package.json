@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "loc": "scc src --exclude-dir=node_modules,.next,coverage"
   },
   "dependencies": {
     "next": "16.2.10",

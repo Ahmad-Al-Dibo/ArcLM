@@ -133,19 +133,30 @@ Requestvelden:
 ```json
 {
   "text": "Hello ArcLM",
+  "source_mode": "demo",
   "include_values": false,
-  "max_values": 20
+  "max_values": 20,
+  "device": "cpu",
+  "precision": "fp32"
 }
 ```
 
-De FastAPI app gebruikt alleen een expliciet geinjecteerd native model en
-tokenizer uit `app.state`; de request accepteert geen checkpointpaden, model
-IDs, Python classes, devices of dtypes. Als er geen model/tokenizer is
-geconfigureerd, geeft de API `native_model_not_configured` terug. De Next.js
-leerpagina staat op `/learn/pipeline` en visualiseert input, tokens, token
-IDs, input tensor, embedding shape, logits shape, geselecteerde token en
-gegenereerde tekst. Attention maps, streaming en externe-model tracing zijn
-niet geimplementeerd.
+Ondersteunde bronnen zijn `demo`, `project_model`, `checkpoint` en het oudere
+`configured` app-state pad. `demo` maakt lui een tiny CPU ArcLM model en
+tokenizer voor onderwijsgebruik. `project_model` gebruikt een projectmodel-
+configuratie en toont die als `Untrained`. `checkpoint` gebruikt alleen
+backend-generated project- en checkpoint IDs; de backend reconstrueert de
+native checkpoint en tokenizer en roept daarna `arclm.inspect_text` aan.
+
+De request accepteert geen bestandspaden, Hugging Face model IDs, Python
+classes of willekeurige dtypes. Als er geen bron gekozen is, retourneert
+`GET /api/inspection/status` een bruikbare uninitialized state met herstelopties
+zoals demo starten, projectmodel kiezen of checkpoint manager openen. De
+Next.js leerpagina staat op `/learn/pipeline` en visualiseert input, tokens,
+token IDs, input tensor, embedding shape, position note, transformer summary,
+logits shape, geselecteerde token en een generatie van een token. Attention
+maps, hidden-state history, multi-step inspectie, streaming en externe-model
+tracing zijn niet geimplementeerd.
 
 ## ArcLM Studio Web 1
 
@@ -208,9 +219,10 @@ from the canonical tokenizer path used by the report.
 
 Tokenizer Lab supports creating a native ArcLM tokenizer from a project
 dataset and inspecting text through that tokenizer. It reports tokens, token
-IDs, token count, unknown-token count, decoded text and round-trip status. The
-SentencePiece creation endpoint is not exposed in this phase because the
-current safe Studio flow only covers the native tokenizer.
+IDs, token count, unknown-token count, decoded text and round-trip status.
+The UI exposes Word tokenizer and SentencePiece tokenizer creation, including
+BPE, Unigram, Character and Word SentencePiece modes when the optional backend
+support is installed.
 
 Web Studio 1 blijft de basis voor projecten, data en tokenizers.
 
@@ -237,15 +249,38 @@ Frontend routes:
 ```text
 /projects/[projectId]/model
 /projects/[projectId]/train
+/projects/[projectId]/train/pretraining
+/projects/[projectId]/train/finetuning
 /projects/[projectId]/runs
 /projects/[projectId]/runs/[runId]
 ```
 
-De Training Studio exposeert alleen `native_causal_lm` als Web Studio 2 job
-type. Native full fine-tuning, SFT en LoRA blijven Python APIs, maar zijn nog
-geen afzonderlijk gevalideerde web-job workflows. Deferred: WebSockets/streaming
-logs, attention maps, authentication, database, cloud storage, shell execution,
-external downloads and arbitrary filesystem browsing.
+Web Studio 4 splitst de oude Training Studio in een Training Center met twee
+zichtbare workflows:
+
+| Workflow | Starts from | Dataset contract | Supported methods | Backend behavior | Limitations |
+| --- | --- | --- | --- | --- | --- |
+| Pre-Training | Newly initialized native ArcLM project model | Plain/text-like causal-LM records from project datasets | Native causal-LM pre-training | Stores `training_mode=pretraining` and starts the existing local `Trainer`. | No checkpoint source; continued pre-training is deferred. |
+| Fine-Tuning | Project model configuration or compatible project checkpoint | `instruction_response`, `prompt_completion`, or `plain_text` | `full`, `sft` | Validates base source, tokenizer/model vocabulary, dataset fields, tags and device; preview returns formatted text, tokens, token IDs and label mask; execution stores `training_mode=fine_tuning`, `fine_tuning_method`, `base_checkpoint_id` and `fine_tuning_format`. | Studio exposes no LoRA/QLoRA because reload/generation integration is not complete. Custom formatting tags are previewed and stored; canonical training uses ArcLM fine-tuning formatter/labels. |
+
+Fine-tuning tags are formatting text, not tokenizer special tokens. Enabling
+special-token registration is blocked if it would require a model vocabulary
+resize; Studio never silently registers tokens or resizes embeddings. End
+behavior can be custom end tag, tokenizer EOS when available, or no explicit
+end marker. Existing runs without `training_mode` remain readable as
+`legacy_native_training`.
+
+New validation endpoints:
+
+```text
+POST /api/projects/{project_id}/training/pretraining/validate
+POST /api/projects/{project_id}/training/finetuning/validate
+POST /api/projects/{project_id}/training/finetuning/preview
+```
+
+Deferred: WebSockets/streaming logs, attention maps, authentication, database,
+cloud storage, shell execution, external downloads, arbitrary filesystem
+browsing, QLoRA runtime and arbitrary Python formatting code.
 
 ## ArcLM Web Studio 3
 

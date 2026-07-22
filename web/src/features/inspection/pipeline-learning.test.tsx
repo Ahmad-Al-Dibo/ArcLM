@@ -31,6 +31,24 @@ const trace: PipelineTraceResponse = {
 
 function client(result: Promise<PipelineTraceResponse> = Promise.resolve(trace)): PipelineInspectionClient {
   return {
+    getPipelineInspectionStatus: vi.fn().mockResolvedValue({
+      available: true,
+      initialized: false,
+      mode: null,
+      reason: "inspection_source_not_selected",
+      supported_modes: ["demo", "project_model", "checkpoint"],
+      project_id: null,
+      checkpoint_id: null,
+      model_class: null,
+      tokenizer_class: null,
+      device: null,
+      dtype: null,
+      supports_attention: false,
+      supports_value_capture: true,
+      supports_streaming: false,
+      supports_external_models: false,
+      message: "Inspection is ready, but no source is selected."
+    }),
     inspectPipelineText: vi.fn().mockReturnValue(result)
   };
 }
@@ -54,7 +72,15 @@ describe("PipelineLearningPage", () => {
     await waitFor(() => expect(testClient.inspectPipelineText).toHaveBeenCalledWith({
       text: "custom prompt",
       include_values: false,
-      max_values: 20
+      max_values: 20,
+      source_mode: "demo",
+      project_id: null,
+      dataset_id: null,
+      tokenizer_id: null,
+      model_id: null,
+      checkpoint_id: null,
+      device: "cpu",
+      precision: "fp32"
     }));
   });
 
@@ -78,14 +104,17 @@ describe("PipelineLearningPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Inspect pipeline" }));
 
     expect(await screen.findByText("Native trace metadata")).toBeTruthy();
-    expect(screen.getByText("1. Input")).toBeTruthy();
+    expect(screen.getByText("1. Input text")).toBeTruthy();
     expect(screen.getByText("2. Tokenization")).toBeTruthy();
     expect(screen.getByText("3. Token IDs")).toBeTruthy();
-    expect(screen.getByText("4. Input Tensor")).toBeTruthy();
-    expect(screen.getByText("5. Embeddings")).toBeTruthy();
-    expect(screen.getByText("6. Model Output / Logits")).toBeTruthy();
-    expect(screen.getByText("7. Selected Token")).toBeTruthy();
-    expect(screen.getByText("8. Generated Text")).toBeTruthy();
+    expect(screen.getByText("4. Input tensor shape")).toBeTruthy();
+    expect(screen.getByText("5. Token embeddings")).toBeTruthy();
+    expect(screen.getByText("6. Position information")).toBeTruthy();
+    expect(screen.getByText("7. Transformer blocks")).toBeTruthy();
+    expect(screen.getByText("8. Final hidden state")).toBeTruthy();
+    expect(screen.getByText("9. Logits shape")).toBeTruthy();
+    expect(screen.getByText("10. Selected token")).toBeTruthy();
+    expect(screen.getByText("11. One generated token")).toBeTruthy();
     expect(screen.getByText("[1, 2, 8]")).toBeTruthy();
     expect(screen.getByText("trace (3)")).toBeTruthy();
   });
@@ -98,7 +127,7 @@ describe("PipelineLearningPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Inspect pipeline" }));
 
-    expect(await screen.findByText("Local inspection model is not configured")).toBeTruthy();
+    expect(await screen.findByText("Inspection source is not selected")).toBeTruthy();
     expect(screen.getByText("native_model_not_configured")).toBeTruthy();
   });
 
@@ -117,7 +146,16 @@ describe("PipelineLearningPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Inspect pipeline" }));
 
-    expect(await screen.findAllByText("Not available in this inspection version")).toHaveLength(1);
+    expect((await screen.findAllByText("Not available in this inspection version")).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Attention tensor capture is planned for a later inspection version.")).toBeTruthy();
+  });
+
+  it("shows recovery actions when inspection has no selected source", async () => {
+    render(<PipelineLearningPage client={client()} />);
+
+    expect(await screen.findByText("Inspection source not selected")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start educational demo" })).toBeTruthy();
+    expect(screen.getByText("Select a project model")).toBeTruthy();
+    expect(screen.getByText("Open Checkpoint Manager")).toBeTruthy();
   });
 });

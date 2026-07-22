@@ -18,6 +18,14 @@ import {
 import type { StudioRunMetadata } from "@/lib/api/schemas";
 import { errorMessage, type StudioClient, useClient } from "./shared";
 
+function runModeLabel(run: StudioRunMetadata) {
+  if (run.training_mode === "fine_tuning") {
+    return run.fine_tuning_method ? `Fine-Tuning - ${run.fine_tuning_method.toUpperCase()}` : "Fine-Tuning";
+  }
+  if (run.training_mode === "pretraining") return "Pre-Training";
+  return "Legacy native training";
+}
+
 export function RunsPage({ projectId, client }: { projectId: string; client?: StudioClient }) {
   const api = useClient(client);
   const [runs, setRuns] = useState<StudioRunMetadata[]>([]);
@@ -52,10 +60,11 @@ export function RunsPage({ projectId, client }: { projectId: string; client?: St
       <div className="studio-grid">
         {visible.length ? visible.map((run) => (
           <Card key={run.id}>
-            <CardHeader><CardTitle>{run.name}</CardTitle><CardDescription>{run.training_type}</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{run.name}</CardTitle><CardDescription>{runModeLabel(run)} - {run.training_type}</CardDescription></CardHeader>
             <CardContent>
               <Badge variant={run.status === "completed" ? "success" : run.status === "failed" ? "error" : "neutral"}>{run.status}</Badge>
               <KeyValueList items={[
+                { label: "Mode", value: runModeLabel(run) },
                 { label: "Progress", value: `${run.current_step}/${run.total_steps ?? "?"}` },
                 { label: "Latest loss", value: String(run.latest_metrics.training_loss ?? "n/a") },
                 { label: "Device", value: run.device }

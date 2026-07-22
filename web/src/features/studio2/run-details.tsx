@@ -16,6 +16,14 @@ import {
 import type { StudioRunMetadata } from "@/lib/api/schemas";
 import { errorMessage, LoadingCard, type StudioClient, useClient } from "./shared";
 
+function runModeLabel(run: StudioRunMetadata) {
+  if (run.training_mode === "fine_tuning") {
+    return run.fine_tuning_method ? `Fine-Tuning - ${run.fine_tuning_method.toUpperCase()}` : "Fine-Tuning";
+  }
+  if (run.training_mode === "pretraining") return "Pre-Training";
+  return "Legacy native training";
+}
+
 export function RunDetailsPage({ projectId, runId, client }: { projectId: string; runId: string; client?: StudioClient }) {
   const api = useClient(client);
   const [run, setRun] = useState<StudioRunMetadata | null>(null);
@@ -74,6 +82,7 @@ export function RunDetailsPage({ projectId, runId, client }: { projectId: string
       <PageHeader title={run.name} description="Run details, metrics, events and checkpoint metadata." />
       <div className="studio-metrics">
         <Card><CardHeader><CardTitle>Status</CardTitle></CardHeader><CardContent><Badge variant={run.status === "completed" ? "success" : run.status === "failed" ? "error" : "neutral"}>{run.status}</Badge></CardContent></Card>
+        <Card><CardHeader><CardTitle>Mode</CardTitle></CardHeader><CardContent><strong>{runModeLabel(run)}</strong></CardContent></Card>
         <Card><CardHeader><CardTitle>Progress</CardTitle></CardHeader><CardContent><strong>{run.current_step}/{run.total_steps ?? "?"}</strong></CardContent></Card>
         <Card><CardHeader><CardTitle>Device</CardTitle></CardHeader><CardContent><strong>{run.device}</strong></CardContent></Card>
       </div>

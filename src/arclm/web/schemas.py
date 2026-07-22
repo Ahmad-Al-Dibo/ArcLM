@@ -459,6 +459,10 @@ class TrainingRunRequest(BaseModel):
     tokenizer_id: str
     model_id: str
     training_type: Literal["native_causal_lm"] = "native_causal_lm"
+    training_mode: Literal["pretraining", "fine_tuning"] = "pretraining"
+    fine_tuning_method: Literal["full", "sft"] | None = None
+    base_checkpoint_id: str | None = None
+    fine_tuning_format: dict[str, Any] | None = None
     epochs: int = 1
     batch_size: int = 1
     learning_rate: float = 1e-3
@@ -485,6 +489,9 @@ class StudioRunMetadata(BaseModel):
     name: str
     status: Literal["queued", "starting", "running", "cancelling", "cancelled", "completed", "failed", "interrupted"]
     training_type: str
+    training_mode: str = "legacy_native_training"
+    fine_tuning_method: str | None = None
+    base_checkpoint_id: str | None = None
     created_at: float
     updated_at: float
     started_at: float | None = None
@@ -719,6 +726,14 @@ class PipelineInspectionRequest(BaseModel):
     text: str
     include_values: bool = False
     max_values: int = 20
+    source_mode: Literal["configured", "demo", "project_model", "checkpoint"] = "configured"
+    project_id: str | None = None
+    dataset_id: str | None = None
+    tokenizer_id: str | None = None
+    model_id: str | None = None
+    checkpoint_id: str | None = None
+    device: Literal["auto", "cpu", "cuda"] = "cpu"
+    precision: Literal["fp32"] = "fp32"
 
 
 class PipelineTraceResponse(BaseModel):
@@ -744,19 +759,108 @@ class PipelineTraceResponse(BaseModel):
     attention_note: str
     warnings: list[str] = Field(default_factory=list)
     values: dict[str, list[int | float]] | None = None
+    source_mode: str | None = None
+    source_label: str | None = None
+    model_state: str | None = None
+    tokenizer: dict[str, Any] | None = None
+    model: dict[str, Any] | None = None
 
 
 class PipelineInspectionStatusResponse(BaseModel):
     """Veilige status van de lokale native inspectie-capability."""
 
     available: bool
+    initialized: bool = False
+    mode: str | None = None
+    reason: str | None = None
+    supported_modes: list[str] = Field(default_factory=lambda: ["demo", "project_model", "checkpoint"])
+    project_id: str | None = None
+    checkpoint_id: str | None = None
     model_class: str | None = None
     tokenizer_class: str | None = None
+    device: str | None = None
+    dtype: str | None = None
     supports_attention: bool = False
     supports_value_capture: bool = True
     supports_streaming: bool = False
     supports_external_models: bool = False
     message: str | None = None
+
+
+class PretrainingValidationRequest(BaseModel):
+    """Validate a pre-training run before it is started."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    training_mode: Literal["pretraining"] = "pretraining"
+    dataset_id: str
+    tokenizer_id: str
+    model_id: str
+    device: Literal["auto", "cpu", "cuda"] = "cpu"
+    precision: Literal["fp32"] = "fp32"
+
+
+class FineTuningFormattingRequest(BaseModel):
+    """Formatting choices for a bounded fine-tuning preview."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_format: Literal["instruction_response", "prompt_completion", "plain_text"] = "instruction_response"
+    instruction_field: str = "instruction"
+    response_field: str = "response"
+    prompt_field: str = "prompt"
+    completion_field: str = "completion"
+    text_field: str = "text"
+    context_field: str | None = None
+    instruction_tag: str = "<|instruction|>"
+    response_tag: str = "<|response|>"
+    end_tag: str = "<|end|>"
+    separator: str = "\n"
+    end_behavior: Literal["custom_end_tag", "tokenizer_eos", "none"] = "custom_end_tag"
+    append_end_tag: bool = True
+    register_tags_as_special_tokens: bool = False
+    train_on_response_only: bool = True
+    maximum_sequence_length: int = 128
+
+
+class FineTuningValidationRequest(BaseModel):
+    """Validate a fine-tuning setup without starting training."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    training_mode: Literal["fine_tuning"] = "fine_tuning"
+    fine_tuning_method: Literal["full", "sft"] = "sft"
+    base_model_id: str | None = None
+    base_checkpoint_id: str | None = None
+    dataset_id: str
+    tokenizer_id: str
+    formatting: FineTuningFormattingRequest = Field(default_factory=FineTuningFormattingRequest)
+    device: Literal["auto", "cpu", "cuda"] = "cpu"
+    precision: Literal["fp32"] = "fp32"
+
+
+class FineTuningPreviewRequest(FineTuningValidationRequest):
+    """Return a bounded preview of formatted fine-tuning records."""
+
+    preview_records: int = 3
+
+
+class TrainingModeValidationResponse(BaseModel):
+    """Shared validation response for pre-training and fine-tuning."""
+
+    valid: bool
+    training_mode: str
+    fine_tuning_method: str | None = None
+    compatibility: dict[str, Any]
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class FineTuningPreviewResponse(TrainingModeValidationResponse):
+    """Bounded fine-tuning formatting preview."""
+
+    formatting: dict[str, Any]
+    records: list[dict[str, Any]]
 
 
 class HealthResponse(BaseModel):

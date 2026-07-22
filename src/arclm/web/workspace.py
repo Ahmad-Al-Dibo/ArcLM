@@ -182,6 +182,9 @@ class StudioRunMetadata:
     error: dict[str, Any] | None
     warnings: list[str]
     configuration: dict[str, Any]
+    training_mode: str = "legacy_native_training"
+    fine_tuning_method: str | None = None
+    base_checkpoint_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -824,6 +827,9 @@ class StudioWorkspace:
             error=None,
             warnings=[],
             configuration=dict(payload),
+            training_mode=str(payload.get("training_mode") or "pretraining"),
+            fine_tuning_method=payload.get("fine_tuning_method"),
+            base_checkpoint_id=payload.get("base_checkpoint_id"),
         )
         _atomic_json(run_dir / "run.json", run.to_dict())
         _atomic_json(run_dir / "configuration.json", dict(payload))

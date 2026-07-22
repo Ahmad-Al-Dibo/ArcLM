@@ -297,6 +297,10 @@ export type TrainingRunRequest = {
   tokenizer_id: string;
   model_id: string;
   training_type?: "native_causal_lm";
+  training_mode?: "pretraining" | "fine_tuning";
+  fine_tuning_method?: "full" | "sft" | null;
+  base_checkpoint_id?: string | null;
+  fine_tuning_format?: Record<string, unknown> | null;
   epochs?: number;
   batch_size?: number;
   learning_rate?: number;
@@ -321,6 +325,9 @@ export type StudioRunMetadata = {
   name: string;
   status: "queued" | "starting" | "running" | "cancelling" | "cancelled" | "completed" | "failed" | "interrupted";
   training_type: string;
+  training_mode: string;
+  fine_tuning_method: string | null;
+  base_checkpoint_id: string | null;
   created_at: number;
   updated_at: number;
   started_at: number | null;
@@ -648,6 +655,14 @@ export type PipelineInspectionRequest = {
   text: string;
   include_values?: boolean;
   max_values?: number;
+  source_mode?: "configured" | "demo" | "project_model" | "checkpoint";
+  project_id?: string | null;
+  dataset_id?: string | null;
+  tokenizer_id?: string | null;
+  model_id?: string | null;
+  checkpoint_id?: string | null;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32";
 };
 
 export type PipelineTraceResponse = {
@@ -671,15 +686,99 @@ export type PipelineTraceResponse = {
   attention_note: string;
   warnings: string[];
   values: Record<string, number[]> | null;
+  source_mode?: string | null;
+  source_label?: string | null;
+  model_state?: string | null;
+  tokenizer?: Record<string, unknown> | null;
+  model?: Record<string, unknown> | null;
 };
 
 export type PipelineInspectionStatusResponse = {
   available: boolean;
+  initialized: boolean;
+  mode: string | null;
+  reason: string | null;
+  supported_modes: string[];
+  project_id: string | null;
+  checkpoint_id: string | null;
   model_class: string | null;
   tokenizer_class: string | null;
+  device: string | null;
+  dtype: string | null;
   supports_attention: boolean;
   supports_value_capture: boolean;
   supports_streaming: boolean;
   supports_external_models: boolean;
   message: string | null;
+};
+
+export type FineTuningFormattingRequest = {
+  dataset_format?: "instruction_response" | "prompt_completion" | "plain_text";
+  instruction_field?: string;
+  response_field?: string;
+  prompt_field?: string;
+  completion_field?: string;
+  text_field?: string;
+  context_field?: string | null;
+  instruction_tag?: string;
+  response_tag?: string;
+  end_tag?: string;
+  separator?: string;
+  end_behavior?: "custom_end_tag" | "tokenizer_eos" | "none";
+  append_end_tag?: boolean;
+  register_tags_as_special_tokens?: boolean;
+  train_on_response_only?: boolean;
+  maximum_sequence_length?: number;
+};
+
+export type FineTuningValidationRequest = {
+  training_mode?: "fine_tuning";
+  fine_tuning_method?: "full" | "sft";
+  base_model_id?: string | null;
+  base_checkpoint_id?: string | null;
+  dataset_id: string;
+  tokenizer_id: string;
+  formatting?: FineTuningFormattingRequest;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32";
+};
+
+export type FineTuningPreviewRequest = FineTuningValidationRequest & {
+  preview_records?: number;
+};
+
+export type PretrainingValidationRequest = {
+  training_mode?: "pretraining";
+  dataset_id: string;
+  tokenizer_id: string;
+  model_id: string;
+  device?: "auto" | "cpu" | "cuda";
+  precision?: "fp32";
+};
+
+export type TrainingModeValidationResponse = {
+  valid: boolean;
+  training_mode: string;
+  fine_tuning_method: string | null;
+  compatibility: Record<string, unknown>;
+  warnings: string[];
+  errors: Array<{ code: string; message: string; details?: Record<string, unknown> | null }>;
+};
+
+export type FineTuningPreviewRecord = {
+  index: number;
+  original_record: Record<string, unknown>;
+  formatted_text: string;
+  tokens: string[];
+  token_ids: number[];
+  label_mask: string[];
+  sequence_length: number;
+  truncated: boolean;
+  unknown_token_count: number;
+  special_tags_detected: string[];
+};
+
+export type FineTuningPreviewResponse = TrainingModeValidationResponse & {
+  formatting: Record<string, unknown>;
+  records: FineTuningPreviewRecord[];
 };

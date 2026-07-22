@@ -41,6 +41,9 @@ from .schemas import (
     EvaluationListResponse,
     EvaluationMetadataResponse,
     EvaluationReportResponse,
+    FineTuningPreviewRequest,
+    FineTuningPreviewResponse,
+    FineTuningValidationRequest,
     HealthResponse,
     CheckpointListResponse,
     CheckpointDeleteRequest,
@@ -65,6 +68,7 @@ from .schemas import (
     NativeModelRequest,
     NativeModelUpdateRequest,
     NativeModelValidationResponse,
+    PretrainingValidationRequest,
     RunListResponse,
     RunLogResponse,
     StudioDatasetMetadata,
@@ -79,6 +83,7 @@ from .schemas import (
     TokenizerInspectRequest,
     TokenizerListResponse,
     TrainingRunRequest,
+    TrainingModeValidationResponse,
 )
 from .services import get_capabilities, get_environment, get_project_status, get_system_diagnostics
 from .studio3 import Studio3Coordinator
@@ -234,6 +239,341 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
                 f"max_values must be between 1 and {MAX_INSPECTION_VALUES}.",
                 status_code=400,
             )
+        if payload.device == "cuda":
+            try:
+                import torch
+            except ModuleNotFoundError as exc:
+                raise InspectionApiError("inspection_device_unavailable", "CUDA inspection requires PyTorch.", status_code=400) from exc
+            if not torch.cuda.is_available():
+                raise InspectionApiError("inspection_device_unavailable", "CUDA was requested but is not available.", status_code=400)
+
+    def demo_inspection_objects() -> tuple[Any, Any]:
+        """Create or reuse a tiny deterministic CPU demo model for learning."""
+        if getattr(app.state, "arclm_demo_model", None) is None or getattr(app.state, "arclm_demo_tokenizer", None) is None:
+            from arclm.models import ArcLM
+            from arclm.tokenizers import Tokenizer
+
+            tokenizer = Tokenizer(max_vocab=24, user_defined_symbols=["<|instruction|>", "<|response|>", "<|end|>"])
+            tokenizer.build("hello arclm pipeline token embedding transformer logits selected generated")
+            model = ArcLM(
+                vocab_size=tokenizer.get_vocab_size(),
+                embed_dim=8,
+                block_size=8,
+                num_blocks=1,
+                dropout=0.0,
+            )
+            model.eval()
+            app.state.arclm_demo_model = model
+            app.state.arclm_demo_tokenizer = tokenizer
+        return app.state.arclm_demo_model, app.state.arclm_demo_tokenizer
+
+    def project_model_inspection_objects(payload: PipelineInspectionRequest) -> tuple[Any, Any, dict[str, Any], dict[str, Any]]:
+        """Build an untrained project model from stored safe project metadata."""
+        if not payload.project_id or not payload.model_id:
+            raise InspectionApiError(
+                "inspection_source_not_selected",
+                "Select a project and native model before inspecting a project model.",
+                status_code=400,
+            )
+        from arclm.models import ArcLM
+
+        model_meta = app.state.studio_workspace.get_model(payload.project_id, payload.model_id)
+        tokenizer_id = payload.tokenizer_id or model_meta.tokenizer_id
+        tokenizer_meta = app.state.studio_workspace.get_ready_tokenizer(payload.project_id, tokenizer_id)
+        if tokenizer_meta.id != model_meta.tokenizer_id:
+            raise InspectionApiError(
+                "fine_tuning_tokenizer_model_mismatch",
+                "The selected tokenizer must match the model tokenizer.",
+                status_code=400,
+            )
+        if int(model_meta.configuration["vocab_size"]) != int(tokenizer_meta.vocab_size):
+            raise InspectionApiError(
+                "fine_tuning_tokenizer_model_mismatch",
+                "Tokenizer vocabulary does not match the model vocabulary.",
+                status_code=400,
+            )
+        model = ArcLM(**model_meta.configuration)
+        tokenizer = app.state.studio_workspace._load_tokenizer(payload.project_id, tokenizer_meta)
+        return model, tokenizer, model_meta.to_dict(), tokenizer_meta.to_dict()
+
+    def enrich_trace(
+        trace: dict[str, Any],
+        *,
+        source_mode: str,
+        source_label: str,
+        model_state: str,
+        model: dict[str, Any] | None = None,
+        tokenizer: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Attach web-source metadata without changing PipelineTrace semantics."""
+        result = dict(trace)
+        result.update(
+            {
+                "source_mode": source_mode,
+                "source_label": source_label,
+                "model_state": model_state,
+                "model": model,
+                "tokenizer": tokenizer,
+            }
+        )
+        return result
+
+    def validate_pretraining_config(project_id: str, payload: PretrainingValidationRequest) -> dict[str, Any]:
+        """Validate the existing native pre-training path without starting it."""
+        try:
+            app.state.training_coordinator._validate_payload(project_id, payload.model_dump())
+        except WorkspaceApiError as exc:
+            return {
+                "valid": False,
+                "training_mode": "pretraining",
+                "fine_tuning_method": None,
+                "compatibility": {"status": "blocked"},
+                "warnings": [],
+                "errors": [{"code": exc.code, "message": exc.message, "details": exc.details}],
+            }
+        model = app.state.studio_workspace.get_model(project_id, payload.model_id)
+        tokenizer = app.state.studio_workspace.get_ready_tokenizer(project_id, payload.tokenizer_id)
+        dataset = app.state.studio_workspace.get_dataset(project_id, payload.dataset_id)
+        return {
+            "valid": True,
+            "training_mode": "pretraining",
+            "fine_tuning_method": None,
+            "compatibility": {
+                "status": "ready",
+                "dataset_id": dataset.id,
+                "tokenizer_id": tokenizer.id,
+                "model_id": model.id,
+                "model_vocabulary_size": int(model.configuration["vocab_size"]),
+                "tokenizer_vocabulary_size": int(tokenizer.vocab_size),
+                "context_length": int(model.configuration["block_size"]),
+            },
+            "warnings": [],
+            "errors": [],
+        }
+
+    def validate_fine_tuning_config(project_id: str, payload: FineTuningValidationRequest) -> dict[str, Any]:
+        """Validate fine-tuning source, formatting and tokenizer/model compatibility."""
+        errors: list[dict[str, Any]] = []
+        warnings: list[str] = []
+        if payload.fine_tuning_method not in {"full", "sft"}:
+            errors.append({"code": "fine_tuning_method_unsupported", "message": "Only full and sft are currently exposed."})
+        if not payload.base_model_id and not payload.base_checkpoint_id:
+            errors.append({"code": "fine_tuning_source_required", "message": "Select a base model or compatible checkpoint."})
+
+        model_id = payload.base_model_id
+        checkpoint_summary: dict[str, Any] | None = None
+        if payload.base_checkpoint_id:
+            try:
+                checkpoint_summary = app.state.studio3_coordinator.get_checkpoint(project_id, payload.base_checkpoint_id)
+                if checkpoint_summary.get("reload_status") != "compatible":
+                    errors.append({"code": "inspection_checkpoint_incompatible", "message": "The selected checkpoint is not compatible."})
+                model_id = str(checkpoint_summary.get("model_id") or model_id or "")
+            except WorkspaceApiError as exc:
+                errors.append({"code": exc.code, "message": exc.message})
+
+        model = None
+        tokenizer = None
+        dataset = None
+        tokenizer_object = None
+        try:
+            if model_id:
+                model = app.state.studio_workspace.get_model(project_id, model_id)
+            dataset = app.state.studio_workspace.get_dataset(project_id, payload.dataset_id)
+            tokenizer = app.state.studio_workspace.get_ready_tokenizer(project_id, payload.tokenizer_id)
+            tokenizer_object = app.state.studio_workspace._load_tokenizer(project_id, tokenizer)
+        except WorkspaceApiError as exc:
+            errors.append({"code": exc.code, "message": exc.message, "details": exc.details})
+
+        if model is not None and tokenizer is not None:
+            if model.tokenizer_id != tokenizer.id:
+                errors.append({"code": "fine_tuning_tokenizer_model_mismatch", "message": "Fine-tuning tokenizer must match the base model tokenizer."})
+            if int(model.configuration["vocab_size"]) != int(tokenizer.vocab_size):
+                errors.append({"code": "fine_tuning_tokenizer_model_mismatch", "message": "Tokenizer vocabulary does not match the model vocabulary."})
+
+        tag_result = _validate_fine_tuning_tags(payload.formatting, tokenizer_object)
+        errors.extend(tag_result["errors"])
+        warnings.extend(tag_result["warnings"])
+
+        if payload.device == "cuda":
+            try:
+                import torch
+            except ModuleNotFoundError:
+                errors.append({"code": "training_device_unavailable", "message": "CUDA requires PyTorch."})
+            else:
+                if not torch.cuda.is_available():
+                    errors.append({"code": "training_device_unavailable", "message": "CUDA was requested but is not available."})
+
+        if payload.precision != "fp32":
+            errors.append({"code": "fine_tuning_label_strategy_unsupported", "message": "Web fine-tuning validation currently supports fp32 only."})
+
+        if dataset is not None:
+            records = app.state.studio_workspace._load_dataset_records(dataset)
+            errors.extend(_validate_fine_tuning_fields(records, payload.formatting))
+
+        compatibility = {
+            "status": "ready" if not errors else "blocked",
+            "base_source": "checkpoint" if payload.base_checkpoint_id else "project_model",
+            "base_checkpoint_id": payload.base_checkpoint_id,
+            "base_model_id": model.id if model is not None else model_id,
+            "dataset_id": dataset.id if dataset is not None else payload.dataset_id,
+            "tokenizer_id": tokenizer.id if tokenizer is not None else payload.tokenizer_id,
+            "model_vocabulary_size": int(model.configuration["vocab_size"]) if model is not None else None,
+            "tokenizer_vocabulary_size": int(tokenizer.vocab_size) if tokenizer is not None else None,
+            "vocabulary_compatible": not any(error["code"] in {"fine_tuning_tokenizer_model_mismatch", "fine_tuning_vocab_resize_required"} for error in errors),
+            "supports_vocab_resize": False,
+            "supported_methods": ["full", "sft"],
+            "unsupported_methods": ["lora", "qlora"],
+        }
+        return {
+            "valid": not errors,
+            "training_mode": "fine_tuning",
+            "fine_tuning_method": payload.fine_tuning_method,
+            "compatibility": compatibility,
+            "warnings": warnings,
+            "errors": errors,
+        }
+
+    def fine_tuning_preview(project_id: str, payload: FineTuningPreviewRequest) -> dict[str, Any]:
+        """Return bounded formatting, token and label-mask previews."""
+        validation = validate_fine_tuning_config(project_id, payload)
+        if not validation["valid"]:
+            return {**validation, "formatting": payload.formatting.model_dump(), "records": []}
+        dataset = app.state.studio_workspace.get_dataset(project_id, payload.dataset_id)
+        tokenizer_meta = app.state.studio_workspace.get_ready_tokenizer(project_id, payload.tokenizer_id)
+        tokenizer = app.state.studio_workspace._load_tokenizer(project_id, tokenizer_meta)
+        records = app.state.studio_workspace._load_dataset_records(dataset)
+        limit = min(max(int(payload.preview_records), 1), 5)
+        previews = []
+        for index, record in enumerate(records[:limit]):
+            formatted, spans, detected_tags = _format_fine_tuning_record(record, payload.formatting)
+            token_ids = [int(item) for item in tokenizer.encode_text(formatted)]
+            max_len = max(1, int(payload.formatting.maximum_sequence_length))
+            truncated = len(token_ids) > max_len
+            token_ids = token_ids[:max_len]
+            tokens = _tokens_from_ids(tokenizer, token_ids)
+            labels = _label_mask(tokenizer, formatted, spans, payload.formatting, token_ids)
+            unknown_id = tokenizer.get_unknown_index() if hasattr(tokenizer, "get_unknown_index") else 0
+            previews.append(
+                {
+                    "index": index,
+                    "original_record": {str(k): v for k, v in record.items()},
+                    "formatted_text": formatted,
+                    "tokens": tokens[:max_len],
+                    "token_ids": token_ids,
+                    "label_mask": labels[: len(token_ids)],
+                    "sequence_length": len(token_ids),
+                    "truncated": truncated,
+                    "unknown_token_count": sum(1 for item in token_ids if int(item) == int(unknown_id)),
+                    "special_tags_detected": detected_tags,
+                }
+            )
+        return {**validation, "formatting": payload.formatting.model_dump(), "records": previews}
+
+    def _validate_fine_tuning_tags(formatting: Any, tokenizer: Any | None) -> dict[str, Any]:
+        errors: list[dict[str, str]] = []
+        warnings: list[str] = []
+        tags = [
+            formatting.instruction_tag if formatting.dataset_format == "instruction_response" else None,
+            formatting.response_tag if formatting.dataset_format in {"instruction_response", "prompt_completion"} else None,
+            formatting.end_tag if formatting.end_behavior == "custom_end_tag" and formatting.append_end_tag else None,
+        ]
+        clean_tags = [str(tag) for tag in tags if tag is not None]
+        for tag in clean_tags:
+            if not tag.strip():
+                errors.append({"code": "fine_tuning_tag_invalid", "message": "Required tags must not be empty."})
+            if len(tag) > 80:
+                errors.append({"code": "fine_tuning_tag_invalid", "message": "Tags must be at most 80 characters."})
+            if any(ord(char) < 32 for char in tag):
+                errors.append({"code": "fine_tuning_tag_invalid", "message": "Tags must not contain control characters."})
+        if len(set(clean_tags)) != len(clean_tags):
+            errors.append({"code": "fine_tuning_tag_duplicate", "message": "Instruction, response and end tags must be distinct."})
+        reserved = {"<UNK>", "<|pad|>"}
+        tokenizer_vocab = getattr(tokenizer, "stoi", {}) if tokenizer is not None else {}
+        for tag in clean_tags:
+            if tag in reserved:
+                errors.append({"code": "fine_tuning_reserved_token_conflict", "message": f"{tag} conflicts with a reserved tokenizer token."})
+        if formatting.register_tags_as_special_tokens:
+            missing = [tag for tag in clean_tags if tag not in tokenizer_vocab]
+            if missing:
+                errors.append(
+                    {
+                        "code": "fine_tuning_vocab_resize_required",
+                        "message": "Registering these tags would change tokenizer vocabulary, but Web Studio has no safe model resize operation.",
+                    }
+                )
+        else:
+            warnings.append("Formatting tags are inserted as text and are not registered as tokenizer special tokens.")
+        if formatting.end_behavior == "tokenizer_eos":
+            eos_id = getattr(tokenizer, "eos_token_id", None)
+            if eos_id is None:
+                processor = getattr(tokenizer, "processor", None)
+                eos_id = processor.eos_id() if processor is not None and hasattr(processor, "eos_id") else None
+            if eos_id is None or int(eos_id) < 0:
+                errors.append({"code": "fine_tuning_tag_invalid", "message": "The selected tokenizer does not expose an EOS token."})
+        return {"errors": errors, "warnings": warnings}
+
+    def _validate_fine_tuning_fields(records: list[Mapping[str, Any]], formatting: Any) -> list[dict[str, str]]:
+        if not records:
+            return [{"code": "fine_tuning_dataset_invalid", "message": "Fine-tuning dataset must not be empty."}]
+        required = []
+        if formatting.dataset_format == "instruction_response":
+            required = [formatting.instruction_field, formatting.response_field]
+        elif formatting.dataset_format == "prompt_completion":
+            required = [formatting.prompt_field, formatting.completion_field]
+        elif formatting.dataset_format == "plain_text":
+            required = [formatting.text_field]
+        errors: list[dict[str, str]] = []
+        for index, record in enumerate(records[:50]):
+            for field in required:
+                value = record.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    errors.append({"code": "fine_tuning_field_missing", "message": f"Record {index} is missing non-empty field {field}."})
+                    return errors
+        return errors
+
+    def _format_fine_tuning_record(record: Mapping[str, Any], formatting: Any) -> tuple[str, dict[str, tuple[int, int]], list[str]]:
+        separator = formatting.separator
+        spans: dict[str, tuple[int, int]] = {}
+        detected_tags: list[str] = []
+        if formatting.dataset_format == "plain_text":
+            text = str(record.get(formatting.text_field, ""))
+            spans["response"] = (0, len(text))
+            return text, spans, detected_tags
+        if formatting.dataset_format == "prompt_completion":
+            prompt = str(record.get(formatting.prompt_field, ""))
+            completion = str(record.get(formatting.completion_field, ""))
+            prefix = f"{prompt}{separator}{formatting.response_tag} "
+            response_start = len(prefix)
+            text = f"{prefix}{completion}"
+            detected_tags.append(formatting.response_tag)
+        else:
+            instruction = str(record.get(formatting.instruction_field, ""))
+            response = str(record.get(formatting.response_field, ""))
+            context = ""
+            if formatting.context_field and record.get(formatting.context_field):
+                context = f"{separator}{record.get(formatting.context_field)}"
+            prefix = f"{formatting.instruction_tag} {instruction}{context}{separator}{formatting.response_tag} "
+            response_start = len(prefix)
+            text = f"{prefix}{response}"
+            detected_tags.extend([formatting.instruction_tag, formatting.response_tag])
+        if formatting.end_behavior == "custom_end_tag" and formatting.append_end_tag:
+            text = f"{text}{separator}{formatting.end_tag}"
+            detected_tags.append(formatting.end_tag)
+        spans["response"] = (response_start, len(text))
+        return text, spans, detected_tags
+
+    def _tokens_from_ids(tokenizer: Any, token_ids: list[int]) -> list[str]:
+        if hasattr(tokenizer, "decode"):
+            return [str(item) for item in tokenizer.decode(token_ids)]
+        return [str(item) for item in token_ids]
+
+    def _label_mask(tokenizer: Any, formatted: str, spans: Mapping[str, tuple[int, int]], formatting: Any, token_ids: list[int]) -> list[str]:
+        if not formatting.train_on_response_only:
+            return ["train"] * len(token_ids)
+        response_start, _ = spans.get("response", (0, len(formatted)))
+        prefix_ids = tokenizer.encode_text(formatted[:response_start])
+        ignored = min(len(prefix_ids), len(token_ids))
+        return ["ignore"] * ignored + ["train"] * (len(token_ids) - ignored)
 
     @app.exception_handler(ConfigurationError)
     async def configuration_error_handler(_: Request, exc: ConfigurationError):
@@ -361,13 +701,26 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         native_tokenizer = getattr(app.state, "arclm_tokenizer", None)
         if native_model is None or native_tokenizer is None:
             return PipelineInspectionStatusResponse(
-                available=False,
-                message="The local ArcLM inspection model and tokenizer are not configured.",
+                available=True,
+                initialized=False,
+                mode=None,
+                reason="inspection_source_not_selected",
+                supported_modes=["demo", "project_model", "checkpoint"],
+                message=(
+                    "Inspection is ready, but no source is selected. Start the educational demo, "
+                    "select a project model, or select a trained checkpoint."
+                ),
             )
         return PipelineInspectionStatusResponse(
             available=True,
+            initialized=True,
+            mode="configured",
+            reason=None,
+            supported_modes=["demo", "project_model", "checkpoint"],
             model_class=type(native_model).__name__,
             tokenizer_class=type(native_tokenizer).__name__,
+            device="cpu",
+            dtype="float32",
             supports_attention=False,
             supports_value_capture=True,
             supports_streaming=False,
@@ -378,7 +731,44 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
     def inspect_pipeline_text(payload: PipelineInspectionRequest) -> dict[str, Any]:
         """Inspecteert een prompt via de canonical native ``inspect_text`` API."""
         validate_inspection_request(payload)
-        native_model, native_tokenizer = inspection_objects()
+        if payload.source_mode == "checkpoint":
+            if not payload.project_id or not payload.checkpoint_id:
+                raise InspectionApiError(
+                    "inspection_source_not_selected",
+                    "Select a project and checkpoint before inspecting a checkpoint.",
+                    status_code=400,
+                )
+            trace = app.state.studio3_coordinator.inspect_checkpoint(
+                payload.project_id,
+                payload.checkpoint_id,
+                payload.model_dump(),
+            )
+            checkpoint = app.state.studio3_coordinator.get_checkpoint(payload.project_id, payload.checkpoint_id)
+            return enrich_trace(
+                trace,
+                source_mode="checkpoint",
+                source_label=str(checkpoint.get("name") or payload.checkpoint_id),
+                model_state="checkpoint",
+                model=checkpoint.get("model") if isinstance(checkpoint.get("model"), dict) else None,
+                tokenizer=checkpoint.get("tokenizer") if isinstance(checkpoint.get("tokenizer"), dict) else None,
+            )
+
+        model_meta: dict[str, Any] | None = None
+        tokenizer_meta: dict[str, Any] | None = None
+        source_label = "Configured native model"
+        model_state = "configured"
+        if payload.source_mode == "demo":
+            native_model, native_tokenizer = demo_inspection_objects()
+            source_label = "Educational tiny demo"
+            model_state = "untrained_demo"
+            tokenizer_meta = {"tokenizer_type": "word", "vocab_size": native_tokenizer.get_vocab_size()}
+            model_meta = {"source": "demo", "state": "untrained", "configuration": {"vocab_size": native_tokenizer.get_vocab_size(), "embed_dim": 8, "block_size": 8, "num_blocks": 1}}
+        elif payload.source_mode == "project_model":
+            native_model, native_tokenizer, model_meta, tokenizer_meta = project_model_inspection_objects(payload)
+            source_label = str(model_meta.get("name") or payload.model_id)
+            model_state = "untrained"
+        else:
+            native_model, native_tokenizer = inspection_objects()
         try:
             with app.state.arclm_inspection_lock:
                 trace = arclm.inspect_text(
@@ -396,7 +786,14 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
                 "The native inspection request could not be completed.",
                 status_code=500,
             ) from exc
-        return trace.to_dict()
+        return enrich_trace(
+            trace.to_dict(),
+            source_mode=payload.source_mode,
+            source_label=source_label,
+            model_state=model_state,
+            model=model_meta,
+            tokenizer=tokenizer_meta,
+        )
 
     @app.get("/api/project/status", response_model=ProjectStatusResponse)
     def project_status() -> ProjectStatusResponse:
@@ -496,6 +893,21 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         """Creates and starts a local native training run in the background."""
         run = app.state.training_coordinator.create_run(project_id, payload.model_dump())
         return StudioRunMetadata(**run.to_dict())
+
+    @app.post("/api/projects/{project_id}/training/pretraining/validate", response_model=TrainingModeValidationResponse)
+    def validate_project_pretraining(project_id: str, payload: PretrainingValidationRequest) -> dict[str, Any]:
+        """Validate pre-training setup without starting a run."""
+        return validate_pretraining_config(project_id, payload)
+
+    @app.post("/api/projects/{project_id}/training/finetuning/validate", response_model=TrainingModeValidationResponse)
+    def validate_project_fine_tuning(project_id: str, payload: FineTuningValidationRequest) -> dict[str, Any]:
+        """Validate fine-tuning setup without starting a run."""
+        return validate_fine_tuning_config(project_id, payload)
+
+    @app.post("/api/projects/{project_id}/training/finetuning/preview", response_model=FineTuningPreviewResponse)
+    def preview_project_fine_tuning(project_id: str, payload: FineTuningPreviewRequest) -> dict[str, Any]:
+        """Preview formatted records, token IDs and label masks without mutating data."""
+        return fine_tuning_preview(project_id, payload)
 
     @app.get("/api/projects/{project_id}/runs/{run_id}", response_model=StudioRunMetadata)
     def read_project_run(project_id: str, run_id: str) -> StudioRunMetadata:

@@ -19,6 +19,7 @@ from typing import Any, Mapping
 import torch
 from torch.utils.data import TensorDataset
 
+from arclm.finetuning import FineTuningConfig, FineTuningMode, prepare_fine_tuning_dataset
 from arclm.models import ArcLM
 from arclm.training import BaseCallback, Trainer, TrainingConfig
 
@@ -42,7 +43,12 @@ class StudioTrainingCallback(BaseCallback):
         self.run.status = "running"
         self.run.started_at = self.run.started_at or time.time()
         self.workspace.write_run(self.run)
-        self.workspace.append_event(self.run.project_id, self.run.id, _event("training_started", "Training started."))
+        mode = self.run.training_mode if self.run.training_mode != "legacy_native_training" else "pretraining"
+        self.workspace.append_event(
+            self.run.project_id,
+            self.run.id,
+            _event("training_started", f"{_mode_label(mode, self.run.fine_tuning_method)} started."),
+        )
 
     def on_step_end(self, trainer, state) -> None:
         if self.cancel_event.is_set():
@@ -106,7 +112,16 @@ class StudioTrainingCoordinator:
     def create_run(self, project_id: str, payload: Mapping[str, Any]) -> StudioRunMetadata:
         """Validate, persist, and start one native training run in the background."""
         if str(payload.get("training_type") or "native_causal_lm") != "native_causal_lm":
-            raise WorkspaceApiError("training_configuration_invalid", "training_type is not supported by Web Studio 2.", status_code=400)
+            raise WorkspaceApiError("training_configuration_invalid", "training_type is not supported by ArcLM Studio.", status_code=400)
+        training_mode = str(payload.get("training_mode") or "pretraining")
+        if training_mode not in {"pretraining", "fine_tuning"}:
+            raise WorkspaceApiError("training_mode_invalid", "training_mode must be pretraining or fine_tuning.", status_code=400)
+        if training_mode == "fine_tuning":
+            method = str(payload.get("fine_tuning_method") or "sft")
+            if method not in {"full", "sft"}:
+                raise WorkspaceApiError("fine_tuning_method_unsupported", "Only full and sft are currently supported by Studio training.", status_code=400)
+            if not payload.get("model_id") and not payload.get("base_checkpoint_id"):
+                raise WorkspaceApiError("fine_tuning_source_required", "Fine-tuning requires a base model or checkpoint.", status_code=400)
         self._validate_payload(project_id, payload)
         with self._lock:
             self._drop_finished_locked()
@@ -189,7 +204,11 @@ class StudioTrainingCoordinator:
             model_meta = self.workspace.get_model(run.project_id, run.model_id)
             records = self.workspace._load_dataset_records(dataset_meta)
             tokenizer = self.workspace._load_tokenizer(run.project_id, tokenizer_meta)
-            dataset = _tensor_dataset(records, tokenizer, dataset_meta.text_fields, int(payload.get("maximum_sequence_length") or model_meta.configuration["block_size"]))
+            max_length = int(payload.get("maximum_sequence_length") or model_meta.configuration["block_size"])
+            if run.training_mode == "fine_tuning":
+                dataset = _fine_tuning_tensor_dataset(records, tokenizer, payload, max_length)
+            else:
+                dataset = _tensor_dataset(records, tokenizer, dataset_meta.text_fields, max_length)
             if len(dataset) == 0:
                 raise WorkspaceApiError("training_dataset_invalid", "No records produced trainable token windows.", status_code=400)
 
@@ -283,6 +302,63 @@ def _tensor_dataset(records, tokenizer, fields, max_length: int) -> TensorDatase
     return TensorDataset(torch.tensor(xs, dtype=torch.long), torch.tensor(ys, dtype=torch.long))
 
 
+class _MaskedTensorDataset(torch.utils.data.Dataset):
+    """Adapts prepared SFT features to the existing Trainer ``x/y/mask`` batches."""
+
+    def __init__(self, xs: list[list[int]], ys: list[list[int]], masks: list[list[float]]):
+        self.x = torch.tensor(xs, dtype=torch.long)
+        self.y = torch.tensor(ys, dtype=torch.long)
+        self.mask = torch.tensor(masks, dtype=torch.float32)
+
+    def __len__(self) -> int:
+        return int(self.x.shape[0])
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        return {"x": self.x[index], "y": self.y[index], "mask": self.mask[index]}
+
+
+def _fine_tuning_tensor_dataset(records, tokenizer, payload: Mapping[str, Any], max_length: int):
+    formatting = dict(payload.get("fine_tuning_format") or {})
+    method = str(payload.get("fine_tuning_method") or "sft")
+    dataset_format = str(formatting.get("dataset_format") or "instruction_response")
+    config = FineTuningConfig(
+        mode=FineTuningMode.SFT if method == "sft" else FineTuningMode.CAUSAL_LM,
+        formatter="plain_text" if dataset_format == "plain_text" else dataset_format,
+        max_sequence_length=max(2, int(formatting.get("maximum_sequence_length") or max_length)),
+        train_on_prompt=not bool(formatting.get("train_on_response_only", True)),
+        append_eos_token=str(formatting.get("end_behavior") or "custom_end_tag") == "tokenizer_eos",
+        text_field=str(formatting.get("text_field") or "text"),
+        prompt_field=str(formatting.get("prompt_field") or "prompt"),
+        completion_field=str(formatting.get("completion_field") or "completion"),
+        instruction_field=str(formatting.get("instruction_field") or "instruction"),
+        input_field=str(formatting.get("context_field") or "input"),
+        response_field=str(formatting.get("response_field") or "response"),
+        skip_invalid_records=False,
+    )
+    prepared = prepare_fine_tuning_dataset(records, tokenizer, config)
+    target_length = max(2, config.max_sequence_length) - 1
+    xs: list[list[int]] = []
+    ys: list[list[int]] = []
+    masks: list[list[float]] = []
+    for feature in prepared.features:
+        input_ids = [int(item) for item in feature["input_ids"]]
+        labels = [int(item) for item in feature["labels"]]
+        if len(input_ids) < 2:
+            continue
+        x = input_ids[:-1][:target_length]
+        y = labels[1:][:target_length]
+        mask = [0.0 if label == config.ignore_index else 1.0 for label in y]
+        pad = target_length - len(x)
+        if pad > 0:
+            x.extend([0] * pad)
+            y.extend([config.ignore_index] * pad)
+            mask.extend([0.0] * pad)
+        xs.append(x)
+        ys.append(y)
+        masks.append(mask)
+    return _MaskedTensorDataset(xs, ys, masks)
+
+
 def _resolve_device(device: str) -> str:
     if device == "auto":
         return "cuda" if torch.cuda.is_available() else "cpu"
@@ -291,6 +367,13 @@ def _resolve_device(device: str) -> str:
 
 def _event(code: str, message: str, details: Mapping[str, Any] | None = None) -> dict[str, Any]:
     return {"timestamp": time.time(), "code": code, "message": message, "details": dict(details or {})}
+
+
+def _mode_label(training_mode: str, fine_tuning_method: str | None = None) -> str:
+    if training_mode == "fine_tuning":
+        method = (fine_tuning_method or "sft").upper()
+        return f"Fine-Tuning - {method}"
+    return "Pre-Training"
 
 
 def _safe_message(exc: Exception) -> str:

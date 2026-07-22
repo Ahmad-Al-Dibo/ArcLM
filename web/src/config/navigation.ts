@@ -101,6 +101,34 @@ export const navigationItems: NavigationItem[] = [
     plannedCapabilities: ["Training jobs", "Run monitoring", "Checkpoint metadata"]
   },
   {
+    title: "Pre-Training",
+    href: "/projects",
+    shortLabel: "PT",
+    section: "Train",
+    description: "Train a newly initialized native ArcLM model from project data.",
+    status: "available",
+    milestone: "ArcLM Web Studio 4",
+    domain: "Training",
+    backend: "Project Pre-Training Studio lives at /projects/[projectId]/train/pretraining.",
+    simpleNote: "Starts from initialized native ArcLM parameters.",
+    advancedNotes: ["No checkpoint starting source.", "No external downloads."],
+    plannedCapabilities: ["Dataset selection", "Tokenizer/model compatibility", "Native Trainer run"]
+  },
+  {
+    title: "Fine-Tuning",
+    href: "/projects",
+    shortLabel: "FT",
+    section: "Train",
+    description: "Fine-tune an existing native project model or compatible checkpoint.",
+    status: "available",
+    milestone: "ArcLM Web Studio 4",
+    domain: "Fine-Tuning",
+    backend: "Project Fine-Tuning Studio lives at /projects/[projectId]/train/finetuning.",
+    simpleNote: "Formats records through the backend and previews token IDs and label masks before starting.",
+    advancedNotes: ["Supported methods: full and SFT.", "LoRA and QLoRA are not exposed in Studio."],
+    plannedCapabilities: ["Base-source selection", "Formatting preview", "Run metadata"]
+  },
+  {
     title: "Runs",
     href: "/projects",
     shortLabel: "RU",
@@ -228,6 +256,12 @@ export function getNavigationItem(pathname: string) {
   }
   if (pathname.startsWith("/projects/") && pathname.endsWith("/train")) {
     return navigationItems.find((item) => item.title === "Training") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.endsWith("/train/pretraining")) {
+    return navigationItems.find((item) => item.title === "Pre-Training") ?? navigationItems[0];
+  }
+  if (pathname.startsWith("/projects/") && pathname.endsWith("/train/finetuning")) {
+    return navigationItems.find((item) => item.title === "Fine-Tuning") ?? navigationItems[0];
   }
   if (pathname.startsWith("/projects/") && pathname.includes("/runs")) {
     return navigationItems.find((item) => item.title === "Runs") ?? navigationItems[0];
