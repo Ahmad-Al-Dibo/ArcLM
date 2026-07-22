@@ -7,6 +7,7 @@ import json
 import math
 import os
 import platform
+import random
 import shutil
 import tempfile
 import time
@@ -901,6 +902,44 @@ def build_reproducibility_metadata(
     }
 
 
+def set_reproducible_seed(seed: int, *, deterministic: bool = False) -> dict[str, Any]:
+    """Set Python, NumPy, and PyTorch seeds where available.
+
+    This improves repeatability for local CPU/GPU runs, but bit-identical
+    results are still backend- and hardware-dependent.
+    """
+
+    seed = int(seed)
+    random.seed(seed)
+    numpy_seeded = False
+    try:
+        import numpy as np
+
+        np.random.seed(seed)
+        numpy_seeded = True
+    except Exception:
+        numpy_seeded = False
+    torch.manual_seed(seed)
+    cuda_seeded = False
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        cuda_seeded = True
+    if deterministic:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+    return {
+        "seed": seed,
+        "python_seeded": True,
+        "numpy_seeded": numpy_seeded,
+        "torch_cpu_seeded": True,
+        "torch_cuda_seeded": cuda_seeded,
+        "deterministic_algorithms": bool(torch.are_deterministic_algorithms_enabled()),
+        "determinism_limitations": (
+            "Identical results are not guaranteed across different hardware, "
+            "PyTorch builds, CUDA kernels, or optional backends."
+        ),
+    }
+
+
 class ExperimentTracker:
     """Oude compatibiliteitswrapper bovenop lokale run tracking.
 
@@ -1442,5 +1481,6 @@ __all__ = [
     "list_runs",
     "load_run",
     "load_run_manifest",
+    "set_reproducible_seed",
     "validate_run",
 ]
