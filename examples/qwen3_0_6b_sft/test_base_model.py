@@ -102,6 +102,7 @@ def generate_answer(tokenizer, model, prompt: str, max_new_tokens: int):
             eos_token_id=tokenizer.eos_token_id,
         )
     generated_ids = output_ids[0][inputs["input_ids"].shape[-1]:]
+
     return tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
 
 

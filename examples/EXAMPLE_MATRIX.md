@@ -25,6 +25,8 @@ Run examples from the repository root unless a README says otherwise.
 | `19_external_multi_gpu_validation_matrix.py` | Expert | External multi-GPU validation planning | CPU | No | None | Planning/runtime-gate example |
 | `20_ddp_cpu_trainer.py` | Expert | CPU DDP trainer smoke | CPU | No | PyTorch distributed availability | Runnable local example |
 | `qwen3_0_6b_sft/` | Advanced | Qwen3 structured-output LoRA SFT | CUDA recommended | Yes for model download | `transformers`, optional PEFT/quantization stack | Customer workflow example |
+| `qwen_thinking/` | Advanced | Qwen thinking-mode usage and LoRA SFT | CUDA recommended | Yes for model download | `transformers`, optional PEFT | Folder workflow example |
+| `gemma/` | Advanced | Gemma usage, LoRA SFT, adapter fallback | CUDA recommended | Yes for model download | `transformers`, optional PEFT | Folder workflow example |
 
 ## Requested Future Folder Layout
 

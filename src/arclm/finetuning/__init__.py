@@ -19,9 +19,12 @@ from .workflow import (
     FineTuningDatasetReport,
     FineTuningResult,
     PreparedFineTuningDataset,
+    SFTRecordContract,
     fine_tune,
+    get_sft_record_contract,
     normalize_fine_tuning_example,
     prepare_fine_tuning_dataset,
+    validate_sft_records,
 )
 
 __all__ = [
@@ -37,6 +40,7 @@ __all__ = [
     "PreparedFineTuningDataset",
     "SFTConfig",
     "SFTDataCollator",
+    "SFTRecordContract",
     "SFTTrainer",
     "SFTTrainingResult",
     "TokenizerAdapter",
@@ -48,8 +52,10 @@ __all__ = [
     "format_text_example",
     "mask_labels",
     "fine_tune",
+    "get_sft_record_contract",
     "normalize_fine_tuning_example",
     "pack_sequences",
     "prepare_fine_tuning_dataset",
     "train_sft",
+    "validate_sft_records",
 ]

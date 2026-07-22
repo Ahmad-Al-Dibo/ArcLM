@@ -244,3 +244,43 @@ export type DatasetInspectionResponse = {
   metadata: DatasetInspectionMetadata;
   warnings: DatasetWarning[];
 };
+
+export type PipelineInspectionRequest = {
+  text: string;
+  include_values?: boolean;
+  max_values?: number;
+};
+
+export type PipelineTraceResponse = {
+  input_text: string;
+  tokens: string[];
+  token_ids: number[];
+  sequence_length: number;
+  input_shape: number[];
+  embedding_shape: number[];
+  logits_shape: number[];
+  selected_token_id: number;
+  selected_token: string;
+  generated_text: string;
+  device: string;
+  dtype: string;
+  model_class: string;
+  tokenizer_class: string;
+  inspected_steps: number;
+  generation_steps: number;
+  attention_available: boolean;
+  attention_note: string;
+  warnings: string[];
+  values: Record<string, number[]> | null;
+};
+
+export type PipelineInspectionStatusResponse = {
+  available: boolean;
+  model_class: string | null;
+  tokenizer_class: string | null;
+  supports_attention: boolean;
+  supports_value_capture: boolean;
+  supports_streaming: boolean;
+  supports_external_models: boolean;
+  message: string | null;
+};

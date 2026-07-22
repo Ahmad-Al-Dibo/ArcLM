@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 CapabilityStatus = Literal[
@@ -176,6 +176,54 @@ class DatasetInspectionResponse(BaseModel):
     statistics: DatasetStatistics
     metadata: DatasetInspectionMetadata
     warnings: list[DatasetWarning] = Field(default_factory=list)
+
+
+class PipelineInspectionRequest(BaseModel):
+    """Request voor een read-only native pipeline-inspectie."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    include_values: bool = False
+    max_values: int = 20
+
+
+class PipelineTraceResponse(BaseModel):
+    """JSON-safe response uit ``PipelineTrace.to_dict()``."""
+
+    input_text: str
+    tokens: list[str]
+    token_ids: list[int]
+    sequence_length: int
+    input_shape: list[int]
+    embedding_shape: list[int]
+    logits_shape: list[int]
+    selected_token_id: int
+    selected_token: str
+    generated_text: str
+    device: str
+    dtype: str
+    model_class: str
+    tokenizer_class: str
+    inspected_steps: int
+    generation_steps: int
+    attention_available: bool
+    attention_note: str
+    warnings: list[str] = Field(default_factory=list)
+    values: dict[str, list[int | float]] | None = None
+
+
+class PipelineInspectionStatusResponse(BaseModel):
+    """Veilige status van de lokale native inspectie-capability."""
+
+    available: bool
+    model_class: str | None = None
+    tokenizer_class: str | None = None
+    supports_attention: bool = False
+    supports_value_capture: bool = True
+    supports_streaming: bool = False
+    supports_external_models: bool = False
+    message: str | None = None
 
 
 class HealthResponse(BaseModel):

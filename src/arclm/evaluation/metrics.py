@@ -1,4 +1,4 @@
-"""Basis metrics voor evaluatie."""
+"""Canonical metric implementations used by evaluation and diagnostics."""
 
 from __future__ import annotations
 
@@ -8,6 +8,14 @@ import torch
 
 from ..exceptions import MetricError
 from .base import BaseMetric
+
+
+def calculate_perplexity(loss: float) -> float:
+    """Return perplexity for a cross-entropy loss value."""
+
+    if loss < 0 or math.isnan(loss) or math.isinf(loss):
+        return float("inf")
+    return math.exp(loss)
 
 
 class LossMetric(BaseMetric):
@@ -66,7 +74,7 @@ class Perplexity(BaseMetric):
             return None
         if not math.isfinite(value) or value > self.max_loss:
             return float("inf")
-        return math.exp(value)
+        return calculate_perplexity(value)
 
     def reset(self) -> None:
         """Maakt de opgeslagen loss leeg."""

@@ -14,11 +14,32 @@ import torch
 from torch.utils.data import Dataset
 
 from .._version import __version__
+from ..datasets import DatasetValidationIssue, DatasetValidationResult
 from ..exceptions import FineTuningError, FormattingError, TokenizerAdapterError
 from ..training import TrainingConfig
 from .adapters import ModelAdapter, TokenizerAdapter
 from .config import FineTuningConfig, FineTuningMode
 from .full import FullFineTuner
+
+
+@dataclass(frozen=True)
+class SFTRecordContract:
+    """Public description of accepted SFT record fields."""
+
+    format: str
+    required_fields: tuple[str, ...]
+    optional_fields: tuple[str, ...] = ()
+    description: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return JSON-safe contract data."""
+
+        return {
+            "format": self.format,
+            "required_fields": list(self.required_fields),
+            "optional_fields": list(self.optional_fields),
+            "description": self.description,
+        }
 
 
 @dataclass(frozen=True)
@@ -96,6 +117,7 @@ class FineTuningResult:
     checkpoint_path: str | None = None
     peft_config: Any | None = None
     peft_result: Any | None = None
+    reproducibility_metadata: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Geeft alleen veilige metadata terug, geen runtime objecten."""
@@ -124,6 +146,7 @@ class FineTuningResult:
                 if self.peft_result is not None and hasattr(self.peft_result, "to_dict")
                 else None
             ),
+            "reproducibility_metadata": self.reproducibility_metadata,
         }
 
     def save_model_artifact(
@@ -304,6 +327,77 @@ def prepare_fine_tuning_dataset(
     return PreparedFineTuningDataset(features, report)
 
 
+def get_sft_record_contract(formatter: str = "instruction_response") -> SFTRecordContract:
+    """Describe one supported SFT record format."""
+
+    formatter = "plain_text" if formatter == "text" else formatter
+    contracts = {
+        "plain_text": SFTRecordContract(
+            format="plain_text",
+            required_fields=("text",),
+            description="Single text field used for causal-LM fine-tuning.",
+        ),
+        "prompt_completion": SFTRecordContract(
+            format="prompt_completion",
+            required_fields=("prompt", "completion"),
+            description="Prompt text followed by a trainable completion.",
+        ),
+        "instruction_response": SFTRecordContract(
+            format="instruction_response",
+            required_fields=("instruction", "response"),
+            optional_fields=("input", "output", "completion", "answer"),
+            description="Instruction plus response, with output/completion/answer accepted as response aliases.",
+        ),
+        "chat": SFTRecordContract(
+            format="chat",
+            required_fields=("messages",),
+            description="List of role/content chat messages with at least one assistant message for SFT.",
+        ),
+    }
+    if formatter not in contracts:
+        raise FineTuningError("SFT record formatter is not supported")
+    return contracts[formatter]
+
+
+def validate_sft_records(
+    records: Iterable[Mapping[str, Any]],
+    config: FineTuningConfig | None = None,
+    *,
+    strict: bool = True,
+) -> DatasetValidationResult:
+    """Validate SFT records through the canonical fine-tuning normalizer."""
+
+    ft_config = config or FineTuningConfig()
+    valid_records: list[dict[str, Any]] = []
+    issues: list[DatasetValidationIssue] = []
+    raw_records = list(records)
+    for index, record in enumerate(raw_records):
+        try:
+            normalize_fine_tuning_example(record, index, ft_config)
+        except Exception as error:
+            issues.append(
+                DatasetValidationIssue(
+                    index=index,
+                    field=None,
+                    code="invalid_sft_record",
+                    message=_safe_error(error),
+                )
+            )
+        else:
+            valid_records.append(dict(record))
+    result = DatasetValidationResult(
+        valid_records=valid_records,
+        issues=issues,
+        total_records=len(raw_records),
+    )
+    if strict and issues:
+        first = issues[0]
+        raise FineTuningError(
+            f"SFT validation failed at record {first.index}: {first.message}"
+        )
+    return result
+
+
 def normalize_fine_tuning_example(
     record: Mapping[str, Any],
     source_index: int,
@@ -379,6 +473,7 @@ def fine_tune(
     peft_config: Any | None = None,
     resume_from_checkpoint=None,
     save_checkpoint: bool = False,
+    reproducibility_metadata: Mapping[str, Any] | None = None,
 ) -> FineTuningResult:
     """Voert full-parameter fine-tuning uit met de bestaande Trainer."""
     if loaded_model is not None:
@@ -441,6 +536,7 @@ def fine_tune(
         checkpoint_path=checkpoint_path,
         peft_config=peft_config,
         peft_result=peft_result,
+        reproducibility_metadata=dict(reproducibility_metadata or {}),
     )
 
 
@@ -531,6 +627,8 @@ def _normalize_instruction(
 ) -> NormalizedSFTExample:
     """Normaliseert instruction/input/response records."""
     instruction = _required_string(record, config.instruction_field, "instruction")
+    if not instruction.strip():
+        raise FormattingError("instruction must not be empty")
     response = _read_response(record, config)
     if response is None:
         raise FormattingError("response field is required")

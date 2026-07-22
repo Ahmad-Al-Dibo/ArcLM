@@ -115,6 +115,20 @@ export const navigationItems: NavigationItem[] = [
     plannedCapabilities: ["Prompt input", "Generation settings", "Result preview"]
   },
   {
+    title: "Pipeline Learning",
+    href: "/learn/pipeline",
+    shortLabel: "LP",
+    section: "Build",
+    description: "Inspect one native ArcLM generation step visually.",
+    status: "available",
+    milestone: "Transparent Pipeline Inspection",
+    domain: "Learning",
+    backend: "Uses POST /api/inspection/text with a configured native model and tokenizer.",
+    simpleNote: "Shows tokenizer, tensor-shape, logits, selected-token, and decoded-output stages.",
+    advancedNotes: ["Calls arclm.inspect_text through the FastAPI backend.", "No prompts are stored by the frontend."],
+    plannedCapabilities: ["Attention visualization later", "Streaming later", "External model tracing later"]
+  },
+  {
     title: "Plugins",
     href: "/plugins",
     shortLabel: "PL",

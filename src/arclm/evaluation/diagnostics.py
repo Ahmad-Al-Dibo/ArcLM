@@ -1,6 +1,10 @@
-"""
-Diagnostics and concept benchmarks for trained language models.
-"""
+"""Diagnostic reports built on ArcLM's canonical evaluation pieces.
+
+The public helpers here inspect model outputs, tokenizer coverage, concept
+benchmarks, and legacy metrics reports. Reusable metric math belongs in
+``arclm.evaluation.metrics``; this module focuses on interpretation and report
+formatting for students debugging trained models.
+"""
 
 from dataclasses import dataclass
 
@@ -10,6 +14,7 @@ from ..configs import Config
 from ..datasets import prepare_data
 from ..inference import Generator
 from ..training import build_model, build_trainer
+from .metrics import Accuracy, calculate_perplexity
 
 
 @dataclass
@@ -346,30 +351,7 @@ def run_long_context_evaluation(
     return results
 
 
-# ============================================================================
-# P4-3: COMPREHENSIVE METRICS (Production Diagnostics)
-# ============================================================================
-
-def calculate_perplexity(loss):
-    """
-    Calculate perplexity from cross-entropy loss.
-    
-    Perplexity = exp(loss)
-    Lower is better (1.0 = perfect prediction)
-    
-    Args:
-        loss (float): Cross-entropy loss value
-        
-    Returns:
-        float: Perplexity value
-    """
-    import math
-    if loss < 0 or math.isnan(loss) or math.isinf(loss):
-        return float('inf')
-    return math.exp(loss)
-
-
-def calculate_metrics(model, val_loader, config, device="cpu"):
+def calculate_metrics(model, val_loader, config, device="cpu"):
     """
     Calculate comprehensive evaluation metrics.
     
@@ -382,13 +364,12 @@ def calculate_metrics(model, val_loader, config, device="cpu"):
     Returns:
         MetricsReport: Metrics dictionary
     """
-    import math
-    from datetime import datetime
-    
-    model.eval()
-    total_loss = 0.0
-    total_tokens = 0
-    correct_predictions = 0
+    from datetime import datetime
+
+    model.eval()
+    total_loss = 0.0
+    total_tokens = 0
+    accuracy_metric = Accuracy()
     
     with torch.no_grad():
         for batch_idx, (x, y) in enumerate(val_loader):
@@ -409,24 +390,22 @@ def calculate_metrics(model, val_loader, config, device="cpu"):
             total_loss += loss.item() * batch_size
             total_tokens += batch_size
             
-            # Count correct predictions
-            predictions = logits.argmax(dim=-1)
-            correct = (predictions == y).sum().item()
-            correct_predictions += correct
-    
-    # Calculate final metrics
-    avg_loss = total_loss / total_tokens if total_tokens > 0 else float('inf')
-    perplexity = calculate_perplexity(avg_loss)
-    accuracy = correct_predictions / total_tokens if total_tokens > 0 else 0.0
-    
-    return MetricsReport(
-        perplexity=perplexity,
-        avg_loss=avg_loss,
-        total_tokens=total_tokens,
-        correct_predictions=correct_predictions,
-        accuracy=accuracy,
-        timestamp=datetime.now().isoformat(),
-    )
+            # Reuse the canonical token-accuracy metric instead of duplicating it.
+            accuracy_metric.update(logits, y)
+
+    # Calculate final metrics
+    avg_loss = total_loss / total_tokens if total_tokens > 0 else float('inf')
+    perplexity = calculate_perplexity(avg_loss)
+    accuracy = accuracy_metric.compute() or 0.0
+
+    return MetricsReport(
+        perplexity=perplexity,
+        avg_loss=avg_loss,
+        total_tokens=total_tokens,
+        correct_predictions=accuracy_metric.correct,
+        accuracy=accuracy,
+        timestamp=datetime.now().isoformat(),
+    )
 
 
 def export_metrics_to_json(metrics_report, filepath):

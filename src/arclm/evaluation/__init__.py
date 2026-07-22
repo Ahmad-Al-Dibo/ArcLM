@@ -12,7 +12,6 @@ from .diagnostics import (
     TopKPrediction,
     build_training_diagnostics_report,
     calculate_metrics,
-    calculate_perplexity,
     export_metrics_to_json,
     export_metrics_to_markdown,
     format_concept_benchmark_report,
@@ -24,8 +23,8 @@ from .diagnostics import (
     score_concept_relationships,
 )
 from .evaluator import Evaluator, evaluate
-from .metrics import Accuracy, LossMetric, Perplexity
-from .result import EvaluationResult
+from .metrics import Accuracy, LossMetric, Perplexity, calculate_perplexity
+from .result import EvaluationReport, EvaluationResult, build_evaluation_report
 
 __all__ = [
     "Accuracy",
@@ -36,6 +35,7 @@ __all__ = [
     "ConceptBenchmarkCase",
     "ConceptBenchmarkResult",
     "EvaluationConfig",
+    "EvaluationReport",
     "EvaluationResult",
     "Evaluator",
     "LossMetric",
@@ -43,6 +43,7 @@ __all__ = [
     "MetricsReport",
     "Perplexity",
     "TopKPrediction",
+    "build_evaluation_report",
     "build_training_diagnostics_report",
     "calculate_metrics",
     "calculate_perplexity",

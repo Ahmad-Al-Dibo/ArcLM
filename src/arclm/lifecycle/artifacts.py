@@ -20,7 +20,7 @@ import torch
 from .._version import __version__
 from ..configs import Config
 from ..exceptions import ModelLoadError, OptionalDependencyError
-from ..models import ArcLM, AutoModel, MiniGPT
+from ..models import ArcLM, AutoModel
 from ..tokenizers import SentencePieceTokenizer, Tokenizer
 
 
@@ -206,7 +206,7 @@ def save_model_artifact(
         resolved_source = source_type or _infer_artifact_source_type(model)
         if resolved_source not in MODEL_SOURCE_TYPES_FOR_ARTIFACTS:
             raise ArtifactError("Artifact model source type is not supported")
-        if resolved_source == "native_checkpoint" and not isinstance(model, (ArcLM, MiniGPT)):
+        if resolved_source == "native_checkpoint" and not isinstance(model, ArcLM):
             raise ArtifactError("Native ArcLM artifacts require an ArcLM model")
         if resolved_source == "huggingface_folder":
             model_info = _save_huggingface_model(model, staging)
@@ -408,7 +408,7 @@ def _make_artifact_id() -> str:
 
 def _infer_artifact_source_type(model: torch.nn.Module) -> str:
     """Bepaalt het artifact-brontype zonder optionele imports."""
-    if isinstance(model, (ArcLM, MiniGPT)):
+    if isinstance(model, ArcLM):
         return "native_checkpoint"
     if hasattr(model, "save_pretrained") and hasattr(model, "config"):
         return "huggingface_folder"
@@ -432,7 +432,7 @@ def _model_config_dict(
             values = dict(config.to_dict())
         else:
             values = dict(config)
-    elif isinstance(model, (ArcLM, MiniGPT)):
+    elif isinstance(model, ArcLM):
         values = _infer_native_config(model)
     else:
         values = {}

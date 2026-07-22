@@ -3,6 +3,8 @@ export const apiEndpoints = {
   environment: "/api/environment",
   capabilities: "/api/capabilities",
   projectStatus: "/api/project/status",
+  pipelineInspection: "/api/inspection/text",
+  pipelineInspectionStatus: "/api/inspection/status",
   datasets: "/api/datasets",
   datasetInspection: (datasetId: string) => `/api/datasets/${encodeURIComponent(datasetId)}/inspection`,
   datasetRoots: "/api/dataset-roots",

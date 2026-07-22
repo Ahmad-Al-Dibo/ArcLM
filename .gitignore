@@ -26,7 +26,7 @@ data/*
 notebooks/
 adapter/
 dataset/
-datasets/
+/datasets/
 !tests/web/datasets/
 !tests/web/datasets/**
 !web/src/features/datasets/

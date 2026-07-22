@@ -1,7 +1,11 @@
-﻿"""
-Trainer Module - Training loop and model management
-"""
+"""Native ArcLM training loop.
 
+This module owns single-device training, optional distributed wrapping,
+precision gates, callbacks, validation, and checkpoint save/load/resume. The
+main path is: build or receive a DataLoader, move each batch to the selected
+device, run the model, compute loss, backpropagate, step optimizer/scheduler,
+and periodically save checkpoints.
+"""
 import copy
 import inspect
 import math
@@ -44,6 +48,10 @@ class Trainer(BaseTrainer):
 
     De trainer ondersteunt de oude ArcLM API met `train(loader, epochs)` en
     de nieuwe API met `train_dataset` en `TrainingConfig`.
+    Inputs are PyTorch datasets/loaders that yield ``(inputs, labels)`` or
+    dictionaries with token tensors. Outputs are a ``TrainingState`` plus model
+    weights/checkpoints. Extension points are callbacks, collate functions,
+    optimizer/scheduler settings, and subclasses for narrow behavior changes.
     """
     
     def __init__(

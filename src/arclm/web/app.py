@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from threading import Lock
 from typing import Any
 
 import arclm
@@ -23,11 +24,28 @@ from .schemas import (
     EnvironmentResponse,
     ErrorResponse,
     HealthResponse,
+    PipelineInspectionRequest,
+    PipelineInspectionStatusResponse,
+    PipelineTraceResponse,
     ProjectStatusResponse,
 )
 from .services import get_capabilities, get_environment, get_project_status
 
 logger = logging.getLogger(__name__)
+
+MAX_INSPECTION_TEXT_LENGTH = 2_000
+MAX_INSPECTION_VALUES = 50
+
+
+class InspectionApiError(Exception):
+    """Fout die veilig naar de inspection API kan worden vertaald."""
+
+    def __init__(self, code: str, message: str, status_code: int = 400):
+        """Bewaart een stabiele foutcode en een Engelse melding."""
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.status_code = status_code
 
 
 def _optional_fastapi() -> tuple[Any, Any, Any, Any, Any, Any, Any]:
@@ -53,11 +71,13 @@ def _error_payload(code: str, message: str) -> dict[str, dict[str, str]]:
     return {"error": {"code": code, "message": message}}
 
 
-def create_app(config: WebConfig | None = None):
+def create_app(config: WebConfig | None = None, *, model: Any | None = None, tokenizer: Any | None = None):
     """Maakt de lokale ArcLM Web API.
 
     De functie start geen server, laadt geen modellen en doet geen hardware-
     detectie bij import. Routes lezen alleen veilige, read-only informatie.
+    Een native model/tokenizer kan expliciet worden geinjecteerd voor de
+    read-only pipeline-inspectie.
     """
     FastAPI, HTTPException, Request, CORSMiddleware, JSONResponse, StarletteHTTPException, _ = _optional_fastapi()
     globals()["Request"] = Request
@@ -80,6 +100,9 @@ def create_app(config: WebConfig | None = None):
     app.state.dataset_source_manager = DatasetSourceManager(web_config)
     app.state.dataset_catalogue = DatasetCatalogue(web_config, source_manager=app.state.dataset_source_manager)
     app.state.dataset_inspector = DatasetInspector(web_config)
+    app.state.arclm_model = model
+    app.state.arclm_tokenizer = tokenizer
+    app.state.arclm_inspection_lock = Lock()
 
     app.add_middleware(
         CORSMiddleware,
@@ -109,6 +132,39 @@ def create_app(config: WebConfig | None = None):
                 "dataset_source_origin_rejected",
                 "Dataset source management requires an approved local origin.",
                 status_code=403,
+            )
+
+    def inspection_objects() -> tuple[Any, Any]:
+        """Geeft het geinjecteerde native model/tokenizer paar terug."""
+        native_model = getattr(app.state, "arclm_model", None)
+        native_tokenizer = getattr(app.state, "arclm_tokenizer", None)
+        if native_model is None or native_tokenizer is None:
+            raise InspectionApiError(
+                "native_model_not_configured",
+                "The local ArcLM inspection model and tokenizer are not configured.",
+                status_code=409,
+            )
+        return native_model, native_tokenizer
+
+    def validate_inspection_request(payload: PipelineInspectionRequest) -> None:
+        """Controleert clientopties voordat de native trace wordt gemaakt."""
+        if not payload.text.strip():
+            raise InspectionApiError(
+                "inspection_text_empty",
+                "text must contain at least one non-whitespace character.",
+                status_code=400,
+            )
+        if len(payload.text) > MAX_INSPECTION_TEXT_LENGTH:
+            raise InspectionApiError(
+                "inspection_text_too_long",
+                f"text must be at most {MAX_INSPECTION_TEXT_LENGTH} characters.",
+                status_code=413,
+            )
+        if payload.max_values < 1 or payload.max_values > MAX_INSPECTION_VALUES:
+            raise InspectionApiError(
+                "inspection_values_limit_invalid",
+                f"max_values must be between 1 and {MAX_INSPECTION_VALUES}.",
+                status_code=400,
             )
 
     @app.exception_handler(ConfigurationError)
@@ -153,6 +209,14 @@ def create_app(config: WebConfig | None = None):
             content=_error_payload(exc.code, exc.message),
         )
 
+    @app.exception_handler(InspectionApiError)
+    async def inspection_error_handler(_: Request, exc: InspectionApiError):
+        """Zet inspectiefouten om naar het vaste foutformaat."""
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_payload(exc.code, exc.message),
+        )
+
     @app.exception_handler(Exception)
     async def unexpected_error_handler(_: Request, exc: Exception):
         """Verbergt interne details bij onverwachte fouten."""
@@ -176,6 +240,50 @@ def create_app(config: WebConfig | None = None):
     def capabilities() -> CapabilitiesResponse:
         """Geeft de huidige ArcLM mogelijkheden terug."""
         return get_capabilities()
+
+    @app.get("/api/inspection/status", response_model=PipelineInspectionStatusResponse)
+    def inspection_status() -> PipelineInspectionStatusResponse:
+        """Geeft veilige capability-informatie voor native inspectie terug."""
+        native_model = getattr(app.state, "arclm_model", None)
+        native_tokenizer = getattr(app.state, "arclm_tokenizer", None)
+        if native_model is None or native_tokenizer is None:
+            return PipelineInspectionStatusResponse(
+                available=False,
+                message="The local ArcLM inspection model and tokenizer are not configured.",
+            )
+        return PipelineInspectionStatusResponse(
+            available=True,
+            model_class=type(native_model).__name__,
+            tokenizer_class=type(native_tokenizer).__name__,
+            supports_attention=False,
+            supports_value_capture=True,
+            supports_streaming=False,
+            supports_external_models=False,
+        )
+
+    @app.post("/api/inspection/text", response_model=PipelineTraceResponse)
+    def inspect_pipeline_text(payload: PipelineInspectionRequest) -> dict[str, Any]:
+        """Inspecteert een prompt via de canonical native ``inspect_text`` API."""
+        validate_inspection_request(payload)
+        native_model, native_tokenizer = inspection_objects()
+        try:
+            with app.state.arclm_inspection_lock:
+                trace = arclm.inspect_text(
+                    model=native_model,
+                    tokenizer=native_tokenizer,
+                    text=payload.text,
+                    include_values=payload.include_values,
+                    max_values=payload.max_values,
+                )
+        except (TypeError, ValueError) as exc:
+            raise InspectionApiError("inspection_failed", str(exc), status_code=400) from exc
+        except RuntimeError as exc:
+            raise InspectionApiError(
+                "inspection_runtime_failed",
+                "The native inspection request could not be completed.",
+                status_code=500,
+            ) from exc
+        return trace.to_dict()
 
     @app.get("/api/project/status", response_model=ProjectStatusResponse)
     def project_status() -> ProjectStatusResponse:

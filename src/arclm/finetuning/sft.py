@@ -1,4 +1,11 @@
-"""Public supervised fine-tuning helpers."""
+"""Supervised fine-tuning entry point for external causal LMs.
+
+``train_sft`` owns the Hugging Face SFT path: read instruction/chat records,
+format prompts, tokenize, build labels with optional assistant-only masking,
+run a small training loop, and save metadata plus optional LoRA/full-model
+outputs. Native ArcLM SFT-style training is handled by the dataset, collator,
+``SFTTrainer`` and ``Trainer`` classes elsewhere in ``arclm.finetuning``.
+"""
 
 from __future__ import annotations
 

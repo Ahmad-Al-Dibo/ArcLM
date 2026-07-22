@@ -194,12 +194,27 @@ def build_checkpoint_metadata(
     scheduler_type = type(trainer.scheduler).__name__ if trainer.scheduler is not None else None
     dataset = getattr(trainer, "train_dataset", None)
     dataloader = getattr(trainer, "train_dataloader", None)
+    model = trainer._raw_model() if hasattr(trainer, "_raw_model") else trainer.model
+    tokenizer_info = dict(lifecycle_metadata.get("tokenizer") or {})
+    model_configuration = {
+        **dict(config),
+        "vocab_size": getattr(model, "vocab_size", config.get("vocab_size")),
+        "embed_dim": getattr(model, "embed_dim", config.get("embed_dim")),
+        "block_size": getattr(model, "block_size", config.get("block_size")),
+        "num_blocks": getattr(model, "num_blocks", config.get("num_blocks")),
+    }
     return _json_safe(
         {
             "checkpoint_format": CHECKPOINT_FORMAT,
             "checkpoint_version": CHECKPOINT_VERSION,
             "arclm_version": __version__,
             "pytorch_version": str(torch.__version__),
+            "model_source": "native_arclm",
+            "model_task": "causal_language_modeling",
+            "architecture": type(model).__name__,
+            "model_configuration": model_configuration,
+            "tokenizer_information": tokenizer_info,
+            "training_configuration": dict(config),
             "created_at": time.time(),
             "run_id": getattr(trainer, "run_id", None),
             "global_step": getattr(trainer, "global_step", 0),

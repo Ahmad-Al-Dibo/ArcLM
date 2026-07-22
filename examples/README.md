@@ -37,6 +37,8 @@ Deze voorbeelden hebben extra dependencies of modeldownloads nodig:
 ## Geavanceerde Workflow
 
 - `qwen3_0_6b_sft/`: Qwen3-0.6B LoRA SFT workflow voor gestructureerde JSON-output.
+- `qwen_thinking/`: Qwen thinking-mode usage/training workflow met `enable_thinking`.
+- `gemma/`: Gemma usage/training workflow met lokale adapter-fallback via base classes.
 
 ## Voorbeeldmatrix
 

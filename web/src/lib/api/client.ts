@@ -16,6 +16,9 @@ import type {
   DatasetWarning,
   EnvironmentResponse,
   HealthResponse,
+  PipelineInspectionRequest,
+  PipelineInspectionStatusResponse,
+  PipelineTraceResponse,
   ProjectStatusResponse,
   TextLengthStatistics
 } from "./schemas";
@@ -233,6 +236,64 @@ function isDatasetInspectionResponse(value: unknown): value is DatasetInspection
   );
 }
 
+function isNumberArray(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every(isNumber);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(isString);
+}
+
+function isPipelineValues(value: unknown): value is Record<string, number[]> | null {
+  if (value === null) {
+    return true;
+  }
+  if (!isRecord(value)) {
+    return false;
+  }
+  return Object.values(value).every(isNumberArray);
+}
+
+function isPipelineTraceResponse(value: unknown): value is PipelineTraceResponse {
+  return (
+    isRecord(value) &&
+    isString(value.input_text) &&
+    isStringArray(value.tokens) &&
+    isNumberArray(value.token_ids) &&
+    isNumber(value.sequence_length) &&
+    isNumberArray(value.input_shape) &&
+    isNumberArray(value.embedding_shape) &&
+    isNumberArray(value.logits_shape) &&
+    isNumber(value.selected_token_id) &&
+    isString(value.selected_token) &&
+    isString(value.generated_text) &&
+    isString(value.device) &&
+    isString(value.dtype) &&
+    isString(value.model_class) &&
+    isString(value.tokenizer_class) &&
+    isNumber(value.inspected_steps) &&
+    isNumber(value.generation_steps) &&
+    isBoolean(value.attention_available) &&
+    isString(value.attention_note) &&
+    isStringArray(value.warnings) &&
+    isPipelineValues(value.values)
+  );
+}
+
+function isPipelineInspectionStatusResponse(value: unknown): value is PipelineInspectionStatusResponse {
+  return (
+    isRecord(value) &&
+    isBoolean(value.available) &&
+    (value.model_class === null || isString(value.model_class)) &&
+    (value.tokenizer_class === null || isString(value.tokenizer_class)) &&
+    isBoolean(value.supports_attention) &&
+    isBoolean(value.supports_value_capture) &&
+    isBoolean(value.supports_streaming) &&
+    isBoolean(value.supports_external_models) &&
+    (value.message === null || isString(value.message))
+  );
+}
+
 function assertDatasetListResponse(value: unknown): DatasetListResponse {
   if (!isDatasetListResponse(value)) {
     throw new ApiClientError("The dataset list response did not match the expected schema.", "invalid_response");
@@ -243,6 +304,20 @@ function assertDatasetListResponse(value: unknown): DatasetListResponse {
 function assertDatasetInspectionResponse(value: unknown): DatasetInspectionResponse {
   if (!isDatasetInspectionResponse(value)) {
     throw new ApiClientError("The dataset inspection response did not match the expected schema.", "invalid_response");
+  }
+  return value;
+}
+
+function assertPipelineTraceResponse(value: unknown): PipelineTraceResponse {
+  if (!isPipelineTraceResponse(value)) {
+    throw new ApiClientError("The pipeline inspection response did not match the expected schema.", "invalid_response");
+  }
+  return value;
+}
+
+function assertPipelineInspectionStatusResponse(value: unknown): PipelineInspectionStatusResponse {
+  if (!isPipelineInspectionStatusResponse(value)) {
+    throw new ApiClientError("The pipeline inspection status response did not match the expected schema.", "invalid_response");
   }
   return value;
 }
@@ -349,6 +424,16 @@ export class ArcLMApiClient {
 
   getProjectStatus() {
     return this.request<ProjectStatusResponse>(apiEndpoints.projectStatus);
+  }
+
+  async getPipelineInspectionStatus() {
+    return assertPipelineInspectionStatusResponse(await this.request<unknown>(apiEndpoints.pipelineInspectionStatus));
+  }
+
+  async inspectPipelineText(payload: PipelineInspectionRequest) {
+    return assertPipelineTraceResponse(
+      await this.request<unknown>(apiEndpoints.pipelineInspection, { method: "POST", body: payload })
+    );
   }
 
   async getDatasets() {

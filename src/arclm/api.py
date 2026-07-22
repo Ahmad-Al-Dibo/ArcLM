@@ -33,6 +33,8 @@ __all__ = [
     "SmartLoader",
     "inspect_model_source",
     "DataProcessor",
+    "PipelineTrace",
+    "inspect_text",
     
     # Tokenizers
     "create_tokenizer",
@@ -116,6 +118,12 @@ def __getattr__(name):
     elif name == "DataProcessor":
         from .datasets import DataProcessor
         return DataProcessor
+    elif name == "PipelineTrace":
+        from .inspection import PipelineTrace
+        return PipelineTrace
+    elif name == "inspect_text":
+        from .inspection import inspect_text
+        return inspect_text
     elif name == "create_tokenizer":
         from .tokenizers import create_tokenizer
         return create_tokenizer

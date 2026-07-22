@@ -304,13 +304,16 @@ class DatasetSourceManager:
         for item in roots:
             if not isinstance(item, dict):
                 raise ConfigurationError("dataset root configuration is invalid")
-            root = self._validated_root(
-                name=str(item.get("name", "")),
-                path=str(item.get("path", "")),
-                recursive=bool(item.get("recursive", False)),
-                enabled=bool(item.get("enabled", True)),
-                current_root_id=str(item.get("root_id") or "") or None,
-            )
+            try:
+                root = self._validated_root(
+                    name=str(item.get("name", "")),
+                    path=str(item.get("path", "")),
+                    recursive=bool(item.get("recursive", False)),
+                    enabled=bool(item.get("enabled", True)),
+                    current_root_id=str(item.get("root_id") or "") or None,
+                )
+            except DatasetSourceError:
+                continue
             loaded.append(root)
         return tuple(loaded)
 
