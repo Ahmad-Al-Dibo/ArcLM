@@ -3,86 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ArcLM Documentation</title>
+    <title>ArcLM Documentation - ArcLM Docs</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <header class="site-header">
-      <div>
-        <p class="eyebrow">ArcLM 0.10.0</p>
-        <h1>Native-first language model learning</h1>
-        <p class="lede">
-          ArcLM helps students and developers understand local dataset,
-          tokenizer, model, training, checkpoint, evaluation, generation and
-          inspection workflows without a production serving stack.
-        </p>
-      </div>
-      <button id="theme-toggle" type="button" aria-label="Toggle theme">Theme</button>
+  <body data-page-id="overview" data-page-href="index.html"  data-next-title="Installation" data-next-href="installation.html">
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="mobile-bar">
+      <button id="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button>
+      <a href="index.html" class="brand">ArcLM Docs</a>
+      <button id="theme-toggle" type="button">Theme</button>
     </header>
-
-    <nav class="top-nav" aria-label="Documentation sections">
-      <a href="#features">Features</a>
-      <a href="#modules">Modules</a>
-      <a href="#cli">CLI</a>
-      <a href="#studio">Studio</a>
-      <a href="#limits">Limitations</a>
-    </nav>
-
-    <main>
-      <section class="toolbar" aria-label="Documentation search and filters">
-        <label>
-          Search
-          <input id="search" type="search" placeholder="Search ArcLM docs" />
-        </label>
-        <label>
-          Status
-          <select id="status-filter">
-            <option value="">All statuses</option>
-          </select>
-        </label>
-      </section>
-
-      <section id="features" class="section">
-        <div class="section-heading">
-          <p class="eyebrow">Public features</p>
-          <h2>What ArcLM currently supports</h2>
-        </div>
-        <div id="feature-list" class="card-grid"></div>
-      </section>
-
-      <section id="modules" class="section">
-        <div class="section-heading">
-          <p class="eyebrow">Module explorer</p>
-          <h2>How the package is organized</h2>
-        </div>
-        <div id="module-list" class="module-list"></div>
-      </section>
-
-      <section id="cli" class="section">
-        <div class="section-heading">
-          <p class="eyebrow">Command line</p>
-          <h2>CLI commands</h2>
-        </div>
-        <div id="cli-list" class="card-grid"></div>
-      </section>
-
-      <section id="studio" class="section">
-        <div class="section-heading">
-          <p class="eyebrow">Local Studio</p>
-          <h2>Visual native workflow</h2>
-        </div>
-        <div id="studio-content"></div>
-      </section>
-
-      <section id="limits" class="section">
-        <div class="section-heading">
-          <p class="eyebrow">Honest scope</p>
-          <h2>Current limitations</h2>
-        </div>
-        <ul id="limitations" class="limit-list"></ul>
-      </section>
-    </main>
-
+    <div class="layout">
+      <aside id="site-nav" class="sidebar" aria-label="Documentation navigation"></aside>
+      <main id="content" class="doc-main">
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb"></nav>
+        <article id="page-content"></article>
+        <nav id="prev-next" class="prev-next" aria-label="Previous and next pages"></nav>
+      </main>
+      <aside id="toc" class="toc" aria-label="Table of contents"></aside>
+    </div>
+    <div id="search-panel" class="search-panel" hidden></div>
+    <script src="data/site-navigation.js"></script>
+    <script src="data/api-catalog.js"></script>
+    <script src="data/module-catalog.js"></script>
+    <script src="data/examples-catalog.js"></script>
+    <script src="data/supported-models.js"></script>
+    <script src="data/dataset-formats.js"></script>
+    <script src="data/configuration-catalog.js"></script>
+    <script src="data/errors-catalog.js"></script>
+    <script src="data/search-index.js"></script>
     <script src="docs-data.js"></script>
     <script src="app.js"></script>
   </body>

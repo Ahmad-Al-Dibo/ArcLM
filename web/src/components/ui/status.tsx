@@ -38,11 +38,24 @@ interface AlertProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export function Alert({ variant = "neutral", title, children, className, ...props }: AlertProps) {
+export function Alert({
+  variant = "neutral",
+  title,
+  children,
+  className,
+  ...props
+}: AlertProps) {
   return (
-    <div className={cn("ui-alert", `ui-status-${variant}`, className)} role="status" {...props}>
+    <div
+      className={cn("ui-alert", `ui-status-${variant}`, className)}
+      role="status"
+      {...props}
+    >
       <p className="ui-alert-title">{title}</p>
-      <p className="ui-alert-description">{children}</p>
+
+      <div className="ui-alert-description">
+        {children}
+      </div>
     </div>
   );
 }
