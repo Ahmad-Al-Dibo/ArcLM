@@ -198,6 +198,11 @@ def get_version():
     """Geeft de huidige ArcLM versie terug."""
     return __version__
 
+def get_api_version():
+    """Geeft de huidige ArcLM API versie terug."""
+    from ._version import __api_version__
+    return __api_version__
+
 
 def list_available_models():
     """Geeft lokale `.pth` checkpoints terug uit de models-map.
