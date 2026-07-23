@@ -10,9 +10,9 @@ LAB_METADATA = {
     "type": "from_scratch",
     "estimated_minutes": 45,
     "points": 100,
-    "requires_network": false,
-    "requires_gpu": false,
-    "production_code_modified": false
+    "requires_network": False,
+    "requires_gpu": False,
+    "production_code_modified": False
 }
 
 def build_vocabulary(*args: Any, **kwargs: Any) -> Any:
@@ -20,14 +20,14 @@ def build_vocabulary(*args: Any, **kwargs: Any) -> Any:
 
     Purpose
     -------
-    Practice the `tokenization` concept in isolation before using or changing
-    production ArcLM code.
+    Practice the `tokenization` concept in isolation before using or
+    changing production ArcLM code.
 
     Parameters
     ----------
     *args, **kwargs:
-        Replace this broad starter signature with explicit parameters when
-        you implement the challenge.
+        Replace this broad starter signature with explicit parameters when you
+        implement the challenge.
 
     Returns
     -------
@@ -54,14 +54,14 @@ def lookup_token_id(*args: Any, **kwargs: Any) -> Any:
 
     Purpose
     -------
-    Practice the `tokenization` concept in isolation before using or changing
-    production ArcLM code.
+    Practice the `tokenization` concept in isolation before using or
+    changing production ArcLM code.
 
     Parameters
     ----------
     *args, **kwargs:
-        Replace this broad starter signature with explicit parameters when
-        you implement the challenge.
+        Replace this broad starter signature with explicit parameters when you
+        implement the challenge.
 
     Returns
     -------

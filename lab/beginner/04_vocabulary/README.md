@@ -34,7 +34,7 @@ Understand the concept, implement the public contract, handle edge cases, and ex
 
 ## Concept foundations
 
-Relevant background may include Autoregressive Language Modeling, SentencePiece, BPE, Adam/AdamW, LoRA, PyTorch DDP/FSDP, and ArcLM lifecycle boundaries where applicable. These references explain concepts; they do not imply every technique is implemented in production ArcLM.
+Relevant background may include Autoregressive Language Modeling, SentencePiece, Byte Pair Encoding, Unigram Language Model Tokenization, Adam, AdamW, LoRA, PyTorch Distributed Data Parallel, Fully Sharded Data Parallel, ZeRO, and Supervised Fine-Tuning. These references explain concepts; they do not imply every technique is implemented in production ArcLM.
 
 ## Background
 
