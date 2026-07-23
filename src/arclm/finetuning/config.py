@@ -30,17 +30,26 @@ class FineTuningConfig:
     max_sequence_length: int = 1024
     train_on_prompt: bool = False
     append_eos_token: bool = True
+    end_behavior: str | None = None
+    end_tag: str = "<|end|>"
     truncation: bool = True
     padding: str = "longest"
     packing: bool = False
     ignore_index: int = -100
+    label_strategy: str | None = None
     text_field: str = "text"
     prompt_field: str = "prompt"
     completion_field: str = "completion"
     instruction_field: str = "instruction"
     input_field: str = "input"
-    response_field: str = "response"
+    response_field: str = "output"
     messages_field: str = "messages"
+    strict_field_mapping: bool = False
+    instruction_tag: str | None = None
+    response_tag: str | None = None
+    context_tag: str | None = None
+    separator: str = "\n"
+    register_tags_as_special_tokens: bool = False
     skip_invalid_records: bool = False
     max_report_errors: int = 10
     config_version: int = 1
@@ -78,6 +87,23 @@ class FineTuningConfig:
             "chat",
         }:
             raise SFTConfigError("formatter is not supported")
+        if self.end_behavior is None:
+            self.end_behavior = "none"
+        if self.end_behavior == "custom_end_tag":
+            self.end_behavior = "custom_tag"
+        if self.end_behavior not in {"custom_tag", "tokenizer_eos", "none"}:
+            raise SFTConfigError(
+                "end_behavior must be one of: custom_tag, tokenizer_eos, none"
+            )
+        self.append_eos_token = self.end_behavior == "tokenizer_eos"
+        if self.label_strategy is None:
+            self.label_strategy = "full_sequence" if self.train_on_prompt else "response_only"
+        if self.label_strategy not in {"full_sequence", "response_only"}:
+            raise SFTConfigError(
+                "label_strategy must be one of: full_sequence, response_only"
+            )
+        self.train_on_prompt = self.label_strategy == "full_sequence"
+        self._validate_format_strings()
         if self.packing:
             raise SFTConfigError(
                 "packing is not enabled for the stable FineTuningConfig workflow yet"
@@ -86,6 +112,58 @@ class FineTuningConfig:
             raise SFTConfigError("max_report_errors must not be negative")
         if self.config_version != 1:
             raise SFTConfigError("config_version must be 1")
+
+    def _validate_format_strings(self) -> None:
+        """Validate fields and formatting strings that affect prepared examples."""
+
+        fields = [
+            self.text_field,
+            self.prompt_field,
+            self.completion_field,
+            self.instruction_field,
+            self.input_field,
+            self.response_field,
+            self.messages_field,
+        ]
+        for field_name in fields:
+            if not isinstance(field_name, str) or not field_name.strip():
+                raise SFTConfigError("fine-tuning field names must not be empty")
+            if any(ord(char) < 32 for char in field_name):
+                raise SFTConfigError("fine-tuning field names must not contain control characters")
+        if not isinstance(self.separator, str):
+            raise SFTConfigError("separator must be a string")
+        if any(char in self.separator for char in "\r\t\x00"):
+            raise SFTConfigError("separator contains unsupported control characters")
+
+        tags: list[str] = []
+        if self.formatter == "instruction_response":
+            self.instruction_tag = self.instruction_tag or "Instruction:"
+            self.response_tag = self.response_tag or "Response:"
+            tags.extend([self.instruction_tag, self.response_tag])
+            if self.context_tag is not None:
+                tags.append(self.context_tag)
+        elif self.formatter == "prompt_completion":
+            self.response_tag = self.response_tag or "Completion:"
+            tags.append(self.response_tag)
+        elif self.formatter == "plain_text":
+            pass
+        elif self.formatter == "text":
+            pass
+        elif self.formatter == "auto":
+            pass
+
+        if self.end_behavior == "custom_tag":
+            tags.append(self.end_tag)
+        clean_tags = [tag for tag in tags if tag is not None]
+        for tag in clean_tags:
+            if not isinstance(tag, str) or not tag.strip():
+                raise SFTConfigError("formatting tags must not be empty")
+            if len(tag) > 80:
+                raise SFTConfigError("formatting tags must be at most 80 characters")
+            if any(ord(char) < 32 for char in tag):
+                raise SFTConfigError("formatting tags must not contain control characters")
+        if len(set(clean_tags)) != len(clean_tags):
+            raise SFTConfigError("formatting tags must be distinct")
 
     def to_dict(self) -> dict[str, Any]:
         """Zet de config om naar JSON-vriendelijke data."""

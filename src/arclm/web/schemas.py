@@ -463,6 +463,7 @@ class TrainingRunRequest(BaseModel):
     fine_tuning_method: Literal["full", "sft"] | None = None
     base_checkpoint_id: str | None = None
     fine_tuning_format: dict[str, Any] | None = None
+    preview_configuration_fingerprint: str | None = None
     epochs: int = 1
     batch_size: int = 1
     learning_rate: float = 1e-3
@@ -816,11 +817,12 @@ class FineTuningFormattingRequest(BaseModel):
     response_tag: str = "<|response|>"
     end_tag: str = "<|end|>"
     separator: str = "\n"
-    end_behavior: Literal["custom_end_tag", "tokenizer_eos", "none"] = "custom_end_tag"
+    end_behavior: Literal["custom_tag", "custom_end_tag", "tokenizer_eos", "none"] = "custom_tag"
     append_end_tag: bool = True
     register_tags_as_special_tokens: bool = False
     train_on_response_only: bool = True
     maximum_sequence_length: int = 128
+    preview_configuration_fingerprint: str | None = None
 
 
 class FineTuningValidationRequest(BaseModel):
@@ -851,6 +853,14 @@ class TrainingModeValidationResponse(BaseModel):
     valid: bool
     training_mode: str
     fine_tuning_method: str | None = None
+    dataset_format: str | None = None
+    record_count: int | None = None
+    usable_record_count: int | None = None
+    rejected_record_count: int | None = None
+    tokenizer_vocab_size: int | None = None
+    model_vocab_size: int | None = None
+    label_strategy: str | None = None
+    format_fingerprint: str | None = None
     compatibility: dict[str, Any]
     warnings: list[str] = Field(default_factory=list)
     errors: list[dict[str, Any]] = Field(default_factory=list)
@@ -860,6 +870,7 @@ class FineTuningPreviewResponse(TrainingModeValidationResponse):
     """Bounded fine-tuning formatting preview."""
 
     formatting: dict[str, Any]
+    preview_configuration_fingerprint: str | None = None
     records: list[dict[str, Any]]
 
 

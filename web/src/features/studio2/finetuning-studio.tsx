@@ -57,7 +57,7 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
   const [instructionTag, setInstructionTag] = useState("<|instruction|>");
   const [responseTag, setResponseTag] = useState("<|response|>");
   const [endTag, setEndTag] = useState("<|end|>");
-  const [endBehavior, setEndBehavior] = useState<FineTuningFormattingRequest["end_behavior"]>("custom_end_tag");
+  const [endBehavior, setEndBehavior] = useState<FineTuningFormattingRequest["end_behavior"]>("custom_tag");
   const [appendEndTag, setAppendEndTag] = useState(true);
   const [registerTags, setRegisterTags] = useState(false);
   const [trainOnResponseOnly, setTrainOnResponseOnly] = useState(true);
@@ -67,6 +67,7 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
   const [learningRate, setLearningRate] = useState(0.001);
   const [device, setDevice] = useState<"auto" | "cpu" | "cuda">("cpu");
   const [preview, setPreview] = useState<FineTuningPreviewResponse | null>(null);
+  const [previewRequestKey, setPreviewRequestKey] = useState<string | null>(null);
   const [createdRun, setCreatedRun] = useState<StudioRunMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,12 +142,16 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
     precision: "fp32" as const
   };
 
-  const startDisabled = !preview?.valid || !selectedDatasetId || !selectedTokenizerId || !selectedBaseModelId;
+  const currentPreviewKey = JSON.stringify(requestPayload);
+  const previewCurrent = Boolean(preview?.valid && previewRequestKey === currentPreviewKey);
+  const previewFingerprint = preview?.preview_configuration_fingerprint ?? preview?.format_fingerprint ?? null;
+  const startDisabled = !previewCurrent || !previewFingerprint || !selectedDatasetId || !selectedTokenizerId || !selectedBaseModelId;
 
   async function previewFormatting() {
     try {
       const response = await api.previewProjectFinetuning(projectId, { ...requestPayload, preview_records: 3 });
       setPreview(response);
+      setPreviewRequestKey(currentPreviewKey);
       setError(null);
     } catch (requestError) {
       setPreview(null);
@@ -162,7 +167,13 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
         training_mode: "fine_tuning",
         fine_tuning_method: method,
         base_checkpoint_id: selectedBaseCheckpointId || null,
-        fine_tuning_format: formatting,
+        fine_tuning_format: {
+          ...formatting,
+          ...(preview?.formatting ?? {}),
+          format_fingerprint: previewFingerprint,
+          preview_configuration_fingerprint: previewFingerprint
+        },
+        preview_configuration_fingerprint: previewFingerprint,
         dataset_id: selectedDatasetId,
         tokenizer_id: selectedTokenizerId,
         model_id: selectedBaseModelId,
@@ -257,7 +268,7 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
                 <TextInput label="End tag" value={endTag} onChange={(event) => setEndTag(event.target.value)} />
               </div>
               <Select label="End behavior" value={endBehavior} onChange={(event) => setEndBehavior(event.target.value as FineTuningFormattingRequest["end_behavior"])}>
-                <option value="custom_end_tag">Use selected end tag</option>
+                <option value="custom_tag">Use selected end tag</option>
                 <option value="tokenizer_eos">Use tokenizer EOS token when available</option>
                 <option value="none">Do not append an end marker</option>
               </Select>
@@ -284,6 +295,11 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
                 <Button onClick={() => void startFineTuning()} disabled={startDisabled}>Start fine-tuning run</Button>
                 {createdRun ? <Link className="ui-button ui-button-secondary" href={`/projects/${projectId}/runs/${createdRun.id}`}>Open run</Link> : null}
               </div>
+              {previewCurrent ? (
+                <Alert variant="success" title="Preview current">This is the exact format ArcLM will use during training.</Alert>
+              ) : (
+                <Alert variant="warning" title="Preview required">Generate a current preview before starting fine-tuning.</Alert>
+              )}
               {preview ? (
                 <>
                   <KeyValueList items={[
@@ -296,7 +312,8 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
                     { label: "Vocabulary compatibility", value: preview.compatibility.vocabulary_compatible ? "Compatible" : "Blocked" },
                     { label: "End behavior", value: endBehavior === "none" ? "No explicit end marker" : endBehavior === "tokenizer_eos" ? "Tokenizer EOS token" : `Response ends with ${endTag}` },
                     { label: "Label strategy", value: trainOnResponseOnly ? "Response tokens trained; prompt tokens ignored" : "Full formatted sequence trained" },
-                    { label: "Special-token registration", value: registerTags ? "Requested and backend-validated" : "Tags used as ordinary formatted text" }
+                    { label: "Special-token registration", value: registerTags ? "Requested and backend-validated" : "Tags used as ordinary formatted text" },
+                    { label: "Formatting fingerprint", value: previewFingerprint ?? "n/a" }
                   ]} />
                   {preview.errors.length ? preview.errors.map((item) => <Alert key={`${item.code}-${item.message}`} variant="error" title={item.code}>{item.message}</Alert>) : null}
                   {preview.warnings.map((warning) => <Alert key={warning} variant="warning" title="Warning">{warning}</Alert>)}
@@ -308,10 +325,12 @@ export function FineTuningStudioPage({ projectId, client }: { projectId: string;
                         <KeyValueList items={[
                           { label: "Formatted text", value: record.formatted_text },
                           { label: "Token IDs", value: record.token_ids.join(", ") },
+                          { label: "Labels", value: (record.labels ?? []).join(", ") },
                           { label: "Label mask", value: record.label_mask.join(", ") },
                           { label: "Sequence length", value: record.sequence_length },
                           { label: "Truncated", value: record.truncated ? "Yes" : "No" },
                           { label: "Unknown tokens", value: record.unknown_token_count },
+                          { label: "Warnings", value: (record.warnings ?? []).join(", ") || "None" },
                           { label: "Special tags detected", value: record.special_tags_detected.join(", ") || "None" }
                         ]} />
                       </CardContent>

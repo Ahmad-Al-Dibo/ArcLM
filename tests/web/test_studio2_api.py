@@ -351,6 +351,81 @@ def test_tiny_cpu_sft_run_uses_fine_tuning_metadata(tmp_path):
     tokenizer = _tokenizer(client, project["id"], dataset["id"], max_vocab=64)
     model = _model(client, project["id"], dataset["id"], tokenizer, block_size=32)
 
+    formatting = {
+        "dataset_format": "instruction_response",
+        "instruction_field": "instruction",
+        "response_field": "response",
+        "instruction_tag": "<|custom_instruction|>",
+        "response_tag": "<|custom_response|>",
+        "end_tag": "<|custom_end|>",
+        "end_behavior": "custom_tag",
+        "train_on_response_only": True,
+        "maximum_sequence_length": 32,
+    }
+    missing_preview = client.post(
+        f"/api/projects/{project['id']}/runs",
+        json={
+            "name": "tiny sft",
+            "training_mode": "fine_tuning",
+            "fine_tuning_method": "sft",
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+            "fine_tuning_format": formatting,
+            "epochs": 1,
+            "batch_size": 1,
+            "learning_rate": 0.001,
+            "device": "cpu",
+            "precision": "fp32",
+            "checkpoint_interval": 1,
+            "maximum_sequence_length": 32,
+        },
+    )
+    assert missing_preview.status_code == 400
+    assert missing_preview.json()["error"]["code"] == "fine_tuning_preview_required"
+
+    preview = client.post(
+        f"/api/projects/{project['id']}/training/finetuning/preview",
+        json={
+            "fine_tuning_method": "sft",
+            "base_model_id": model["id"],
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "formatting": formatting,
+            "preview_records": 1,
+            "device": "cpu",
+            "precision": "fp32",
+        },
+    )
+    assert preview.status_code == 200, preview.text
+    preview_payload = preview.json()
+    fingerprint = preview_payload["preview_configuration_fingerprint"]
+    assert fingerprint == preview_payload["format_fingerprint"]
+    assert "<|custom_instruction|>" in preview_payload["records"][0]["formatted_text"]
+
+    stale = client.post(
+        f"/api/projects/{project['id']}/runs",
+        json={
+            "name": "tiny sft stale",
+            "training_mode": "fine_tuning",
+            "fine_tuning_method": "sft",
+            "dataset_id": dataset["id"],
+            "tokenizer_id": tokenizer["id"],
+            "model_id": model["id"],
+            "fine_tuning_format": {**preview_payload["formatting"], "response_tag": "<|changed|>"},
+            "preview_configuration_fingerprint": fingerprint,
+            "epochs": 1,
+            "batch_size": 1,
+            "learning_rate": 0.001,
+            "device": "cpu",
+            "precision": "fp32",
+            "checkpoint_interval": 1,
+            "maximum_sequence_length": 32,
+        },
+    )
+    assert stale.status_code == 409
+    assert stale.json()["error"]["code"] == "fine_tuning_preview_stale"
+
     created = client.post(
         f"/api/projects/{project['id']}/runs",
         json={
@@ -360,13 +435,8 @@ def test_tiny_cpu_sft_run_uses_fine_tuning_metadata(tmp_path):
             "dataset_id": dataset["id"],
             "tokenizer_id": tokenizer["id"],
             "model_id": model["id"],
-            "fine_tuning_format": {
-                "dataset_format": "instruction_response",
-                "instruction_field": "instruction",
-                "response_field": "response",
-                "train_on_response_only": True,
-                "maximum_sequence_length": 32,
-            },
+            "fine_tuning_format": preview_payload["formatting"],
+            "preview_configuration_fingerprint": fingerprint,
             "epochs": 1,
             "batch_size": 1,
             "learning_rate": 0.001,
@@ -383,10 +453,12 @@ def test_tiny_cpu_sft_run_uses_fine_tuning_metadata(tmp_path):
     assert run["status"] == "completed", run
     assert run["training_mode"] == "fine_tuning"
     assert run["configuration"]["fine_tuning_format"]["dataset_format"] == "instruction_response"
+    assert run["configuration"]["fine_tuning_format"]["format_fingerprint"] == fingerprint
 
     checkpoints = client.get(f"/api/projects/{project['id']}/runs/{run['id']}/checkpoints")
     assert checkpoints.status_code == 200
     assert checkpoints.json()["count"] >= 1
+    assert checkpoints.json()["checkpoints"][0]["fine_tuning"]["format_fingerprint"] == fingerprint
 
 
 def test_run_checkpoint_list_tolerates_incomplete_checkpoint_directory(tmp_path):

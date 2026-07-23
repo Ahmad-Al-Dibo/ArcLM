@@ -9,6 +9,13 @@ from typing import Any
 import arclm
 from arclm.diagnostics_runtime import optional_dependency_status
 from arclm.exceptions import ArcLMError, ConfigurationError
+from arclm.finetuning import (
+    FineTuningConfig,
+    FineTuningMode,
+    fine_tuning_format_fingerprint,
+    prepare_fine_tuning_dataset,
+    prepare_fine_tuning_record,
+)
 
 from .config import WebConfig
 from .datasets import DatasetApiError, DatasetCatalogue, DatasetInspector
@@ -390,9 +397,31 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
             if int(model.configuration["vocab_size"]) != int(tokenizer.vocab_size):
                 errors.append({"code": "fine_tuning_tokenizer_model_mismatch", "message": "Tokenizer vocabulary does not match the model vocabulary."})
 
-        tag_result = _validate_fine_tuning_tags(payload.formatting, tokenizer_object)
-        errors.extend(tag_result["errors"])
-        warnings.extend(tag_result["warnings"])
+        ft_config = None
+        format_fingerprint = None
+        try:
+            ft_config = _fine_tuning_config_from_formatting(payload.formatting, payload.fine_tuning_method)
+        except Exception as exc:
+            message = str(exc)[:240]
+            code = "fine_tuning_tag_duplicate" if "distinct" in message else "fine_tuning_format_configuration_invalid"
+            errors.append({"code": code, "message": message})
+
+        if ft_config is not None:
+            tag_result = _validate_fine_tuning_tags(ft_config, tokenizer_object)
+            errors.extend(tag_result["errors"])
+            warnings.extend(tag_result["warnings"])
+            tokenizer_identity = _fine_tuning_tokenizer_identity(tokenizer)
+            format_fingerprint = fine_tuning_format_fingerprint(
+                config=ft_config,
+                tokenizer_identity=tokenizer_identity,
+            )
+            if payload.formatting.preview_configuration_fingerprint and payload.formatting.preview_configuration_fingerprint != format_fingerprint:
+                errors.append(
+                    {
+                        "code": "fine_tuning_format_fingerprint_mismatch",
+                        "message": "The supplied preview fingerprint does not match the current configuration.",
+                    }
+                )
 
         if payload.device == "cuda":
             try:
@@ -406,9 +435,33 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         if payload.precision != "fp32":
             errors.append({"code": "fine_tuning_label_strategy_unsupported", "message": "Web fine-tuning validation currently supports fp32 only."})
 
-        if dataset is not None:
+        record_count = int(dataset.record_count) if dataset is not None else 0
+        usable_record_count = 0
+        rejected_record_count = 0
+        if dataset is not None and tokenizer_object is not None and ft_config is not None:
             records = app.state.studio_workspace._load_dataset_records(dataset)
-            errors.extend(_validate_fine_tuning_fields(records, payload.formatting))
+            record_count = len(records)
+            for index, record in enumerate(records):
+                try:
+                    prepare_fine_tuning_record(
+                        record,
+                        tokenizer_object,
+                        ft_config,
+                        record_index=index,
+                    )
+                except Exception as exc:
+                    rejected_record_count += 1
+                    if len(errors) < 10:
+                        errors.append(
+                            {
+                                "code": _fine_tuning_error_code(exc),
+                                "message": f"Record {index} is not usable for fine-tuning.",
+                            }
+                        )
+                else:
+                    usable_record_count += 1
+            if record_count and usable_record_count == 0:
+                errors.append({"code": "fine_tuning_record_unusable", "message": "No records produced trainable examples."})
 
         compatibility = {
             "status": "ready" if not errors else "blocked",
@@ -423,11 +476,20 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
             "supports_vocab_resize": False,
             "supported_methods": ["full", "sft"],
             "unsupported_methods": ["lora", "qlora"],
+            "format_fingerprint": format_fingerprint,
         }
         return {
             "valid": not errors,
             "training_mode": "fine_tuning",
             "fine_tuning_method": payload.fine_tuning_method,
+            "dataset_format": ft_config.formatter if ft_config is not None else payload.formatting.dataset_format,
+            "record_count": record_count,
+            "usable_record_count": usable_record_count,
+            "rejected_record_count": rejected_record_count,
+            "tokenizer_vocab_size": int(tokenizer.vocab_size) if tokenizer is not None else None,
+            "model_vocab_size": int(model.configuration["vocab_size"]) if model is not None else None,
+            "label_strategy": ft_config.label_strategy if ft_config is not None else None,
+            "format_fingerprint": format_fingerprint,
             "compatibility": compatibility,
             "warnings": warnings,
             "errors": errors,
@@ -444,47 +506,96 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         records = app.state.studio_workspace._load_dataset_records(dataset)
         limit = min(max(int(payload.preview_records), 1), 5)
         previews = []
+        ft_config = _fine_tuning_config_from_formatting(payload.formatting, payload.fine_tuning_method)
         for index, record in enumerate(records[:limit]):
-            formatted, spans, detected_tags = _format_fine_tuning_record(record, payload.formatting)
-            token_ids = [int(item) for item in tokenizer.encode_text(formatted)]
-            max_len = max(1, int(payload.formatting.maximum_sequence_length))
-            truncated = len(token_ids) > max_len
-            token_ids = token_ids[:max_len]
-            tokens = _tokens_from_ids(tokenizer, token_ids)
-            labels = _label_mask(tokenizer, formatted, spans, payload.formatting, token_ids)
-            unknown_id = tokenizer.get_unknown_index() if hasattr(tokenizer, "get_unknown_index") else 0
-            previews.append(
-                {
-                    "index": index,
-                    "original_record": {str(k): v for k, v in record.items()},
-                    "formatted_text": formatted,
-                    "tokens": tokens[:max_len],
-                    "token_ids": token_ids,
-                    "label_mask": labels[: len(token_ids)],
-                    "sequence_length": len(token_ids),
-                    "truncated": truncated,
-                    "unknown_token_count": sum(1 for item in token_ids if int(item) == int(unknown_id)),
-                    "special_tags_detected": detected_tags,
-                }
+            prepared = prepare_fine_tuning_record(
+                record,
+                tokenizer,
+                ft_config,
+                record_index=index,
             )
-        return {**validation, "formatting": payload.formatting.model_dump(), "records": previews}
+            row = prepared.to_dict()
+            row["index"] = index
+            row["record_index"] = index
+            row["original_record"] = {str(k): v for k, v in record.items()}
+            row["token_ids"] = row.pop("input_ids")
+            row["special_tags_detected"] = row.get("detected_tags", [])
+            previews.append(
+                row
+            )
+        return {
+            **validation,
+            "formatting": _preview_formatting_payload(payload.formatting, ft_config, validation.get("format_fingerprint")),
+            "format_fingerprint": validation.get("format_fingerprint"),
+            "preview_configuration_fingerprint": validation.get("format_fingerprint"),
+            "records": previews,
+        }
 
-    def _validate_fine_tuning_tags(formatting: Any, tokenizer: Any | None) -> dict[str, Any]:
+    def _fine_tuning_config_from_formatting(formatting: Any, method: str) -> FineTuningConfig:
+        dataset_format = str(formatting.dataset_format)
+        end_behavior = str(formatting.end_behavior)
+        if end_behavior == "custom_end_tag":
+            end_behavior = "custom_tag"
+        return FineTuningConfig(
+            mode=FineTuningMode.SFT if method == "sft" else FineTuningMode.CAUSAL_LM,
+            formatter="plain_text" if dataset_format == "plain_text" else dataset_format,
+            max_sequence_length=max(1, int(formatting.maximum_sequence_length)),
+            train_on_prompt=not bool(formatting.train_on_response_only),
+            label_strategy="response_only" if formatting.train_on_response_only else "full_sequence",
+            end_behavior=end_behavior,
+            end_tag=str(formatting.end_tag),
+            text_field=str(formatting.text_field),
+            prompt_field=str(formatting.prompt_field),
+            completion_field=str(formatting.completion_field),
+            instruction_field=str(formatting.instruction_field),
+            input_field=str(formatting.context_field or "input"),
+            response_field=str(formatting.response_field),
+            instruction_tag=str(formatting.instruction_tag),
+            response_tag=str(formatting.response_tag),
+            context_tag=None,
+            separator=str(formatting.separator),
+            register_tags_as_special_tokens=bool(formatting.register_tags_as_special_tokens),
+            strict_field_mapping=True,
+            skip_invalid_records=False,
+        )
+
+    def _fine_tuning_tokenizer_identity(tokenizer_meta: Any | None) -> dict[str, Any]:
+        if tokenizer_meta is None:
+            return {}
+        return {
+            "id": tokenizer_meta.id,
+            "type": tokenizer_meta.type,
+            "tokenizer_type": tokenizer_meta.tokenizer_type,
+            "sentencepiece_model_type": tokenizer_meta.sentencepiece_model_type,
+            "vocab_size": int(tokenizer_meta.vocab_size),
+        }
+
+    def _preview_formatting_payload(formatting: Any, config: FineTuningConfig, fingerprint: str | None) -> dict[str, Any]:
+        values = formatting.model_dump() if hasattr(formatting, "model_dump") else dict(formatting)
+        values["end_behavior"] = config.end_behavior
+        values["label_strategy"] = config.label_strategy
+        values["maximum_sequence_length"] = config.max_sequence_length
+        values["format_fingerprint"] = fingerprint
+        values["preview_configuration_fingerprint"] = fingerprint
+        values["strict_field_mapping"] = True
+        return values
+
+    def _validate_fine_tuning_tags(config: FineTuningConfig, tokenizer: Any | None) -> dict[str, Any]:
         errors: list[dict[str, str]] = []
         warnings: list[str] = []
         tags = [
-            formatting.instruction_tag if formatting.dataset_format == "instruction_response" else None,
-            formatting.response_tag if formatting.dataset_format in {"instruction_response", "prompt_completion"} else None,
-            formatting.end_tag if formatting.end_behavior == "custom_end_tag" and formatting.append_end_tag else None,
+            config.instruction_tag if config.formatter == "instruction_response" else None,
+            config.response_tag if config.formatter in {"instruction_response", "prompt_completion"} else None,
+            config.end_tag if config.end_behavior == "custom_tag" else None,
         ]
         clean_tags = [str(tag) for tag in tags if tag is not None]
         for tag in clean_tags:
             if not tag.strip():
-                errors.append({"code": "fine_tuning_tag_invalid", "message": "Required tags must not be empty."})
+                errors.append({"code": "fine_tuning_format_configuration_invalid", "message": "Required tags must not be empty."})
             if len(tag) > 80:
-                errors.append({"code": "fine_tuning_tag_invalid", "message": "Tags must be at most 80 characters."})
+                errors.append({"code": "fine_tuning_format_configuration_invalid", "message": "Tags must be at most 80 characters."})
             if any(ord(char) < 32 for char in tag):
-                errors.append({"code": "fine_tuning_tag_invalid", "message": "Tags must not contain control characters."})
+                errors.append({"code": "fine_tuning_format_configuration_invalid", "message": "Tags must not contain control characters."})
         if len(set(clean_tags)) != len(clean_tags):
             errors.append({"code": "fine_tuning_tag_duplicate", "message": "Instruction, response and end tags must be distinct."})
         reserved = {"<UNK>", "<|pad|>"}
@@ -492,7 +603,7 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
         for tag in clean_tags:
             if tag in reserved:
                 errors.append({"code": "fine_tuning_reserved_token_conflict", "message": f"{tag} conflicts with a reserved tokenizer token."})
-        if formatting.register_tags_as_special_tokens:
+        if config.register_tags_as_special_tokens:
             missing = [tag for tag in clean_tags if tag not in tokenizer_vocab]
             if missing:
                 errors.append(
@@ -503,77 +614,22 @@ def create_app(config: WebConfig | None = None, *, model: Any | None = None, tok
                 )
         else:
             warnings.append("Formatting tags are inserted as text and are not registered as tokenizer special tokens.")
-        if formatting.end_behavior == "tokenizer_eos":
+        if config.end_behavior == "tokenizer_eos":
             eos_id = getattr(tokenizer, "eos_token_id", None)
             if eos_id is None:
                 processor = getattr(tokenizer, "processor", None)
                 eos_id = processor.eos_id() if processor is not None and hasattr(processor, "eos_id") else None
             if eos_id is None or int(eos_id) < 0:
-                errors.append({"code": "fine_tuning_tag_invalid", "message": "The selected tokenizer does not expose an EOS token."})
+                errors.append({"code": "fine_tuning_eos_unavailable", "message": "The selected tokenizer does not expose an EOS token."})
         return {"errors": errors, "warnings": warnings}
 
-    def _validate_fine_tuning_fields(records: list[Mapping[str, Any]], formatting: Any) -> list[dict[str, str]]:
-        if not records:
-            return [{"code": "fine_tuning_dataset_invalid", "message": "Fine-tuning dataset must not be empty."}]
-        required = []
-        if formatting.dataset_format == "instruction_response":
-            required = [formatting.instruction_field, formatting.response_field]
-        elif formatting.dataset_format == "prompt_completion":
-            required = [formatting.prompt_field, formatting.completion_field]
-        elif formatting.dataset_format == "plain_text":
-            required = [formatting.text_field]
-        errors: list[dict[str, str]] = []
-        for index, record in enumerate(records[:50]):
-            for field in required:
-                value = record.get(field)
-                if not isinstance(value, str) or not value.strip():
-                    errors.append({"code": "fine_tuning_field_missing", "message": f"Record {index} is missing non-empty field {field}."})
-                    return errors
-        return errors
-
-    def _format_fine_tuning_record(record: Mapping[str, Any], formatting: Any) -> tuple[str, dict[str, tuple[int, int]], list[str]]:
-        separator = formatting.separator
-        spans: dict[str, tuple[int, int]] = {}
-        detected_tags: list[str] = []
-        if formatting.dataset_format == "plain_text":
-            text = str(record.get(formatting.text_field, ""))
-            spans["response"] = (0, len(text))
-            return text, spans, detected_tags
-        if formatting.dataset_format == "prompt_completion":
-            prompt = str(record.get(formatting.prompt_field, ""))
-            completion = str(record.get(formatting.completion_field, ""))
-            prefix = f"{prompt}{separator}{formatting.response_tag} "
-            response_start = len(prefix)
-            text = f"{prefix}{completion}"
-            detected_tags.append(formatting.response_tag)
-        else:
-            instruction = str(record.get(formatting.instruction_field, ""))
-            response = str(record.get(formatting.response_field, ""))
-            context = ""
-            if formatting.context_field and record.get(formatting.context_field):
-                context = f"{separator}{record.get(formatting.context_field)}"
-            prefix = f"{formatting.instruction_tag} {instruction}{context}{separator}{formatting.response_tag} "
-            response_start = len(prefix)
-            text = f"{prefix}{response}"
-            detected_tags.extend([formatting.instruction_tag, formatting.response_tag])
-        if formatting.end_behavior == "custom_end_tag" and formatting.append_end_tag:
-            text = f"{text}{separator}{formatting.end_tag}"
-            detected_tags.append(formatting.end_tag)
-        spans["response"] = (response_start, len(text))
-        return text, spans, detected_tags
-
-    def _tokens_from_ids(tokenizer: Any, token_ids: list[int]) -> list[str]:
-        if hasattr(tokenizer, "decode"):
-            return [str(item) for item in tokenizer.decode(token_ids)]
-        return [str(item) for item in token_ids]
-
-    def _label_mask(tokenizer: Any, formatted: str, spans: Mapping[str, tuple[int, int]], formatting: Any, token_ids: list[int]) -> list[str]:
-        if not formatting.train_on_response_only:
-            return ["train"] * len(token_ids)
-        response_start, _ = spans.get("response", (0, len(formatted)))
-        prefix_ids = tokenizer.encode_text(formatted[:response_start])
-        ignored = min(len(prefix_ids), len(token_ids))
-        return ["ignore"] * ignored + ["train"] * (len(token_ids) - ignored)
+    def _fine_tuning_error_code(exc: Exception) -> str:
+        message = str(exc)
+        if "fine_tuning_response_fully_truncated" in message or "no trainable tokens" in message:
+            return "fine_tuning_response_fully_truncated"
+        if "eos" in message.lower():
+            return "fine_tuning_eos_unavailable"
+        return "fine_tuning_record_unusable"
 
     @app.exception_handler(ConfigurationError)
     async def configuration_error_handler(_: Request, exc: ConfigurationError):

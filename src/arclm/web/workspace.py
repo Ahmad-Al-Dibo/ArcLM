@@ -1281,4 +1281,10 @@ def _checkpoint_summary(path: Path) -> dict[str, Any]:
             "reload_compatibility": "compatible",
         }
     )
+    fine_tuning = info.metadata.get("fine_tuning")
+    if fine_tuning:
+        base["fine_tuning"] = fine_tuning
+        base["training_mode"] = fine_tuning.get("training_mode")
+        base["fine_tuning_method"] = fine_tuning.get("fine_tuning_method")
+        base["format_fingerprint"] = fine_tuning.get("format_fingerprint")
     return base

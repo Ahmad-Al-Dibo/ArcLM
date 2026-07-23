@@ -301,6 +301,7 @@ export type TrainingRunRequest = {
   fine_tuning_method?: "full" | "sft" | null;
   base_checkpoint_id?: string | null;
   fine_tuning_format?: Record<string, unknown> | null;
+  preview_configuration_fingerprint?: string | null;
   epochs?: number;
   batch_size?: number;
   learning_rate?: number;
@@ -724,11 +725,12 @@ export type FineTuningFormattingRequest = {
   response_tag?: string;
   end_tag?: string;
   separator?: string;
-  end_behavior?: "custom_end_tag" | "tokenizer_eos" | "none";
+  end_behavior?: "custom_tag" | "custom_end_tag" | "tokenizer_eos" | "none";
   append_end_tag?: boolean;
   register_tags_as_special_tokens?: boolean;
   train_on_response_only?: boolean;
   maximum_sequence_length?: number;
+  preview_configuration_fingerprint?: string | null;
 };
 
 export type FineTuningValidationRequest = {
@@ -763,6 +765,9 @@ export type TrainingModeValidationResponse = {
   compatibility: Record<string, unknown>;
   warnings: string[];
   errors: Array<{ code: string; message: string; details?: Record<string, unknown> | null }>;
+  format_fingerprint?: string | null;
+  preview_configuration_fingerprint?: string | null;
+  label_strategy?: string | null;
 };
 
 export type FineTuningPreviewRecord = {
@@ -771,14 +776,19 @@ export type FineTuningPreviewRecord = {
   formatted_text: string;
   tokens: string[];
   token_ids: number[];
+  labels?: number[];
   label_mask: string[];
   sequence_length: number;
+  original_token_count?: number;
   truncated: boolean;
   unknown_token_count: number;
   special_tags_detected: string[];
+  warnings?: string[];
 };
 
 export type FineTuningPreviewResponse = TrainingModeValidationResponse & {
   formatting: Record<string, unknown>;
+  format_fingerprint?: string | null;
+  preview_configuration_fingerprint?: string | null;
   records: FineTuningPreviewRecord[];
 };

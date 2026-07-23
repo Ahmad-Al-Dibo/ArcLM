@@ -128,13 +128,16 @@ function client(overrides: Partial<StudioClient> = {}): StudioClient {
       compatibility: { status: "ready", vocabulary_compatible: true, model_vocabulary_size: 32, tokenizer_vocabulary_size: 32 },
       warnings: ["Formatting tags are inserted as text and are not registered as tokenizer special tokens."],
       errors: [],
-      formatting: {},
+      format_fingerprint: "fmt_test",
+      preview_configuration_fingerprint: "fmt_test",
+      formatting: { dataset_format: "instruction_response", format_fingerprint: "fmt_test", preview_configuration_fingerprint: "fmt_test" },
       records: [{
         index: 0,
         original_record: { instruction: "What is ArcLM?", response: "A native-first learning library." },
         formatted_text: "<|instruction|> What is ArcLM?\n<|response|> A native-first learning library.\n<|end|>",
         tokens: ["<|instruction|>", "What", "is", "ArcLM?"],
         token_ids: [1, 2, 3, 4],
+        labels: [-100, -100, 3, 4],
         label_mask: ["ignore", "ignore", "train", "train"],
         sequence_length: 4,
         truncated: false,
@@ -236,7 +239,8 @@ describe("ArcLM Studio 2 pages", () => {
     await waitFor(() => expect(api.createProjectRun).toHaveBeenCalledWith("project_abc123abc123", expect.objectContaining({
       training_mode: "fine_tuning",
       fine_tuning_method: "sft",
-      fine_tuning_format: expect.objectContaining({ dataset_format: "instruction_response" })
+      fine_tuning_format: expect.objectContaining({ dataset_format: "instruction_response", format_fingerprint: "fmt_test" }),
+      preview_configuration_fingerprint: "fmt_test"
     })));
   });
 

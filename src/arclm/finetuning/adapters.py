@@ -215,6 +215,11 @@ class TokenizerAdapter(BaseTokenizerAdapter):
         value = getattr(self.tokenizer, name, None)
         if value is not None:
             return value
+        processor = getattr(self.tokenizer, "processor", None)
+        if name == "eos_token_id" and processor is not None and hasattr(processor, "eos_id"):
+            eos_id = processor.eos_id()
+            if eos_id is not None and int(eos_id) >= 0:
+                return int(eos_id)
         if name == "pad_token_id":
             eos_id = getattr(self.tokenizer, "eos_token_id", None)
             if eos_id is not None:

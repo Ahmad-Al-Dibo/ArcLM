@@ -76,6 +76,7 @@ export function RunDetailsPage({ projectId, runId, client }: { projectId: string
   if (!run) return <LoadingCard title="Run details" />;
 
   const canCancel = ["queued", "starting", "running", "cancelling"].includes(run.status);
+  const fineTuningFormat = run.training_mode === "fine_tuning" ? (run.configuration.fine_tuning_format as Record<string, unknown> | undefined) : undefined;
 
   return (
     <div className="studio-page">
@@ -92,6 +93,17 @@ export function RunDetailsPage({ projectId, runId, client }: { projectId: string
         <Card><CardHeader><CardTitle>Latest metrics</CardTitle></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(run.latest_metrics, null, 2)}</pre></CardContent></Card>
         <Card><CardHeader><CardTitle>Training configuration</CardTitle></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(run.configuration, null, 2)}</pre></CardContent></Card>
       </div>
+      {fineTuningFormat ? (
+        <Card>
+          <CardHeader><CardTitle>Fine-tuning format</CardTitle><CardDescription>Prepared data identity used by the training run.</CardDescription></CardHeader>
+          <CardContent><pre className="studio-json">{JSON.stringify({
+            dataset_format: fineTuningFormat.dataset_format,
+            label_strategy: fineTuningFormat.label_strategy,
+            maximum_sequence_length: fineTuningFormat.maximum_sequence_length,
+            format_fingerprint: fineTuningFormat.format_fingerprint
+          }, null, 2)}</pre></CardContent>
+        </Card>
+      ) : null}
       <Card><CardHeader><CardTitle>Metrics</CardTitle></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(metrics.slice(-10), null, 2)}</pre></CardContent></Card>
       <Card><CardHeader><CardTitle>Events</CardTitle></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(events.slice(-10), null, 2)}</pre></CardContent></Card>
       <Card><CardHeader><CardTitle>Checkpoints</CardTitle><CardDescription>Metadata only; checkpoint binaries are not returned.</CardDescription></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(checkpoints, null, 2)}</pre></CardContent></Card>

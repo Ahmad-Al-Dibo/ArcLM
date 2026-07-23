@@ -78,6 +78,40 @@ class FineTuningDatasetReport:
         return asdict(self)
 
 
+@dataclass
+class PreparedFineTuningRecord:
+    """Canonical prepared representation of one fine-tuning record."""
+
+    record_index: int
+    formatted_text: str
+    tokens: list[str]
+    input_ids: list[int]
+    labels: list[int]
+    label_mask: list[str]
+    attention_mask: list[int]
+    sequence_length: int
+    original_token_count: int
+    unknown_token_count: int
+    truncated: bool
+    detected_tags: list[str] = field(default_factory=list)
+    tags: dict[str, Any] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
+
+    def feature(self) -> dict[str, list[int]]:
+        """Return the Trainer-facing token feature."""
+
+        return {
+            "input_ids": list(self.input_ids),
+            "attention_mask": list(self.attention_mask),
+            "labels": list(self.labels),
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe bounded preview shape."""
+
+        return asdict(self)
+
+
 class PreparedFineTuningDataset(Dataset):
     """Dataset met vooraf getokenizede fine-tuning voorbeelden."""
 
@@ -271,13 +305,17 @@ def prepare_fine_tuning_dataset(
 
     for index, record in enumerate(raw_records):
         try:
-            normalized = normalize_fine_tuning_example(record, index, config)
-            formatter = normalized.formatter if formatter == "auto" else formatter
-            feature, was_truncated = tokenize_normalized_example(
-                normalized,
-                adapter,
+            prepared = prepare_fine_tuning_record(
+                record,
+                tokenizer,
                 config,
+                tokenizer_adapter=adapter,
+                record_index=index,
             )
+            normalized_formatter = str(prepared.tags.get("dataset_format") or config.formatter)
+            formatter = normalized_formatter if formatter == "auto" else formatter
+            feature = prepared.feature()
+            was_truncated = prepared.truncated
         except Exception as error:
             dropped += 1
             _append_error(errors, index, error, config)
@@ -295,7 +333,7 @@ def prepare_fine_tuning_dataset(
         trainable_tokens += active_labels
         fingerprint_rows.append(
             {
-                "formatter": normalized.formatter,
+                "formatter": formatter,
                 "input_ids": feature["input_ids"],
                 "labels": feature["labels"],
             }
@@ -327,6 +365,64 @@ def prepare_fine_tuning_dataset(
     return PreparedFineTuningDataset(features, report)
 
 
+def prepare_fine_tuning_record(
+    record: Mapping[str, Any],
+    tokenizer: Any,
+    config: FineTuningConfig | None = None,
+    *,
+    tokenizer_adapter: TokenizerAdapter | None = None,
+    record_index: int = 0,
+) -> PreparedFineTuningRecord:
+    """Prepare exactly one record using the canonical dataset-preparation path."""
+
+    ft_config = config or FineTuningConfig()
+    adapter = tokenizer_adapter or TokenizerAdapter(tokenizer)
+    normalized = normalize_fine_tuning_example(record, record_index, ft_config)
+    feature, was_truncated, original_length, formatted_text = tokenize_normalized_example(
+        normalized,
+        adapter,
+        ft_config,
+        return_metadata=True,
+    )
+    input_ids = [int(item) for item in feature["input_ids"]]
+    labels = [int(item) for item in feature["labels"]]
+    attention_mask = [int(item) for item in feature["attention_mask"]]
+    warnings = []
+    trainable_count = sum(1 for label in labels if label != ft_config.ignore_index)
+    if was_truncated:
+        warnings.append("fine_tuning_record_truncated")
+    if trainable_count == 0:
+        warnings.append("fine_tuning_response_fully_truncated")
+        raise FineTuningError("fine_tuning_response_fully_truncated")
+    tokens = _tokens_from_ids(adapter.tokenizer, input_ids)
+    unknown_id = _unknown_token_id(adapter.tokenizer)
+    unknown_count = (
+        sum(1 for token_id in input_ids if int(token_id) == int(unknown_id))
+        if unknown_id is not None
+        else 0
+    )
+    tag_info = _format_tag_report(adapter.tokenizer, ft_config, normalized.formatter)
+    return PreparedFineTuningRecord(
+        record_index=record_index,
+        formatted_text=formatted_text,
+        tokens=tokens,
+        input_ids=input_ids,
+        labels=labels,
+        label_mask=[
+            "ignore" if label == ft_config.ignore_index else "train"
+            for label in labels
+        ],
+        attention_mask=attention_mask,
+        sequence_length=len(input_ids),
+        original_token_count=original_length,
+        unknown_token_count=unknown_count,
+        truncated=was_truncated,
+        detected_tags=list(tag_info["detected_tags"]),
+        tags=tag_info,
+        warnings=warnings,
+    )
+
+
 def get_sft_record_contract(formatter: str = "instruction_response") -> SFTRecordContract:
     """Describe one supported SFT record format."""
 
@@ -345,8 +441,8 @@ def get_sft_record_contract(formatter: str = "instruction_response") -> SFTRecor
         "instruction_response": SFTRecordContract(
             format="instruction_response",
             required_fields=("instruction", "response"),
-            optional_fields=("input", "output", "completion", "answer"),
-            description="Instruction plus response, with output/completion/answer accepted as response aliases.",
+            optional_fields=("input", "output"),
+            description="Instruction plus response with an optional context/input field.",
         ),
         "chat": SFTRecordContract(
             format="chat",
@@ -422,28 +518,46 @@ def tokenize_normalized_example(
     example: NormalizedSFTExample,
     tokenizer_adapter: TokenizerAdapter,
     config: FineTuningConfig,
-) -> tuple[dict[str, list[int]], bool]:
+    *,
+    return_metadata: bool = False,
+) -> tuple[dict[str, list[int]], bool] | tuple[dict[str, list[int]], bool, int, str]:
     """Tokenizet segmenten zonder response-grenzen te zoeken in decode output."""
     input_ids: list[int] = []
     labels: list[int] = []
+    formatted_parts: list[str] = []
     for text, trainable in example.segments:
         token_ids = _encode_segment(tokenizer_adapter, text)
+        formatted_parts.append(text)
         input_ids.extend(token_ids)
         active = config.mode == FineTuningMode.CAUSAL_LM or trainable
         labels.extend(token_ids if active else [config.ignore_index] * len(token_ids))
 
     eos_id = tokenizer_adapter.eos_token_id
-    if config.append_eos_token and eos_id is not None:
+    if config.end_behavior == "tokenizer_eos":
+        if eos_id is None:
+            raise FineTuningError("fine_tuning_eos_unavailable")
+        formatted_parts.append(_eos_text(tokenizer_adapter, int(eos_id)))
         input_ids.append(int(eos_id))
         last_trainable = (
             config.mode == FineTuningMode.CAUSAL_LM
             or bool(example.segments and example.segments[-1][1])
         )
         labels.append(int(eos_id) if last_trainable else config.ignore_index)
+    elif config.end_behavior == "custom_tag":
+        end_text = _join_separator(config.separator, config.end_tag)
+        token_ids = _encode_segment(tokenizer_adapter, end_text)
+        formatted_parts.append(end_text)
+        input_ids.extend(token_ids)
+        last_trainable = (
+            config.mode == FineTuningMode.CAUSAL_LM
+            or bool(example.segments and example.segments[-1][1])
+        )
+        labels.extend(token_ids if last_trainable else [config.ignore_index] * len(token_ids))
 
     if not input_ids:
         raise FineTuningError("Fine-tuning example produced no tokens")
     original_length = len(input_ids)
+    formatted_text = "".join(formatted_parts)
     if original_length > config.max_sequence_length:
         if not config.truncation:
             raise FineTuningError("Fine-tuning example exceeds max_sequence_length")
@@ -452,11 +566,14 @@ def tokenize_normalized_example(
     if not any(label != config.ignore_index for label in labels):
         raise FineTuningError("Fine-tuning example has no trainable tokens")
     attention_mask = [1] * len(input_ids)
-    return {
+    feature = {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "labels": labels,
-    }, original_length > len(input_ids)
+    }
+    if return_metadata:
+        return feature, original_length > len(input_ids), original_length, formatted_text
+    return feature, original_length > len(input_ids)
 
 
 def fine_tune(
@@ -612,7 +729,8 @@ def _normalize_prompt_completion(
     completion = _required_string(record, config.completion_field, "completion")
     if not completion.strip():
         raise FormattingError("completion must not be empty")
-    prefix = f"Prompt:\n{prompt}\n\nCompletion:\n"
+    response_tag = config.response_tag or "Completion:"
+    prefix = f"{prompt}{config.separator}{response_tag} "
     return NormalizedSFTExample(
         formatter="prompt_completion",
         source_index=source_index,
@@ -635,10 +753,16 @@ def _normalize_instruction(
     if not str(response).strip():
         raise FormattingError("response must not be empty")
     input_text = _optional_string(record, config.input_field, default="")
-    parts = [f"Instruction:\n{instruction.strip()}"]
+    instruction_tag = config.instruction_tag or "Instruction:"
+    response_tag = config.response_tag or "Response:"
+    context_tag = config.context_tag
+    parts = [f"{instruction_tag} {instruction.strip()}"]
     if input_text.strip():
-        parts.append(f"Input:\n{input_text.strip()}")
-    prefix = "\n\n".join(parts) + "\n\nResponse:\n"
+        if context_tag:
+            parts.append(f"{context_tag} {input_text.strip()}")
+        else:
+            parts.append(input_text.strip())
+    prefix = config.separator.join(parts) + f"{config.separator}{response_tag} "
     return NormalizedSFTExample(
         formatter="instruction_response",
         source_index=source_index,
@@ -704,18 +828,20 @@ def _optional_string(record: Mapping[str, Any], field_name: str, default: str) -
 
 
 def _read_response(record: Mapping[str, Any], config: FineTuningConfig) -> str | None:
-    """Leest response met enkele bestaande veldnamen als compatibiliteit."""
-    for field_name in (
-        config.response_field,
-        "response",
-        "output",
-        "completion",
-        "answer",
-    ):
-        if field_name in record:
-            value = record[field_name]
+    """Reads the configured response field, with legacy aliases when allowed."""
+    field_name = config.response_field
+    if field_name in record:
+        value = record[field_name]
+        if not isinstance(value, str):
+            raise FormattingError(f"{field_name} must be a string")
+        return value
+    if not config.strict_field_mapping:
+        for alias in ("response", "output", "completion", "answer"):
+            if alias == field_name or alias not in record:
+                continue
+            value = record[alias]
             if not isinstance(value, str):
-                raise FormattingError(f"{field_name} must be a string")
+                raise FormattingError(f"{alias} must be a string")
             return value
     return None
 
@@ -735,6 +861,146 @@ def _encode_segment(tokenizer_adapter: TokenizerAdapter, text: str) -> list[int]
         if isinstance(error, TokenizerAdapterError):
             raise
         raise TokenizerAdapterError(f"Tokenizer could not encode fine-tuning text: {error}") from error
+
+
+def _join_separator(separator: str, text: str) -> str:
+    """Append a marker using the configured separator without inventing whitespace."""
+
+    return f"{separator}{text}" if separator else text
+
+
+def _eos_text(tokenizer_adapter: TokenizerAdapter, eos_id: int) -> str:
+    """Return a readable EOS representation for preview text."""
+
+    tokenizer = tokenizer_adapter.tokenizer
+    eos_token = getattr(tokenizer, "eos_token", None)
+    if eos_token:
+        return str(eos_token)
+    processor = getattr(tokenizer, "processor", None)
+    if processor is not None and hasattr(processor, "id_to_piece"):
+        try:
+            return str(processor.id_to_piece(int(eos_id)))
+        except Exception:
+            pass
+    return f"<eos:{int(eos_id)}>"
+
+
+def _tokens_from_ids(tokenizer: Any, token_ids: Sequence[int]) -> list[str]:
+    """Return display tokens without affecting training semantics."""
+
+    if hasattr(tokenizer, "decode"):
+        try:
+            decoded = tokenizer.decode(list(token_ids))
+            if isinstance(decoded, list):
+                return [str(item) for item in decoded]
+        except Exception:
+            pass
+    processor = getattr(tokenizer, "processor", None)
+    if processor is not None and hasattr(processor, "id_to_piece"):
+        tokens = []
+        for token_id in token_ids:
+            try:
+                tokens.append(str(processor.id_to_piece(int(token_id))))
+            except Exception:
+                tokens.append(str(token_id))
+        return tokens
+    return [str(item) for item in token_ids]
+
+
+def _unknown_token_id(tokenizer: Any) -> int | None:
+    """Return the tokenizer unknown id when available."""
+
+    if hasattr(tokenizer, "get_unknown_index"):
+        try:
+            return int(tokenizer.get_unknown_index())
+        except Exception:
+            return None
+    unk_id = getattr(tokenizer, "unk_token_id", None)
+    if unk_id is not None:
+        return int(unk_id)
+    processor = getattr(tokenizer, "processor", None)
+    if processor is not None and hasattr(processor, "unk_id"):
+        value = processor.unk_id()
+        if value is not None and int(value) >= 0:
+            return int(value)
+    return None
+
+
+def _format_tag_report(
+    tokenizer: Any,
+    config: FineTuningConfig,
+    dataset_format: str,
+) -> dict[str, Any]:
+    """Describe how configured tags are treated by the tokenizer."""
+
+    tag_values: dict[str, str] = {}
+    if dataset_format == "instruction_response":
+        if config.instruction_tag:
+            tag_values["instruction_tag"] = config.instruction_tag
+        if config.context_tag:
+            tag_values["context_tag"] = config.context_tag
+        if config.response_tag:
+            tag_values["response_tag"] = config.response_tag
+    elif dataset_format == "prompt_completion" and config.response_tag:
+        tag_values["response_tag"] = config.response_tag
+    if config.end_behavior == "custom_tag":
+        tag_values["end_tag"] = config.end_tag
+
+    vocab = getattr(tokenizer, "stoi", None) or {}
+    user_symbols = set(getattr(tokenizer, "user_defined_symbols", []) or [])
+    items: dict[str, dict[str, Any]] = {}
+    detected = []
+    for name, value in tag_values.items():
+        detected.append(value)
+        exists = value in vocab or value in user_symbols
+        if exists:
+            status = "existing special token" if value in user_symbols else "ordinary text"
+        elif config.register_tags_as_special_tokens:
+            status = "new special token requiring registration"
+        else:
+            status = "ordinary text"
+        items[name] = {"value": value, "status": status}
+    return {
+        "dataset_format": dataset_format,
+        "detected_tags": detected,
+        "items": items,
+        "register_tags_as_special_tokens": config.register_tags_as_special_tokens,
+    }
+
+
+def fine_tuning_format_fingerprint(
+    *,
+    config: FineTuningConfig,
+    tokenizer_identity: Mapping[str, Any] | None = None,
+) -> str:
+    """Fingerprint only fields that affect prepared fine-tuning examples."""
+
+    data = config.to_dict()
+    relevant = {
+        "formatter": data.get("formatter"),
+        "dataset_format": data.get("formatter"),
+        "mode": data.get("mode"),
+        "max_sequence_length": data.get("max_sequence_length"),
+        "text_field": data.get("text_field"),
+        "prompt_field": data.get("prompt_field"),
+        "completion_field": data.get("completion_field"),
+        "instruction_field": data.get("instruction_field"),
+        "context_field": data.get("input_field"),
+        "response_field": data.get("response_field"),
+        "strict_field_mapping": data.get("strict_field_mapping"),
+        "instruction_tag": data.get("instruction_tag"),
+        "response_tag": data.get("response_tag"),
+        "context_tag": data.get("context_tag"),
+        "end_behavior": data.get("end_behavior"),
+        "end_tag": data.get("end_tag"),
+        "separator": data.get("separator"),
+        "register_tags_as_special_tokens": data.get("register_tags_as_special_tokens"),
+        "label_strategy": data.get("label_strategy"),
+        "truncation": data.get("truncation"),
+        "padding": data.get("padding"),
+        "tokenizer": dict(tokenizer_identity or {}),
+    }
+    return _fingerprint(relevant).replace("sft_", "fmt_", 1)
 
 
 def _append_error(

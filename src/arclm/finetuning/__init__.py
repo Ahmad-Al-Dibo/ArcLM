@@ -17,13 +17,16 @@ from .packing import pack_sequences
 from .sft import SFTTrainingResult, train_sft
 from .workflow import (
     FineTuningDatasetReport,
+    PreparedFineTuningRecord,
     FineTuningResult,
     PreparedFineTuningDataset,
     SFTRecordContract,
+    fine_tuning_format_fingerprint,
     fine_tune,
     get_sft_record_contract,
     normalize_fine_tuning_example,
     prepare_fine_tuning_dataset,
+    prepare_fine_tuning_record,
     validate_sft_records,
 )
 
@@ -38,6 +41,7 @@ __all__ = [
     "FineTuningResult",
     "ModelAdapter",
     "PreparedFineTuningDataset",
+    "PreparedFineTuningRecord",
     "SFTConfig",
     "SFTDataCollator",
     "SFTRecordContract",
@@ -52,10 +56,12 @@ __all__ = [
     "format_text_example",
     "mask_labels",
     "fine_tune",
+    "fine_tuning_format_fingerprint",
     "get_sft_record_contract",
     "normalize_fine_tuning_example",
     "pack_sequences",
     "prepare_fine_tuning_dataset",
+    "prepare_fine_tuning_record",
     "train_sft",
     "validate_sft_records",
 ]

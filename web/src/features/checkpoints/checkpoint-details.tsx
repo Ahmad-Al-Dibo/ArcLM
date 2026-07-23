@@ -46,6 +46,7 @@ export function CheckpointDetailsPage({ projectId, checkpointId, client }: { pro
 
   if (error) return <ErrorState title="Checkpoint unavailable" description={error} />;
   if (!checkpoint) return <Card><CardContent>Loading checkpoint.</CardContent></Card>;
+  const fineTuning = checkpoint.fine_tuning as Record<string, unknown> | undefined;
 
   return (
     <div className="studio-page">
@@ -77,6 +78,20 @@ export function CheckpointDetailsPage({ projectId, checkpointId, client }: { pro
         <Link className="ui-button ui-button-secondary" href={`/projects/${projectId}/checkpoints/${checkpointId}/inspect`}>Inspect</Link>
         <Button variant="destructive" onClick={() => void remove()}>Delete</Button>
       </div>
+      {fineTuning ? (
+        <Card>
+          <CardHeader><CardTitle>Fine-tuning summary</CardTitle><CardDescription>Formatting identity preserved with this checkpoint.</CardDescription></CardHeader>
+          <CardContent>
+            <KeyValueList items={[
+              { label: "Method", value: text(fineTuning.fine_tuning_method) },
+              { label: "Dataset format", value: text(fineTuning.dataset_format) },
+              { label: "Label strategy", value: text(fineTuning.label_strategy) },
+              { label: "Maximum sequence length", value: text(fineTuning.maximum_sequence_length) },
+              { label: "Formatting fingerprint", value: text(fineTuning.format_fingerprint) }
+            ]} />
+          </CardContent>
+        </Card>
+      ) : null}
       <Card><CardHeader><CardTitle>Metadata JSON</CardTitle></CardHeader><CardContent><pre className="studio-json">{JSON.stringify(checkpoint, null, 2)}</pre></CardContent></Card>
     </div>
   );

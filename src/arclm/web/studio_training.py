@@ -19,7 +19,12 @@ from typing import Any, Mapping
 import torch
 from torch.utils.data import TensorDataset
 
-from arclm.finetuning import FineTuningConfig, FineTuningMode, prepare_fine_tuning_dataset
+from arclm.finetuning import (
+    FineTuningConfig,
+    FineTuningMode,
+    fine_tuning_format_fingerprint,
+    prepare_fine_tuning_dataset,
+)
 from arclm.models import ArcLM
 from arclm.training import BaseCallback, Trainer, TrainingConfig
 
@@ -75,6 +80,7 @@ class StudioTrainingCallback(BaseCallback):
     def on_checkpoint_save(self, trainer, path) -> None:
         if path is None:
             return
+        _patch_checkpoint_fine_tuning_metadata(path, self.run)
         checkpoint_id = Path(path).name
         self.run.latest_checkpoint_id = checkpoint_id
         self.workspace.append_event(
@@ -174,6 +180,51 @@ class StudioTrainingCoordinator:
             raise WorkspaceApiError("tokenizer_vocab_model_mismatch", "Tokenizer vocabulary does not match model vocabulary.", status_code=400)
         if dataset.record_count <= 0:
             raise WorkspaceApiError("training_dataset_invalid", "The selected dataset has no records.", status_code=400)
+        if str(payload.get("training_mode") or "pretraining") == "fine_tuning":
+            formatting = dict(payload.get("fine_tuning_format") or {})
+            if not formatting:
+                raise WorkspaceApiError(
+                    "fine_tuning_preview_required",
+                    "Generate a fine-tuning preview before starting SFT.",
+                    status_code=400,
+                )
+            try:
+                ft_config = _fine_tuning_config_from_payload(payload, int(payload.get("maximum_sequence_length") or model.configuration["block_size"]))
+            except Exception as exc:
+                raise WorkspaceApiError(
+                    "fine_tuning_format_configuration_invalid",
+                    _safe_message(exc),
+                    status_code=400,
+                ) from exc
+            expected = fine_tuning_format_fingerprint(
+                config=ft_config,
+                tokenizer_identity=_tokenizer_identity(tokenizer),
+            )
+            supplied = (
+                payload.get("preview_configuration_fingerprint")
+                or formatting.get("preview_configuration_fingerprint")
+                or formatting.get("format_fingerprint")
+            )
+            if not supplied:
+                raise WorkspaceApiError(
+                    "fine_tuning_preview_required",
+                    "Generate a current fine-tuning preview before starting SFT.",
+                    status_code=400,
+                )
+            if str(supplied) != expected:
+                raise WorkspaceApiError(
+                    "fine_tuning_preview_stale",
+                    "The fine-tuning preview is stale. Regenerate the preview before starting.",
+                    status_code=409,
+                    details={"expected_format_fingerprint": expected},
+                )
+            payload_format = dict(formatting)
+            payload_format["format_fingerprint"] = expected
+            payload_format["label_strategy"] = ft_config.label_strategy
+            payload_format["maximum_sequence_length"] = ft_config.max_sequence_length
+            if hasattr(payload, "__setitem__"):
+                payload["fine_tuning_format"] = payload_format
+                payload["preview_configuration_fingerprint"] = expected
         device = str(payload.get("device") or "auto")
         if device not in {"auto", "cpu", "cuda"}:
             raise WorkspaceApiError("training_device_unavailable", "device must be one of: auto, cpu, cuda.", status_code=400)
@@ -207,6 +258,9 @@ class StudioTrainingCoordinator:
             max_length = int(payload.get("maximum_sequence_length") or model_meta.configuration["block_size"])
             if run.training_mode == "fine_tuning":
                 dataset = _fine_tuning_tensor_dataset(records, tokenizer, payload, max_length)
+                payload["format_fingerprint"] = payload.get("preview_configuration_fingerprint") or (payload.get("fine_tuning_format") or {}).get("format_fingerprint")
+                run.configuration = payload
+                self.workspace.write_run(run)
             else:
                 dataset = _tensor_dataset(records, tokenizer, dataset_meta.text_fields, max_length)
             if len(dataset) == 0:
@@ -318,23 +372,7 @@ class _MaskedTensorDataset(torch.utils.data.Dataset):
 
 
 def _fine_tuning_tensor_dataset(records, tokenizer, payload: Mapping[str, Any], max_length: int):
-    formatting = dict(payload.get("fine_tuning_format") or {})
-    method = str(payload.get("fine_tuning_method") or "sft")
-    dataset_format = str(formatting.get("dataset_format") or "instruction_response")
-    config = FineTuningConfig(
-        mode=FineTuningMode.SFT if method == "sft" else FineTuningMode.CAUSAL_LM,
-        formatter="plain_text" if dataset_format == "plain_text" else dataset_format,
-        max_sequence_length=max(2, int(formatting.get("maximum_sequence_length") or max_length)),
-        train_on_prompt=not bool(formatting.get("train_on_response_only", True)),
-        append_eos_token=str(formatting.get("end_behavior") or "custom_end_tag") == "tokenizer_eos",
-        text_field=str(formatting.get("text_field") or "text"),
-        prompt_field=str(formatting.get("prompt_field") or "prompt"),
-        completion_field=str(formatting.get("completion_field") or "completion"),
-        instruction_field=str(formatting.get("instruction_field") or "instruction"),
-        input_field=str(formatting.get("context_field") or "input"),
-        response_field=str(formatting.get("response_field") or "response"),
-        skip_invalid_records=False,
-    )
+    config = _fine_tuning_config_from_payload(payload, max_length)
     prepared = prepare_fine_tuning_dataset(records, tokenizer, config)
     target_length = max(2, config.max_sequence_length) - 1
     xs: list[list[int]] = []
@@ -357,6 +395,96 @@ def _fine_tuning_tensor_dataset(records, tokenizer, payload: Mapping[str, Any], 
         ys.append(y)
         masks.append(mask)
     return _MaskedTensorDataset(xs, ys, masks)
+
+
+def _fine_tuning_config_from_payload(payload: Mapping[str, Any], max_length: int) -> FineTuningConfig:
+    formatting = dict(payload.get("fine_tuning_format") or {})
+    method = str(payload.get("fine_tuning_method") or "sft")
+    dataset_format = str(formatting.get("dataset_format") or "instruction_response")
+    end_behavior = str(formatting.get("end_behavior") or "custom_tag")
+    if end_behavior == "custom_end_tag":
+        end_behavior = "custom_tag"
+    train_on_response_only = bool(formatting.get("train_on_response_only", True))
+    return FineTuningConfig(
+        mode=FineTuningMode.SFT if method == "sft" else FineTuningMode.CAUSAL_LM,
+        formatter="plain_text" if dataset_format == "plain_text" else dataset_format,
+        max_sequence_length=max(2, int(formatting.get("maximum_sequence_length") or max_length)),
+        train_on_prompt=not train_on_response_only,
+        label_strategy="response_only" if train_on_response_only else "full_sequence",
+        end_behavior=end_behavior,
+        end_tag=str(formatting.get("end_tag") or "<|end|>"),
+        text_field=str(formatting.get("text_field") or "text"),
+        prompt_field=str(formatting.get("prompt_field") or "prompt"),
+        completion_field=str(formatting.get("completion_field") or "completion"),
+        instruction_field=str(formatting.get("instruction_field") or "instruction"),
+        input_field=str(formatting.get("context_field") or "input"),
+        response_field=str(formatting.get("response_field") or "response"),
+        instruction_tag=str(formatting.get("instruction_tag") or "<|instruction|>"),
+        response_tag=str(formatting.get("response_tag") or "<|response|>"),
+        context_tag=formatting.get("context_tag"),
+        separator=str(formatting.get("separator") or "\n"),
+        register_tags_as_special_tokens=bool(formatting.get("register_tags_as_special_tokens", False)),
+        strict_field_mapping=True,
+        skip_invalid_records=False,
+    )
+
+
+def _tokenizer_identity(tokenizer_meta: Any) -> dict[str, Any]:
+    return {
+        "id": tokenizer_meta.id,
+        "type": tokenizer_meta.type,
+        "tokenizer_type": tokenizer_meta.tokenizer_type,
+        "sentencepiece_model_type": tokenizer_meta.sentencepiece_model_type,
+        "vocab_size": int(tokenizer_meta.vocab_size),
+    }
+
+
+def _patch_checkpoint_fine_tuning_metadata(path: str | Path, run: StudioRunMetadata) -> None:
+    """Store Studio fine-tuning identity in the Trainer checkpoint metadata."""
+
+    if run.training_mode != "fine_tuning":
+        return
+    checkpoint_dir = Path(path)
+    checkpoint_file = checkpoint_dir / "training.pt" if checkpoint_dir.is_dir() else checkpoint_dir
+    if not checkpoint_file.is_file():
+        return
+    try:
+        checkpoint = torch.load(checkpoint_file, map_location="cpu", weights_only=False)
+    except Exception:
+        return
+    metadata = dict(checkpoint.get("metadata") or {})
+    checkpoint_metadata = dict(checkpoint.get("checkpoint_metadata") or {})
+    lifecycle_metadata = dict(checkpoint.get("lifecycle_metadata") or {})
+    config = dict(run.configuration or {})
+    formatting = dict(config.get("fine_tuning_format") or {})
+    summary = {
+        "training_mode": run.training_mode,
+        "fine_tuning_method": run.fine_tuning_method,
+        "base_checkpoint_id": run.base_checkpoint_id,
+        "base_model_id": run.model_id,
+        "dataset_id": run.dataset_id,
+        "tokenizer_id": run.tokenizer_id,
+        "dataset_format": formatting.get("dataset_format"),
+        "field_mapping": {
+            "instruction_field": formatting.get("instruction_field"),
+            "response_field": formatting.get("response_field"),
+            "prompt_field": formatting.get("prompt_field"),
+            "completion_field": formatting.get("completion_field"),
+            "text_field": formatting.get("text_field"),
+            "context_field": formatting.get("context_field"),
+        },
+        "format_config": formatting,
+        "format_fingerprint": formatting.get("format_fingerprint") or config.get("format_fingerprint"),
+        "label_strategy": formatting.get("label_strategy"),
+        "maximum_sequence_length": formatting.get("maximum_sequence_length") or config.get("maximum_sequence_length"),
+    }
+    metadata["fine_tuning"] = summary
+    checkpoint_metadata["fine_tuning"] = summary
+    lifecycle_metadata["fine_tuning"] = summary
+    checkpoint["metadata"] = metadata
+    checkpoint["checkpoint_metadata"] = checkpoint_metadata
+    checkpoint["lifecycle_metadata"] = lifecycle_metadata
+    torch.save(checkpoint, checkpoint_file)
 
 
 def _resolve_device(device: str) -> str:

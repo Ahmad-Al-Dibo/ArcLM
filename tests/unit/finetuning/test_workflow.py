@@ -7,6 +7,7 @@ from arclm.finetuning import (
     PreparedFineTuningDataset,
     normalize_fine_tuning_example,
     prepare_fine_tuning_dataset,
+    prepare_fine_tuning_record,
 )
 
 from ._helpers import TinyTokenizer
@@ -169,3 +170,81 @@ def test_normalization_supports_causal_lm_mode():
 
     assert example.formatter == "plain_text"
     assert example.full_text == "hello world"
+
+
+def test_single_record_preparation_matches_dataset_feature_with_custom_tags():
+    tokenizer = TinyTokenizer()
+    record = {"instruction": "Say hi", "response": "hello"}
+    config = FineTuningConfig(
+        formatter="instruction_response",
+        instruction_field="instruction",
+        response_field="response",
+        instruction_tag="<|i|>",
+        response_tag="<|r|>",
+        end_behavior="custom_tag",
+        end_tag="<|end|>",
+        label_strategy="response_only",
+        max_sequence_length=24,
+        strict_field_mapping=True,
+    )
+
+    preview = prepare_fine_tuning_record(record, tokenizer, config)
+    prepared = prepare_fine_tuning_dataset([record], tokenizer, config)
+
+    assert preview.formatted_text == "<|i|> Say hi\n<|r|> hello\n<|end|>"
+    assert preview.input_ids == prepared[0]["input_ids"]
+    assert preview.labels == prepared[0]["labels"]
+    assert preview.label_mask == [
+        "ignore" if label == config.ignore_index else "train"
+        for label in prepared[0]["labels"]
+    ]
+    assert preview.truncated == bool(prepared.report.records_truncated)
+
+
+def test_end_behavior_and_label_strategy_are_canonical():
+    tokenizer = TinyTokenizer()
+    record = {"prompt": "Say", "completion": "hello"}
+    eos = prepare_fine_tuning_record(
+        record,
+        tokenizer,
+        FineTuningConfig(
+            formatter="prompt_completion",
+            end_behavior="tokenizer_eos",
+            label_strategy="response_only",
+            max_sequence_length=24,
+        ),
+    )
+    no_end = prepare_fine_tuning_record(
+        record,
+        tokenizer,
+        FineTuningConfig(
+            formatter="prompt_completion",
+            end_behavior="none",
+            label_strategy="full_sequence",
+            max_sequence_length=24,
+        ),
+    )
+
+    assert eos.input_ids[-1] == tokenizer.eos_token_id
+    assert eos.labels[-1] == tokenizer.eos_token_id
+    assert all(label != -100 for label in no_end.labels)
+    assert len(no_end.input_ids) + 1 == len(eos.input_ids)
+
+
+def test_truncation_is_identical_for_record_and_dataset():
+    tokenizer = TinyTokenizer()
+    record = {"prompt": "one two three four five six", "completion": "answer"}
+    config = FineTuningConfig(
+        formatter="prompt_completion",
+        end_behavior="none",
+        label_strategy="full_sequence",
+        max_sequence_length=4,
+    )
+
+    preview = prepare_fine_tuning_record(record, tokenizer, config)
+    prepared = prepare_fine_tuning_dataset([record], tokenizer, config)
+
+    assert preview.truncated is True
+    assert prepared.report.records_truncated == 1
+    assert preview.input_ids == prepared[0]["input_ids"]
+    assert preview.labels == prepared[0]["labels"]
