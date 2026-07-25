@@ -17,6 +17,7 @@ from .results import AgentRunResult
 from .session import AgentSession
 from .schema import validate_arguments
 from .tracing import AgentTrace
+from arclm.security.redaction import redact_mapping
 
 
 class AgentRunner:
@@ -132,7 +133,10 @@ class AgentRunner:
                     duration_seconds=duration,
                     metadata={"success": result.success, "error_code": result.error_code},
                 )
-                session.add_message(tool_result_message(call.id, current_tool.name, result))
+                safe_result = result
+                if getattr(agent.security_policy, "redact_traces", True):
+                    safe_result = _redacted_tool_result(result)
+                session.add_message(tool_result_message(call.id, current_tool.name, safe_result))
                 if not result.success and agent.tool_policy.stop_on_tool_failure:
                     return _failure(result.error_code or "tool_execution_failed", result.error_message or "tool failed", session, trace)
             trace.record("step_completed", step=step)
@@ -199,3 +203,21 @@ def _validate_structured_output(agent: Agent, response: ModelResponse) -> str | 
     except Exception as exc:
         return f"structured output validation failed: {exc}"
     return None
+
+
+def _redacted_tool_result(result: Any) -> Any:
+    from .results import ToolResult
+
+    if not isinstance(result, ToolResult):
+        return result
+    metadata = redact_mapping(result.metadata)
+    value = redact_mapping(result.value)
+    content = None if result.content is None else redact_mapping(result.content)
+    return ToolResult(
+        success=result.success,
+        value=value,
+        content=content,
+        error_code=result.error_code,
+        error_message=result.error_message,
+        metadata=metadata,
+    )

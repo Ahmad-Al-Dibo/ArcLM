@@ -232,6 +232,25 @@ def create_web_api_parser(subparsers):
     return parser
 
 
+def create_security_parser(subparsers):
+    """Create parser for safe security commands."""
+
+    parser = subparsers.add_parser(
+        "security",
+        help="Inspect ArcLM Security Core status",
+        description="Run safe local Security Core status and audit commands.",
+    )
+    security_subparsers = parser.add_subparsers(dest="security_command")
+    status = security_subparsers.add_parser("status", help="Print safe security status")
+    status.add_argument("--json", action="store_true", help="Print JSON output")
+    status.set_defaults(func=security_status_command)
+    audit = security_subparsers.add_parser("audit", help="Print security inventory and threat model")
+    audit.add_argument("--json", action="store_true", help="Print JSON output")
+    audit.set_defaults(func=security_audit_command)
+    parser.set_defaults(func=security_status_command)
+    return parser
+
+
 def create_doctor_parser(subparsers):
     """Maakt de parser voor veilige lokale diagnostics."""
     parser = subparsers.add_parser(
@@ -483,6 +502,44 @@ def web_api_command(args):
     return 0
 
 
+def security_status_command(args):
+    """Print safe Security Core status."""
+
+    from arclm.security import security_status
+
+    status = security_status()
+    if getattr(args, "json", False):
+        print(json.dumps(status, indent=2, sort_keys=True))
+    else:
+        print(f"Security mode: {status['mode']}")
+        print(f"Encryption available: {status['encryption']['available']}")
+        print(f"Signing available: {status['signing']['available']}")
+        for warning in status.get("warnings", []):
+            print(f"Warning: {warning}", file=sys.stderr)
+    return 0
+
+
+def security_audit_command(args):
+    """Print safe security inventory and threat model."""
+
+    from arclm.security import security_inventory, threat_model
+
+    payload = {
+        "inventory": [item.to_dict() for item in security_inventory()],
+        "threat_model": [item.to_dict() for item in threat_model()],
+    }
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("Security inventory")
+        for item in payload["inventory"]:
+            print(f"- {item['asset']}: {item['sensitivity']} ({item['owner_subsystem']})")
+        print("Threat model")
+        for item in payload["threat_model"]:
+            print(f"- {item['threat']}: {item['mitigation']}")
+    return 0
+
+
 def doctor_command(args):
     """Print safe native diagnostics for release-readiness checks."""
     report = build_runtime_diagnostics(include_paths=True)
@@ -579,6 +636,7 @@ Examples:
     create_eval_parser(subparsers)
     create_generate_parser(subparsers)
     create_web_api_parser(subparsers)
+    create_security_parser(subparsers)
     create_doctor_parser(subparsers)
 
     args = parser.parse_args()

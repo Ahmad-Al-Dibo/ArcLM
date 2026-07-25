@@ -19,6 +19,7 @@ arclm.peft
 arclm.search
 arclm.web
 arclm.agents
+arclm.security
 ```
 
 Legacy modules blijven compatibility-only zolang tests en gebruikers ze nodig hebben. `MiniGPT` blijft voorlopig een deprecated alias naar `ArcLM`; er is geen tweede implementatie. `arclm.pipeline_v2` is geen tweede pipeline meer, maar alleen een deprecated re-export pad.
@@ -207,6 +208,151 @@ Security limits:
   downloads.
 
 Dedicated documentation: [`docs/agent-runtime.md`](agent-runtime.md).
+
+## ArcLM Security Core
+
+Status: foundational security subsystem, explicit crypto extra, no version bump.
+
+`arclm.security` introduces ArcLM Security Core. Its design rule is:
+
+```text
+Secure by default
+Explicit when sensitive
+Fail closed
+No silent downgrade
+```
+
+Security inventory and threat model:
+
+- The implementation includes safe `security_inventory()` and `threat_model()`
+  objects covering datasets, tokenizer files, model configs, model weights,
+  checkpoints, optimizer/scheduler/RNG state, run events, evaluation reports,
+  generation history, Agent sessions, tool calls/results, prompts,
+  instructions, external credentials, Web Studio config, keys and plugins.
+- Primary threats recorded include path traversal, checkpoint replacement,
+  untrusted Pickle loading, secret leakage, SSRF, weak keys, nonce reuse,
+  remote Web exposure and prompt injection through documents/webpages.
+
+Security modes and policy:
+
+- `SecurityMode`: `development`, `local_secure`, `remote_secure`.
+- `LegacyArtifactPolicy`: `legacy_read`, `secure_write`, `strict_secure`.
+- `SecurityPolicy` controls encryption-required artifact types,
+  signature-required artifact types, allowed algorithms, untrusted Pickle,
+  remote model code, TLS-for-remote behavior, CORS credential rules and limits.
+- `security_status()` returns a safe report with no keys, passwords, tokens,
+  certificates or private paths.
+
+Cryptographic dependency decision:
+
+- Security crypto is an explicit extra: `arclm[security]`.
+- The selected library is `cryptography>=42,<47`.
+- Base imports remain light. Encryption/signing operations fail closed when
+  `cryptography` is unavailable and never downgrade to plaintext.
+
+Encryption algorithms and envelopes:
+
+- Supported AEAD algorithms: `AES-256-GCM` and `ChaCha20-Poly1305`.
+- Unsupported: ECB, unauthenticated CBC, DES/3DES/RC4, XOR, ZIP passwords and
+  tutorial ciphers.
+- Every encryption operation generates a fresh 96-bit random nonce with
+  `os.urandom`.
+- `EncryptedEnvelope` is versioned JSON with format, version, algorithm, key id,
+  nonce, associated data, ciphertext, creation time and metadata.
+- Associated data is canonicalized and authenticated. Changing it causes
+  decryption to fail.
+- Large artifact behavior is conservative: the small AEAD backend refuses
+  payloads above policy limits. Streaming AEAD is not implemented yet and no
+  plaintext fallback is allowed.
+
+Key derivation and key providers:
+
+- Password-derived keys use Argon2id with random salt and bounded parameters.
+- HKDF derives purpose-bound subkeys from high-entropy master keys.
+- `KeyProvider`, `KeyReference`, and `SecretKeyMaterial` define the provider
+  boundary.
+- Implemented providers: `InMemoryKeyProvider` for tests/local ephemeral use
+  and `PasswordKeyProvider` for explicit password-derived workflows.
+- Key lifecycle states are represented: `active`, `decrypt_only`, `rotating`,
+  `disabled`, `destroyed`.
+- Python memory zeroization is not claimed.
+
+Encrypted artifacts and atomic writes:
+
+- `EncryptedArtifactStore` is root-scoped and validates relative paths before
+  writing or reading.
+- Encrypted writes use a temporary file in the destination directory, flush,
+  `os.replace`, and cleanup on failure.
+- File permissions are tightened with `chmod(0o600)` where the platform
+  supports it. Encryption remains the main confidentiality boundary.
+
+Hashing and signed manifests:
+
+- Hash helpers support SHA-256 and SHA-512.
+- Unsigned hashes are documented as integrity checks, not authenticity proofs.
+- `ArtifactManifest` and `ManifestFile` provide canonical file inventory.
+- Manifests are signed and verified with Ed25519 using deterministic canonical
+  serialization.
+- Verification rejects modified manifests, changed files, duplicate paths,
+  traversal paths, unsupported algorithms and missing signatures.
+
+Secure checkpoint/model loading:
+
+- `SecureArtifactLoader` validates policy before deserialization.
+- Untrusted Pickle loading is rejected by default.
+- Remote model code is rejected by default.
+- Strict secure mode requires signed manifests for checkpoints/model artifacts.
+- Existing legacy checkpoint APIs remain readable through explicit trusted
+  paths; automatic migration or deletion is not performed.
+- Safetensors is treated as a safer model-weight format candidate and verified
+  through manifests when present, but no new safetensors dependency is added in
+  this phase.
+
+Web Studio security:
+
+- Web Studio remains bound to `127.0.0.1` by default.
+- Security helpers validate remote-secure TLS policy, CORS origins, wildcard
+  credential denial, CSRF tokens and conservative security headers.
+- Authentication and authorization are represented by an explicit boundary
+  object. A production auth system is not implemented.
+
+Agent Runtime security:
+
+- `Agent` can carry `SecurityPolicy`.
+- Tool-result messages are redacted before session storage when
+  `security_policy.redact_traces` is enabled.
+- Defensive Agent tools are available through
+  `create_security_tool_collection()` for redaction and hashing.
+- Sensitive tool permission and approval behavior remains enforced by Agent
+  Runtime policies.
+
+Migration:
+
+- `inspect_workspace_for_security_migration()` classifies existing plaintext
+  files and creates a migration plan without modifying files.
+- Migration defaults preserve plaintext until encrypted copies are verified and
+  cleanup is explicitly chosen.
+
+Security CLI:
+
+```bash
+python -m arclm security status --json
+python -m arclm security audit --json
+```
+
+The CLI prints safe status, inventory and threat-model information without
+secrets or absolute workspace paths.
+
+Known limitations:
+
+- No cloud KMS, OS keyring provider, streaming AEAD backend, full auth system,
+  full MCP security profile, independent audit, certification, or production
+  browser deployment is claimed.
+- Existing PyTorch trusted loading remains a legacy explicit boundary.
+- Full test suite still has unrelated environment-sensitive failures in
+  distributed/checkpoint/web/regression areas in this workspace.
+
+Examples live in [`examples/security/`](../examples/security/).
 
 Release recommendation after this pass should prefer `0.10.0` unless a final
 manual release review decides Web Studio 1-3 are small enough to remain under

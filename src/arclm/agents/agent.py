@@ -8,6 +8,7 @@ from typing import Any
 from .configuration import AgentConfig
 from .permissions import ToolPolicy
 from .tool import Tool
+from arclm.security import SecurityPolicy
 
 
 @dataclass
@@ -24,6 +25,7 @@ class Agent:
     approval_policy: dict[str, Any] = field(default_factory=dict)
     session_policy: dict[str, Any] = field(default_factory=dict)
     output_schema: dict[str, Any] | type | None = None
+    security_policy: SecurityPolicy = field(default_factory=SecurityPolicy)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def config(self) -> AgentConfig:

@@ -132,6 +132,34 @@ multi-agent orchestration.
 See [`docs/agent-runtime.md`](docs/agent-runtime.md) and
 [`examples/agents/`](examples/agents/) for details.
 
+## Security
+
+ArcLM includes `arclm.security`, the ArcLM Security Core. It provides
+security-policy objects, safe status reports, secret redaction, hashing,
+signed manifests, AEAD encryption envelopes, key providers, and encrypted
+artifact storage. Install the crypto dependency explicitly with:
+
+```bash
+pip install "arclm[security]"
+```
+
+Encryption uses reviewed primitives from `cryptography` and fails closed when
+the dependency or key is missing. It never silently stores plaintext as a
+fallback. Signed manifests use Ed25519, hashes use SHA-256/SHA-512 allowlists,
+password-derived keys use Argon2id, and high-entropy subkeys use HKDF.
+
+Web Studio remains local-only by default. Remote-secure deployments must supply
+TLS, explicit origins, and an authentication/authorization layer. Agent Runtime
+tools use permissions and approvals, and Security Core adds defensive redaction
+and hashing tools.
+
+```bash
+python -m arclm security status --json
+```
+
+See [`SECURITY.md`](SECURITY.md) and
+[`examples/security/`](examples/security/) for secure usage notes and examples.
+
 ## Current Limits
 
 ArcLM 0.10.0 does not claim universal Hugging Face support, production serving,

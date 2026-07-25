@@ -13,6 +13,7 @@ def test_documented_domain_imports_are_available():
         "arclm.inference": ["TextGenerator", "load_model", "predict"],
         "arclm.inspection": ["PipelineTrace", "inspect_text"],
         "arclm.agents": ["Agent", "AgentRunner", "Tool", "ToolResult", "tool"],
+        "arclm.security": ["SecurityPolicy", "encrypt_bytes", "decrypt_bytes", "hash_file", "redact_sensitive_text"],
         "arclm.checkpoints": [
             "CheckpointInfo",
             "SmartLoader",
