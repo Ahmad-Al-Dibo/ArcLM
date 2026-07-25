@@ -72,6 +72,66 @@ python -m arclm generate --help
 
 The installed console entry point is also `arclm`.
 
+## ArcLM Agent Runtime
+
+ArcLM includes a foundational provider-independent agent subsystem:
+
+```python
+from arclm.agents import Agent, AgentRunner, ModelResponse, ToolCall, tool
+
+
+@tool
+def calculate_total(price: float, quantity: int) -> float:
+    """Calculate a total price."""
+    return price * quantity
+
+
+class FakeModel:
+    def __init__(self):
+        self.calls = 0
+
+    def generate_response(self, *, messages, tools, instructions, session):
+        self.calls += 1
+        if self.calls == 1:
+            return ModelResponse(
+                tool_calls=[
+                    ToolCall(
+                        id="call_1",
+                        name="calculate_total",
+                        arguments={"price": 12.5, "quantity": 3},
+                    )
+                ]
+            )
+        return ModelResponse(content="The total is 37.5.")
+
+
+agent = Agent(
+    name="shopping_assistant",
+    instructions="Help calculate product totals.",
+    model=FakeModel(),
+    tools=[calculate_total],
+)
+
+result = AgentRunner(max_steps=5).run(agent, "What is 3 * 12.50?")
+print(result.output)
+```
+
+Tools are typed Python callables with generated schemas, validated arguments,
+permissions, structured results, and trace events. Model adapters return
+provider-independent `ModelResponse` objects, so the core runtime does not
+depend on OpenAI, Anthropic, Hugging Face, LangChain, or another agent
+framework.
+
+Built-in groups cover bounded calculators, current date/time, text statistics,
+JSON helpers, Markdown/HTML conversion, safe workspace text-file reads, safe
+mockable webpage reading, and a speech-to-text abstraction. Whisper is optional
+and lazy. The runtime does not include shell tools, arbitrary Python execution,
+browser automation, unrestricted filesystem access, long-term vector memory, or
+multi-agent orchestration.
+
+See [`docs/agent-runtime.md`](docs/agent-runtime.md) and
+[`examples/agents/`](examples/agents/) for details.
+
 ## Current Limits
 
 ArcLM 0.10.0 does not claim universal Hugging Face support, production serving,

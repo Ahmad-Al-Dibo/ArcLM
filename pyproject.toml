@@ -78,6 +78,14 @@ preprocess = [
   "PyYAML>=6,<7",
   "tqdm>=4.66,<5",
 ]
+agents = []
+agents-web = []
+agents-audio = [
+  "openai-whisper>=20231117",
+]
+agents-all = [
+  "openai-whisper>=20231117",
+]
 peft = [
   "peft>=0.11,<1",
 ]

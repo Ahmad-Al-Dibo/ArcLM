@@ -12,6 +12,7 @@ def test_documented_domain_imports_are_available():
         "arclm.finetuning": ["SFTTrainer", "SFTConfig", "ModelAdapter"],
         "arclm.inference": ["TextGenerator", "load_model", "predict"],
         "arclm.inspection": ["PipelineTrace", "inspect_text"],
+        "arclm.agents": ["Agent", "AgentRunner", "Tool", "ToolResult", "tool"],
         "arclm.checkpoints": [
             "CheckpointInfo",
             "SmartLoader",

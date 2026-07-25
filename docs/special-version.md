@@ -18,6 +18,7 @@ arclm.evaluation
 arclm.peft
 arclm.search
 arclm.web
+arclm.agents
 ```
 
 Legacy modules blijven compatibility-only zolang tests en gebruikers ze nodig hebben. `MiniGPT` blijft voorlopig een deprecated alias naar `ArcLM`; er is geen tweede implementatie. `arclm.pipeline_v2` is geen tweede pipeline meer, maar alleen een deprecated re-export pad.
@@ -59,6 +60,153 @@ Public API stability inventory:
 | Experimental | External HF causal-LM loading boundaries, QLoRA/quantization runtime helpers, distributed runtime helpers, advanced preprocessing/search surfaces |
 | Deprecated | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders`, `MiniGPT`, Flask simple interface |
 | Unsupported | Native BERT/T5/LLaMA/Mistral/Qwen implementations, diffusion, multimodal, RLHF/DPO/GRPO, OpenAI-compatible APIs, production serving, attention-map capture, WebSockets/streaming generation |
+
+## ArcLM Agent Runtime
+
+Status: beta foundational subsystem, no version bump.
+
+`arclm.agents` adds the ArcLM Agent Runtime: a native-first, model-provider
+independent tool and agent loop. The public surface is intentionally small:
+
+```python
+from arclm.agents import Agent, AgentRunner, Tool, ToolResult, ToolCall, ModelResponse, tool
+```
+
+Architecture:
+
+- Core runtime depends on ArcLM and the Python standard library, not OpenAI,
+  Anthropic, Google, Hugging Face, LangChain, or another agent framework.
+- Tool registration follows the existing lightweight `arclm.registry.Registry`
+  style through a focused `ToolRegistry`; no second general plugin, event, or
+  dependency-injection platform was added.
+- Root import policy is preserved. `import arclm` does not import the Agent
+  Runtime or optional speech/web/model dependencies eagerly.
+- The runtime integrates through stable boundaries: model adapters,
+  serializable messages, structured tool results, sessions, traces, and
+  capability reports.
+
+Tool abstraction:
+
+- `Tool` wraps a typed callable and exposes `ToolSpec`.
+- `@tool` supports simple and configured decorator forms.
+- `Tool.from_callable(...)` supports explicit construction.
+- Generated input schemas use a strict JSON-schema subset.
+- Supported inputs include `str`, `int`, `float`, `bool`, `None`, `list[T]`,
+  `dict[str, T]`, `Literal`, `Enum`, optional/union values, simple dataclasses,
+  and already-loaded Pydantic models.
+- Unsupported annotations are rejected instead of represented as arbitrary
+  objects.
+- Tool invocation returns `ToolResult(success=..., value=..., content=...)`.
+
+Tool registry and collections:
+
+- `ToolRegistry` supports `register_tool`, `unregister_tool`, `get_tool`,
+  `list_tools`, `has_tool`, and `create_tool_set`.
+- Ordering is deterministic and duplicate names are rejected.
+- Filtering by category, tags, and enabled state is supported.
+- `ToolCollection` groups tools with description, categories, default
+  permissions, optional dependencies, and a capability report.
+
+Model adapter protocol:
+
+- Adapters return `ModelResponse(content=...)` for final answers or
+  `ModelResponse(tool_calls=[ToolCall(...)])` for tool requests.
+- Sync and async adapters are supported.
+- `CallableModelAdapter` wraps developer callables.
+- `JSONToolCallingAdapter` and `ArcLMJSONToolAdapter` implement a strict,
+  bounded JSON protocol for generation callables.
+- ArcLM native causal models are not described as reliable universal tool
+  callers. Malformed constrained-JSON output is rejected.
+
+Agent runner:
+
+- `Agent` describes name, instructions, model, tools, policies, optional
+  output schema, and metadata.
+- `AgentRunner` owns the bounded loop and defaults to eight steps.
+- Stop conditions include final response, maximum steps, model failure, invalid
+  model response, unknown or disabled tool, invalid arguments, approval denied,
+  tool failure, cancellation, and timeout.
+- `run(...)` is synchronous. `run_async(...)` is asynchronous. Sync tools can be
+  run from async execution through an executor, with cooperative rather than
+  forced cancellation.
+
+Sessions, permissions, approvals, tracing:
+
+- `AgentSession` stores bounded JSON-safe messages, tool calls, metadata,
+  created time, updated time, serialization, and restoration.
+- Tool permissions are `pure`, `read_local`, `read_network`, `write_local`,
+  `external_action`, and `sensitive`.
+- Side effects are `none`, `read_only`, `reversible`, and `irreversible`.
+- The default approval handler denies tools whose permission requires approval.
+- `ToolApprovalHandler` supports approve once, approve session, and deny.
+- `AgentTrace` records safe local events such as `run_started`,
+  `model_responded`, `tool_requested`, `approval_denied`, `tool_completed`,
+  `tool_failed`, `step_completed`, and `run_completed`.
+
+Built-in tools:
+
+- Utility: bounded `add`, `subtract`, `multiply`, `divide`, `power`,
+  `current_datetime`, and `text_statistics`.
+- JSON: `parse_json`, `format_json`, and `validate_json_shape`.
+- Documents: `markdown_to_text`, `markdown_to_document`, `markdown_to_json`,
+  `html_to_text`, `html_to_document`, and `html_to_json`.
+- Filesystem: `create_read_text_file_tool(workspace_root)` creates a read-only,
+  root-scoped text-file reader that rejects absolute paths, traversal, symlink
+  escape, unsupported extensions, oversized files, and invalid encodings.
+- Web: `SafeWebReader` and `create_read_webpage_tool` enforce HTTP(S), block
+  private/loopback/link-local destinations and redirects, bound response size,
+  require supported content types, avoid cookies/auth persistence, and never
+  execute JavaScript. Tests use mocked fetchers.
+
+Speech-to-text:
+
+- `SpeechToTextBackend`, `TranscriptionRequest`, and `TranscriptionResult`
+  define the provider-independent abstraction.
+- `FakeSpeechToTextBackend` supports deterministic examples/tests.
+- `arclm.agents.integrations.whisper.WhisperSpeechToTextBackend` imports
+  Whisper lazily, reports a clear optional dependency error, and refuses
+  automatic model downloads unless explicitly allowed or a local model is
+  supplied.
+
+Resources and MCP boundary:
+
+- `AgentResource`, `ResourceProvider`, and `InMemoryResourceProvider` prepare a
+  read-only resource boundary.
+- Tool/resource schema conversion is schema-ready for future MCP mapping.
+- ArcLM does not claim full MCP client/server behavior or network transport.
+
+Structured output and capability reporting:
+
+- `Agent.output_schema` can hold a JSON-schema-like dictionary.
+- Final JSON is validated only when the model adapter explicitly marks the
+  response as structured output. Natural-language text is not silently trusted.
+- `get_agent_capabilities()` distinguishes `available`, `optional`,
+  `experimental`, `unsupported`, and dependency-related states.
+
+Optional extras:
+
+- `arclm[agents]`: base runtime.
+- `arclm[agents-web]`: web boundary, currently standard-library only.
+- `arclm[agents-audio]`: optional Whisper integration.
+- `arclm[agents-all]`: all agent integrations.
+
+Examples and tests:
+
+- Examples live in `examples/agents/` and use fake model or speech backends by
+  default.
+- Focused tests cover tools, schema validation, runner behavior, documents, web
+  safety, filesystem safety, audio abstraction, and import boundaries.
+
+Security limits:
+
+- Not included: shell execution, arbitrary Python execution, `eval`, `exec`,
+  unrestricted file tools, unrestricted HTTP requests, browser automation,
+  JavaScript execution, file deletion, file writing tools, authentication,
+  databases, vector databases, long-term memory, multi-agent orchestration,
+  autonomous background jobs, full MCP network transport, or automatic model
+  downloads.
+
+Dedicated documentation: [`docs/agent-runtime.md`](agent-runtime.md).
 
 Release recommendation after this pass should prefer `0.10.0` unless a final
 manual release review decides Web Studio 1-3 are small enough to remain under
