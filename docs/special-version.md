@@ -1,6 +1,8 @@
 # Speciale ArcLM Versie
 
-Release candidate: `0.10.0`.
+Framework version: `1.0.0`.
+
+API compatibility version: `0.10.0`.
 
 Deze repository is een private/speciale ArcLM-editie. De baseline is native-first: eigen ArcLM/PyTorch code vormt de kern; Hugging Face, PEFT, Web en preprocessing zijn optionele integraties.
 
@@ -393,17 +395,18 @@ Known limitations:
 
 Examples live in [`examples/security/`](../examples/security/).
 
-Release recommendation after this pass should prefer `0.10.0` unless a final
-manual release review decides Web Studio 1-3 are small enough to remain under
-the original `0.9.0` release candidate. A `1.0.0 RC` should wait until clean
-wheel workflow, Studio journey, docs and deprecation policy are manually
-reviewed together.
+Release status after the repository and documentation verification pass:
+`1.0.0` is the real framework version reported by `arclm.__version__`, package
+metadata, built artifacts, Web Studio diagnostics and generated documentation.
+`0.10.0` remains the separate API compatibility version reported by
+`arclm.__api_version__`.
 
-## ArcLM 0.10.0 Release Candidate
+## ArcLM 1.0.0 Framework Version
 
-ArcLM `0.10.0` is the honest release line for the completed native Studio
-workflow. It is not a `1.0.0` claim. The release gate uses a clean installed
-wheel, `arclm[web]`, a temporary workspace and real Uvicorn HTTP requests for:
+ArcLM `1.0.0` is the current framework version for the completed native Studio
+workflow and verified documentation pass. The release gate uses a clean
+installed wheel, `arclm[web]`, a temporary workspace and real Uvicorn HTTP
+requests for:
 
 ```text
 Project -> Dataset -> Validation/report -> Word tokenizer -> Record inspection
@@ -426,9 +429,9 @@ Privacy and workspace behavior:
 - Checkpoint metadata and evaluation reports are exportable as safe JSON
   payloads through existing read endpoints.
 
-Release recommendation: ship this work as `0.10.0` after manual review. Keep
-`1.0.0 RC` for a later pass after the full Studio journey, docs, deprecation
-policy and clean-install gates have been reviewed together.
+Release recommendation: treat this repository state as framework version
+`1.0.0` after owner review. Keep `0.10.0` only as the Web/API compatibility
+marker until an intentional API-version bump is made.
 
 ## Transparent Pipeline Inspection
 

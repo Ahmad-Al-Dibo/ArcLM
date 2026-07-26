@@ -7,7 +7,7 @@ window.ARCLM_DOCS = {
       "current": true
     },
     {
-      "label": "0.10 documentation marker",
+      "label": "API compatibility 0.10.0",
       "href": "releases/version-history.html",
       "current": false
     },
@@ -24256,11 +24256,11 @@ window.ARCLM_DOCS = {
             "rows": [
               [
                 "1.0.0",
-                "Current installed package metadata and built artifact"
+                "Current framework version from arclm.__version__, package metadata and built artifact"
               ],
               [
                 "0.10.0",
-                "Previous release-candidate documentation marker"
+                "Current API compatibility version from arclm.__api_version__"
               ],
               [
                 "0.9.0",

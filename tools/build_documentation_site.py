@@ -1288,7 +1288,7 @@ def build_pages() -> list[dict]:
             list_section("Version strategy", ["Current docs are generated in place.", "Historical docs are included only when an accurate snapshot exists.", "Development docs should be generated from the active branch."]),
         ]),
         page("version-history", "Version History", "Releases", "releases/version-history.html", "Known documentation and package history.", [
-            table_section("Artifacts", ["Version", "Status"], [["1.0.0", "Current installed package metadata and built artifact"], ["0.10.0", "Previous release-candidate documentation marker"], ["0.9.0", "Older built artifact retained in dist for comparison"]]),
+            table_section("Artifacts", ["Version", "Status"], [["1.0.0", "Current framework version from arclm.__version__, package metadata and built artifact"], ["0.10.0", "Current API compatibility version from arclm.__api_version__"], ["0.9.0", "Older built artifact retained in dist for comparison"]]),
         ]),
         page("migration", "Migration Guides", "Releases", "releases/migration.html", "Migration notes for current users.", [
             list_section("Recommended migrations", ["Use domain imports instead of legacy modules.", "Use numbered examples as canonical current examples.", "Treat external model and QLoRA paths as optional/manual until verified locally."]),
@@ -1495,7 +1495,7 @@ def build() -> None:
         "version": arclm.__version__,
         "versions": [
             {"label": f"Current ({arclm.__version__})", "href": "index.html", "current": True},
-            {"label": "0.10 documentation marker", "href": "releases/version-history.html", "current": False},
+            {"label": "API compatibility 0.10.0", "href": "releases/version-history.html", "current": False},
             {"label": "Development strategy", "href": "contributing/docs-build.html", "current": False},
         ],
         "statuses": STATUSES,

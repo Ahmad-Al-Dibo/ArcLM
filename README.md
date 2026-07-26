@@ -200,7 +200,7 @@ See [`SECURITY.md`](SECURITY.md) and
 
 ## Current Limits
 
-ArcLM 0.10.0 does not claim universal Hugging Face support, production serving,
+ArcLM 1.0.0 does not claim universal Hugging Face support, production serving,
 OpenAI-compatible APIs, attention-map capture, streaming generation, guaranteed
 multi-GPU training, real QLoRA runtime validation, native BERT/T5/diffusion,
 vision, audio, multimodal models, RLHF, DPO, or GRPO.
