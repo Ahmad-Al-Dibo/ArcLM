@@ -59,7 +59,7 @@ def default_load_options():
         "device": os.getenv("MODEL_DEVICE") or os.getenv("DEVICE"),
         "device_map": os.getenv("MODEL_DEVICE_MAP"),
         "dtype": os.getenv("MODEL_DTYPE", "auto"),
-        "trust_remote_code": env_bool("TRUST_REMOTE_CODE", True),
+        "trust_remote_code": env_bool("TRUST_REMOTE_CODE", False),
         "load_in_8bit": env_bool("LOAD_IN_8BIT", False),
         "load_in_4bit": env_bool("LOAD_IN_4BIT", False),
         "default_system_prompt": os.getenv("DEFAULT_SYSTEM_PROMPT"),
@@ -403,9 +403,9 @@ def run_simple_interface(host=None, port=None, debug=None):
 
     app = create_simple_interface_app()
     app.run(
-        host=host or os.getenv("HOST", "0.0.0.0"),
+        host=host or os.getenv("HOST", "127.0.0.1"),
         port=int(port or os.getenv("PORT", "5000")),
-        debug=env_bool("FLASK_DEBUG", True) if debug is None else bool(debug),
+        debug=env_bool("FLASK_DEBUG", False) if debug is None else bool(debug),
     )
 
 

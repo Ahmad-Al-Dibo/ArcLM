@@ -1509,18 +1509,23 @@ def _is_safe_init_method(value: str) -> bool:
 
 def _resolve_init_method(config: DistributedConfig) -> str:
     if config.init_method:
-        return config.init_method
+        return _with_windows_tcpstore_libuv_fallback(config.init_method)
     if config.master_addr and config.master_port is not None:
         method = f"tcp://{config.master_addr}:{config.master_port}"
-        # Windows CUDA wheels can request libuv even when the wheel lacks it.
-        # Voor ArcLM-gemaakte rendezvous zetten we dat expliciet uit.
-        if os.name == "nt":
-            method = f"{method}?use_libuv=0"
-        return method
+        return _with_windows_tcpstore_libuv_fallback(method)
     raise DistributedError(
         "process_group_rendezvous_missing",
         "init_method or master_addr/master_port is required to initialize a process group",
     )
+
+
+def _with_windows_tcpstore_libuv_fallback(method: str) -> str:
+    # Some Windows PyTorch wheels request libuv by default even when built
+    # without libuv support. The tcp rendezvous handler accepts this query flag.
+    if os.name != "nt" or not method.startswith("tcp://") or "use_libuv=" in method:
+        return method
+    separator = "&" if "?" in method else "?"
+    return f"{method}{separator}use_libuv=0"
 
 
 def _multiprocessing_context(start_method: str):

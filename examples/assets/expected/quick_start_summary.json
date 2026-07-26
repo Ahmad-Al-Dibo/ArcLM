@@ -1,0 +1,5 @@
+{
+  "status": "ok",
+  "workflow": "dataset -> tokenizer -> model -> inspection"
+}
+

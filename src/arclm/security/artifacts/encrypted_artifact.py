@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ from arclm.security.audit import InMemorySecurityAuditLog
 from arclm.security.configuration import SecurityPolicy
 from arclm.security.crypto.aead import decrypt_bytes, decrypt_json, encrypt_bytes, encrypt_json
 from arclm.security.crypto.formats import EncryptedEnvelope
-from arclm.security.errors import EncryptionError
+from arclm.security.errors import DecryptionError, EncryptionError
 from arclm.security.keys.provider import KeyProvider
 from arclm.security.paths import resolve_under_root
 
@@ -66,15 +66,7 @@ class EncryptedArtifactStore:
 
         target = resolve_under_root(self.root, relative_path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        active = self.key_provider.active_key()
-        envelope = encrypt_bytes(
-            data,
-            self.key_provider.get_key(active.key_id).key,
-            key_id=active.key_id,
-            algorithm=self.policy.default_encryption_algorithm,
-            associated_data={"artifact_type": artifact_type, **dict(associated_data or {})},
-            policy=self.policy,
-        )
+        envelope = self._encrypt_payload(data, artifact_type=artifact_type, associated_data=associated_data)
         payload = envelope.to_json(indent=2).encode("utf-8")
         _atomic_write(target, payload)
         try:
@@ -85,7 +77,7 @@ class EncryptedArtifactStore:
             artifact_id="enc_" + uuid.uuid4().hex,
             path=target.relative_to(self.root).as_posix(),
             artifact_type=artifact_type,
-            key_id=active.key_id,
+            key_id=envelope.key_encryption_key_id or envelope.key_id,
         )
         self.audit_log.record("encrypted_artifact_written", artifact_type=artifact_type, metadata=record.to_dict())
         return record
@@ -95,23 +87,14 @@ class EncryptedArtifactStore:
 
         target = resolve_under_root(self.root, relative_path)
         envelope = EncryptedEnvelope.from_json(target.read_text(encoding="utf-8"))
-        material = self.key_provider.get_key(envelope.key_id)
-        return decrypt_bytes(envelope, material.key)
+        return self._decrypt_payload(envelope)
 
     def write_json(self, *, relative_path: str, value: Any, artifact_type: str) -> EncryptedArtifactRecord:
         """Encrypt and atomically write JSON-safe data."""
 
         target = resolve_under_root(self.root, relative_path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        active = self.key_provider.active_key()
-        envelope = encrypt_json(
-            value,
-            self.key_provider.get_key(active.key_id).key,
-            key_id=active.key_id,
-            algorithm=self.policy.default_encryption_algorithm,
-            associated_data={"artifact_type": artifact_type},
-            policy=self.policy,
-        )
+        envelope = self._encrypt_json_payload(value, artifact_type=artifact_type)
         _atomic_write(target, envelope.to_json(indent=2).encode("utf-8"))
         try:
             os.chmod(target, 0o600)
@@ -121,7 +104,7 @@ class EncryptedArtifactStore:
             artifact_id="enc_" + uuid.uuid4().hex,
             path=target.relative_to(self.root).as_posix(),
             artifact_type=artifact_type,
-            key_id=active.key_id,
+            key_id=envelope.key_encryption_key_id or envelope.key_id,
         )
         self.audit_log.record("encrypted_json_written", artifact_type=artifact_type, metadata=record.to_dict())
         return record
@@ -131,8 +114,74 @@ class EncryptedArtifactStore:
 
         target = resolve_under_root(self.root, relative_path)
         envelope = EncryptedEnvelope.from_json(target.read_text(encoding="utf-8"))
-        material = self.key_provider.get_key(envelope.key_id)
-        return decrypt_json(envelope, material.key)
+        return self._decrypt_json_payload(envelope)
+
+    def _encrypt_payload(
+        self,
+        data: bytes,
+        *,
+        artifact_type: str,
+        associated_data: dict[str, Any] | None = None,
+    ) -> EncryptedEnvelope:
+        dek = os.urandom(32)
+        active = self.key_provider.active_key()
+        wrapping_ref, wrapped_dek = self.key_provider.wrap_key(dek, key_id=active.key_id)
+        envelope = encrypt_bytes(
+            data,
+            dek,
+            key_id="wrapped_data_key",
+            algorithm=self.policy.default_encryption_algorithm,
+            associated_data={
+                "artifact_type": artifact_type,
+                "key_encryption_key_id": wrapping_ref.key_id,
+                **dict(associated_data or {}),
+            },
+            policy=self.policy,
+        )
+        return replace(
+            envelope,
+            encrypted_data_key=_b64(wrapped_dek),
+            key_encryption_key_id=wrapping_ref.key_id,
+        )
+
+    def _encrypt_json_payload(self, value: Any, *, artifact_type: str) -> EncryptedEnvelope:
+        dek = os.urandom(32)
+        active = self.key_provider.active_key()
+        wrapping_ref, wrapped_dek = self.key_provider.wrap_key(dek, key_id=active.key_id)
+        envelope = encrypt_json(
+            value,
+            dek,
+            key_id="wrapped_data_key",
+            algorithm=self.policy.default_encryption_algorithm,
+            associated_data={
+                "artifact_type": artifact_type,
+                "key_encryption_key_id": wrapping_ref.key_id,
+            },
+            policy=self.policy,
+        )
+        return replace(
+            envelope,
+            encrypted_data_key=_b64(wrapped_dek),
+            key_encryption_key_id=wrapping_ref.key_id,
+        )
+
+    def _decrypt_payload(self, envelope: EncryptedEnvelope) -> bytes:
+        if envelope.encrypted_data_key is None:
+            material = self.key_provider.get_key(envelope.key_id)
+            return decrypt_bytes(envelope, material.key)
+        if not envelope.key_encryption_key_id:
+            raise DecryptionError("encrypted artifact is missing key-encryption-key metadata")
+        dek = self.key_provider.unwrap_key(envelope.encrypted_data_key_bytes() or b"", envelope.key_encryption_key_id)
+        return decrypt_bytes(envelope, dek)
+
+    def _decrypt_json_payload(self, envelope: EncryptedEnvelope) -> Any:
+        if envelope.encrypted_data_key is None:
+            material = self.key_provider.get_key(envelope.key_id)
+            return decrypt_json(envelope, material.key)
+        if not envelope.key_encryption_key_id:
+            raise DecryptionError("encrypted artifact is missing key-encryption-key metadata")
+        dek = self.key_provider.unwrap_key(envelope.encrypted_data_key_bytes() or b"", envelope.key_encryption_key_id)
+        return decrypt_json(envelope, dek)
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
@@ -157,3 +206,9 @@ def _atomic_write(path: Path, data: bytes) -> None:
                 temp_path.unlink()
             except OSError:
                 pass
+
+
+def _b64(value: bytes) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(value).decode("ascii")

@@ -55,7 +55,10 @@ def test_new_checkpoint_has_format_version_metadata_and_rng(tmp_path):
     assert checkpoint["checkpoint_metadata"]["dataset"]["dataset_length"] == 4
     assert checkpoint["rng_state"]["python"]
     assert checkpoint["rng_state"]["torch_cpu"] is not None
-    assert checkpoint["rng_state"]["torch_cuda"] == []
+    if torch.cuda.is_available():
+        assert checkpoint["rng_state"]["torch_cuda"]
+    else:
+        assert checkpoint["rng_state"]["torch_cuda"] == []
 
 
 def test_inspect_checkpoint_returns_typed_info_without_rng_mutation(tmp_path):

@@ -247,6 +247,8 @@ def test_external_hf_loading_generation_dtype_device_and_export(monkeypatch, tmp
 
     assert text == "decoded answer"
     assert _FakeAutoTokenizer.loaded_sources[0][0] == "owner/tiny-model"
+    assert _FakeAutoTokenizer.loaded_sources[0][1]["trust_remote_code"] is False
+    assert _FakeAutoModelForCausalLM.loaded_sources[0][1]["trust_remote_code"] is False
     assert _FakeAutoModelForCausalLM.loaded_sources[0][1]["torch_dtype"] is torch.float32
     assert _FakeAutoModelForCausalLM.last_model.to_device == "cpu"
     assert output == tmp_path / "export"

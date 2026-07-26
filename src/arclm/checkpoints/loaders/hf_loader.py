@@ -34,11 +34,11 @@ class HuggingFaceLoader(CheckpointLoader):
             ) from exc
 
         source_str = str(source)
-        hf_config = AutoConfig.from_pretrained(source_str, trust_remote_code=True)
+        hf_config = AutoConfig.from_pretrained(source_str, trust_remote_code=False)
         model = AutoModelForCausalLM.from_pretrained(
             source_str,
             torch_dtype="auto",
-            trust_remote_code=True,
+            trust_remote_code=False,
         )
         model.to(map_location)
         state_dict = model.state_dict()
@@ -48,7 +48,7 @@ class HuggingFaceLoader(CheckpointLoader):
         stoi = None
         itos = None
         try:
-            tokenizer = AutoTokenizer.from_pretrained(source_str, trust_remote_code=True)
+            tokenizer = AutoTokenizer.from_pretrained(source_str, trust_remote_code=False)
             vocab_data = tokenizer.get_vocab()
             stoi = {str(token): int(index) for token, index in vocab_data.items()}
             itos = {index: token for token, index in stoi.items()}

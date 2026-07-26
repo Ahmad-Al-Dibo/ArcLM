@@ -153,7 +153,7 @@ class ExternalModelConfig:
     device: Optional[str] = None
     device_map: Optional[Any] = None
     dtype: Optional[Union[str, torch.dtype]] = "auto"
-    trust_remote_code: bool = True
+    trust_remote_code: bool = False
     tokenizer_path: Optional[PathLike] = None
     max_memory: Optional[Any] = None
     load_in_8bit: bool = False

@@ -113,6 +113,52 @@ window.ARCLM_EXAMPLES = {
       "teaches": "Honest native, compatible and experimental model status.",
       "download": "assets/examples/model-support-matrix.py",
       "code": "from arclm import model_support_matrix\n\nfor row in model_support_matrix():\n    print(row[\"Model\"], row[\"Status\"])"
+    },
+    {
+      "id": "verified-examples-runner",
+      "title": "Run the verified examples suite",
+      "difficulty": "Beginner",
+      "tags": [
+        "Examples",
+        "Verification"
+      ],
+      "runtime": "CPU",
+      "device": "CPU",
+      "optionalDependencies": [],
+      "teaches": "How to list, run and verify the maintained numbered examples.",
+      "download": "../examples/run_examples.py",
+      "code": "import arclm\nfrom pathlib import Path\n\nmanifest = Path(\"examples/manifest.json\")\nrunner = Path(\"examples/run_examples.py\")\nprint(arclm.__version__)\nprint(manifest.exists(), runner.exists())"
+    },
+    {
+      "id": "security-core-example",
+      "title": "Inspect Security Core status",
+      "difficulty": "Beginner",
+      "tags": [
+        "Security"
+      ],
+      "runtime": "Instant",
+      "device": "CPU",
+      "optionalDependencies": [
+        "security"
+      ],
+      "teaches": "Security status, crypto availability and safe defaults.",
+      "download": "../examples/11_security/01_security_status.py",
+      "code": "from arclm.security import security_status\n\nstatus = security_status()\nprint(status.mode)"
+    },
+    {
+      "id": "agent-tool-example",
+      "title": "Run a deterministic custom-tool agent",
+      "difficulty": "Beginner",
+      "tags": [
+        "Agents",
+        "Tools"
+      ],
+      "runtime": "Instant",
+      "device": "CPU",
+      "optionalDependencies": [],
+      "teaches": "Provider-independent agent loop with a typed local tool.",
+      "download": "../examples/10_agents_tools/01_custom_tool_agent.py",
+      "code": "from arclm.agents import Agent, AgentRunner\n\nprint(Agent.__name__)\nprint(AgentRunner.__name__)"
     }
   ],
   "projects": [
@@ -167,6 +213,38 @@ window.ARCLM_EXAMPLES = {
       "trainingConfiguration": "No training required.",
       "expectedOutput": "PipelineTrace summary and JSON-safe dictionary.",
       "download": "assets/examples/pipeline-inspection-project/inspect.py"
+    },
+    {
+      "id": "local-language-model-project",
+      "title": "Local language model project",
+      "difficulty": "Beginner",
+      "goal": "Run the maintained complete project that trains, checkpoints, evaluates and generates with a tiny native model.",
+      "files": [
+        "main.py",
+        "README.md"
+      ],
+      "dataset": "Synthetic local text fixture.",
+      "tokenizer": "Native word tokenizer.",
+      "modelConfiguration": "Tiny native ArcLM causal LM.",
+      "trainingConfiguration": "One CPU optimization step.",
+      "expectedOutput": "JSON summary with checkpoint, loss, perplexity and generated text.",
+      "download": "../examples/12_complete_projects/01_local_language_model/main.py"
+    },
+    {
+      "id": "secure-local-ai-workspace-project",
+      "title": "Secure local AI workspace",
+      "difficulty": "Intermediate",
+      "goal": "Exercise Security Core encryption, signed manifests and redaction with local artifacts.",
+      "files": [
+        "main.py",
+        "README.md"
+      ],
+      "dataset": "Synthetic local metadata.",
+      "tokenizer": "Not required.",
+      "modelConfiguration": "Not required.",
+      "trainingConfiguration": "No training required.",
+      "expectedOutput": "JSON summary with decrypted payload, manifest verification and redacted trace.",
+      "download": "../examples/12_complete_projects/06_secure_local_ai_workspace/main.py"
     }
   ]
 };

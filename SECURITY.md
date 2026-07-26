@@ -45,7 +45,7 @@ Response times are not guaranteed in this private development repository.
 - in-memory and password-derived key providers;
 - hash helpers with SHA-256/SHA-512 allowlists;
 - Ed25519 signed artifact manifests;
-- encrypted artifact storage with atomic writes;
+- envelope-encrypted artifact storage with per-artifact data keys and atomic writes;
 - secure model/checkpoint loading policy gates;
 - redaction helpers;
 - safe audit inventory and threat-model objects;
@@ -69,8 +69,9 @@ independent security certification.
 
 ## Secure Deployment Guidance
 
-- Keep Web Studio bound to `127.0.0.1` unless a later deployment layer provides
-  TLS, authentication, authorization, and explicit origin policy.
+- Keep Web Studio bound to `127.0.0.1`; non-loopback Web API binding is blocked
+  until a later deployment layer provides TLS, authentication, authorization,
+  and explicit origin policy.
 - Treat PyTorch/Pickle checkpoints as trusted legacy artifacts only.
 - Require signed manifests before trusted model or checkpoint loading in strict
   secure workflows.

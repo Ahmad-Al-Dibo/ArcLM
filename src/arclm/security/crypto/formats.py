@@ -72,6 +72,8 @@ class EncryptedEnvelope:
 
     @classmethod
     def from_dict(cls, values: dict[str, Any]) -> "EncryptedEnvelope":
+        if not isinstance(values, dict):
+            raise DecryptionError("encrypted envelope must be an object")
         allowed = {
             "format",
             "version",
@@ -89,7 +91,13 @@ class EncryptedEnvelope:
         unknown = set(values) - allowed
         if unknown:
             raise DecryptionError("encrypted envelope contains unsupported fields")
-        envelope = cls(**values)
+        required = {"format", "version", "algorithm", "key_id", "nonce", "associated_data", "ciphertext", "created_at"}
+        if missing := required - set(values):
+            raise DecryptionError("encrypted envelope is missing required fields")
+        try:
+            envelope = cls(**values)
+        except TypeError as exc:
+            raise DecryptionError("encrypted envelope has invalid fields") from exc
         envelope.validate()
         return envelope
 
@@ -106,18 +114,27 @@ class EncryptedEnvelope:
     def validate(self) -> None:
         if self.format != ENVELOPE_FORMAT:
             raise DecryptionError("encrypted envelope format is unsupported")
-        if self.version != ENVELOPE_VERSION:
+        if not isinstance(self.version, int) or self.version != ENVELOPE_VERSION:
             raise DecryptionError("encrypted envelope version is unsupported")
-        if self.algorithm not in ALLOWED_ALGORITHMS:
+        if not isinstance(self.algorithm, str) or self.algorithm not in ALLOWED_ALGORITHMS:
             raise DecryptionError("encryption algorithm is not supported")
         if not isinstance(self.key_id, str) or not self.key_id:
             raise DecryptionError("encrypted envelope key_id is invalid")
+        if not isinstance(self.created_at, str) or not self.created_at:
+            raise DecryptionError("encrypted envelope created_at is invalid")
         if not isinstance(self.associated_data, dict):
             raise DecryptionError("associated_data must be an object")
         if not isinstance(self.metadata, dict):
             raise DecryptionError("metadata must be an object")
+        if self.encrypted_data_key is not None and not isinstance(self.encrypted_data_key, str):
+            raise DecryptionError("encrypted_data_key must be base64 text")
+        if self.key_encryption_key_id is not None and not isinstance(self.key_encryption_key_id, str):
+            raise DecryptionError("key_encryption_key_id must be text")
+        if self.password_kdf is not None and not isinstance(self.password_kdf, dict):
+            raise DecryptionError("password_kdf must be an object")
         self.nonce_bytes()
         self.ciphertext_bytes()
+        self.encrypted_data_key_bytes()
 
     def nonce_bytes(self) -> bytes:
         nonce = _unb64(self.nonce, "nonce")
@@ -151,6 +168,6 @@ def _unb64(value: str, field: str) -> bytes:
     if not isinstance(value, str):
         raise DecryptionError(f"{field} must be base64 text")
     try:
-        return base64.urlsafe_b64decode(value.encode("ascii"))
+        return base64.b64decode(value.encode("ascii"), altchars=b"-_", validate=True)
     except Exception as exc:
         raise DecryptionError(f"{field} is not valid base64") from exc

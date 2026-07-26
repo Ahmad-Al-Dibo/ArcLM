@@ -118,7 +118,7 @@ class PreTrainedModelLoader(BaseModelLoader):
     def _load_from_huggingface(
         self,
         revision: str | None = None,
-        trust_remote_code: bool = True) -> tuple:
+        trust_remote_code: bool = False) -> tuple:
         """Load from HuggingFace transformers library."""
         try:
             from transformers import AutoModelForCausalLM, AutoConfig
@@ -135,9 +135,9 @@ class PreTrainedModelLoader(BaseModelLoader):
                 str(self.source),
                 device_map=self.device,
                 torch_dtype=torch.float32,
-                trust_remote_code=True,
+                trust_remote_code=trust_remote_code,
             )
-            hf_config = AutoConfig.from_pretrained(str(self.source))
+            hf_config = AutoConfig.from_pretrained(str(self.source), trust_remote_code=trust_remote_code)
             
             # Create ArcLM model and adapt weights
             model = ArcLM(

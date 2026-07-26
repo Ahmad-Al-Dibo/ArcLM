@@ -45,11 +45,28 @@ def get_environment() -> EnvironmentResponse:
     """
     diagnostics = build_runtime_diagnostics()
     torch = _load_torch()
-    cuda_available = bool(diagnostics["cuda_available"])
-    cuda_runtime = diagnostics["cuda_version"]
-    device_count = int(diagnostics["gpu_count"])
-    gpus = [GpuInfo(**gpu) for gpu in diagnostics["gpus"]]
-    bf16_supported: bool | None = bool(torch.cuda.is_bf16_supported()) if torch is not None and cuda_available else None
+    cuda_available = False
+    cuda_runtime = None
+    device_count = 0
+    gpus: list[GpuInfo] = []
+    bf16_supported: bool | None = None
+    if torch is not None:
+        cuda = getattr(torch, "cuda", None)
+        cuda_runtime = getattr(getattr(torch, "version", None), "cuda", None)
+        cuda_available = bool(cuda is not None and cuda.is_available())
+        if cuda_available:
+            device_count = int(cuda.device_count())
+            for index in range(device_count):
+                props = cuda.get_device_properties(index)
+                gpus.append(
+                    GpuInfo(
+                        name=str(cuda.get_device_name(index)),
+                        vram_bytes=int(getattr(props, "total_memory", 0)),
+                        compute_capability=tuple(cuda.get_device_capability(index)),
+                    )
+                )
+            bf16_probe = getattr(cuda, "is_bf16_supported", None)
+            bf16_supported = bool(bf16_probe()) if callable(bf16_probe) else None
 
     available_devices = ["cpu"]
     if cuda_available:

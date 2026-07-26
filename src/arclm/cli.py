@@ -492,10 +492,16 @@ def web_api_command(args):
         return 1
 
     if config.is_remote_binding:
-        print(
-            "Warning: non-localhost binding is not production-safe without a later security milestone.",
-            file=sys.stderr,
-        )
+        from arclm.security.configuration import SecurityMode
+        from arclm.security.web import WebTransportPolicy, validate_transport_policy
+
+        try:
+            validate_transport_policy(
+                WebTransportPolicy(mode=SecurityMode.LOCAL_SECURE, host=config.host, tls_enabled=False)
+            )
+        except Exception as exc:
+            print(f"Error: {exc}")
+            return 1
 
     app = create_app(config)
     uvicorn.run(app, host=config.host, port=config.port)
@@ -607,7 +613,7 @@ Examples:
     parser.add_argument(
         "--host",
         default=None,
-        help="Host for --run simple-interface, defaults to HOST or 0.0.0.0",
+        help="Host for --run simple-interface, defaults to HOST or 127.0.0.1",
     )
     parser.add_argument(
         "--port",

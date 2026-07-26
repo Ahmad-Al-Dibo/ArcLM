@@ -52,7 +52,7 @@ def train_sft(
     max_length: int = 1024,
     dtype: str = "auto",
     device_map: Optional[str] = None,
-    trust_remote_code: bool = True,
+    trust_remote_code: bool = False,
     enable_thinking: Optional[bool] = False,
     lora_r: int = 8,
     lora_alpha: int = 16,

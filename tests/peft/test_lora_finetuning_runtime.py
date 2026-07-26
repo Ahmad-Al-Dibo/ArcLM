@@ -75,6 +75,7 @@ def _training_config(path, *, epochs=1):
         batch_size=2,
         learning_rate=5e-2,
         output_dir=str(path),
+        device="cpu",
         save_every_steps=0,
         log_every_steps=0,
         shuffle=False,

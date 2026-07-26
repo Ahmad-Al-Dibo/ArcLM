@@ -132,12 +132,32 @@ multi-agent orchestration.
 See [`docs/agent-runtime.md`](docs/agent-runtime.md) and
 [`examples/agents/`](examples/agents/) for details.
 
+## Examples
+
+The maintained examples suite lives in [`examples/`](examples/). It is organized
+as numbered categories from quick start through complete projects, with a
+machine-readable manifest and runner:
+
+```bash
+python examples/run_examples.py list
+python examples/run_examples.py run 00-01
+python examples/run_examples.py run-verified
+```
+
+The verified runner set is CPU-first and local by default: no network access,
+automatic downloads, GPU, remote service, or real external model is required.
+Optional PEFT/QLoRA, real Hugging Face local-model loading, and real Whisper
+speech-to-text boundaries are documented as manual optional entries in
+[`examples/manifest.json`](examples/manifest.json). Historical unnumbered
+examples are preserved, but the numbered suite is the current source of truth.
+
 ## Security
 
 ArcLM includes `arclm.security`, the ArcLM Security Core. It provides
 security-policy objects, safe status reports, secret redaction, hashing,
 signed manifests, AEAD encryption envelopes, key providers, and encrypted
-artifact storage. Install the crypto dependency explicitly with:
+artifact storage. Artifact-store writes use per-artifact data keys wrapped by
+the active key provider. Install the crypto dependency explicitly with:
 
 ```bash
 pip install "arclm[security]"
@@ -148,8 +168,9 @@ the dependency or key is missing. It never silently stores plaintext as a
 fallback. Signed manifests use Ed25519, hashes use SHA-256/SHA-512 allowlists,
 password-derived keys use Argon2id, and high-entropy subkeys use HKDF.
 
-Web Studio remains local-only by default. Remote-secure deployments must supply
-TLS, explicit origins, and an authentication/authorization layer. Agent Runtime
+Web Studio remains local-only by default. Non-loopback Web API binding fails
+closed until a remote-secure deployment supplies TLS, explicit origins, and an
+authentication/authorization layer. Agent Runtime
 tools use permissions and approvals, and Security Core adds defensive redaction
 and hashing tools.
 

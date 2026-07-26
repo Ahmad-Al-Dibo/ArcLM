@@ -256,8 +256,16 @@ def test_precision_and_device_errors_are_controlled(tmp_path):
 
     with pytest.raises(ArtifactError, match="FP16 loading on CPU"):
         load_model_artifact(artifact, precision="fp16")
-    with pytest.raises(ArtifactError, match="CUDA was requested"):
-        load_model_artifact(artifact, device="cuda")
+
+    if torch.cuda.is_available():
+        loaded = load_model_artifact(artifact, device="cuda")
+        assert loaded.device.type == "cuda"
+        bad_index = torch.cuda.device_count()
+        with pytest.raises(ArtifactError, match="Requested CUDA device index"):
+            load_model_artifact(artifact, device=f"cuda:{bad_index}")
+    else:
+        with pytest.raises(ArtifactError, match="CUDA was requested"):
+            load_model_artifact(artifact, device="cuda")
 
 
 def test_training_checkpoint_is_not_model_artifact_and_artifact_is_not_checkpoint(tmp_path):

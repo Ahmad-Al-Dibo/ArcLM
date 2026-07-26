@@ -56,6 +56,28 @@ def test_web_api_reuses_create_app_without_starting_real_server(monkeypatch):
     assert calls["app"].docs_url is None
 
 
+def test_web_api_rejects_remote_binding_without_remote_secure_transport(capsys, monkeypatch):
+    calls = {}
+
+    def fake_run(app, host, port):
+        calls["host"] = host
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+
+    code = web_api_command(
+        SimpleNamespace(
+            host="0.0.0.0",
+            port=8765,
+            no_docs=True,
+            dataset_root=[],
+        )
+    )
+
+    assert code == 1
+    assert calls == {}
+    assert "remote Web Studio binding requires remote_secure mode" in capsys.readouterr().out
+
+
 def test_web_api_accepts_dataset_root_option(tmp_path, monkeypatch):
     calls = {}
 

@@ -62,6 +62,39 @@ Public API stability inventory:
 | Deprecated | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders`, `MiniGPT`, Flask simple interface |
 | Unsupported | Native BERT/T5/LLaMA/Mistral/Qwen implementations, diffusion, multimodal, RLHF/DPO/GRPO, OpenAI-compatible APIs, production serving, attention-map capture, WebSockets/streaming generation |
 
+## Verified Examples Suite
+
+Status: maintained numbered suite, CPU/local verification, no version bump.
+
+Audit evidence for the repository-wide verification pass is recorded in
+[`docs/repository-audit.md`](repository-audit.md).
+
+The current examples live under `examples/00_quick_start` through
+`examples/12_complete_projects`. `examples/manifest.json` is the compact source
+of truth for category, status, requirements, optional dependencies, generated
+artifacts, and runner eligibility.
+
+Runner commands:
+
+```bash
+python examples/run_examples.py list
+python examples/run_examples.py run 00-01
+python examples/run_examples.py run-category data
+python examples/run_examples.py run-verified
+```
+
+Verified examples do not require network access, automatic downloads, GPU,
+remote services, or real external model assets. Boundaries that need local
+models or optional providers are marked `manual_optional`, including PEFT/QLoRA
+adapter training, real Hugging Face local-model loading, and real Whisper
+speech-to-text.
+
+The suite covers datasets, validation, manifests, tokenizers, native models,
+training, SFT preparation, checkpoints, evaluation, local inference, pipeline
+inspection, agents/tools, Security Core, and six complete projects. Older
+unnumbered examples are preserved for history; the numbered suite is the
+maintained release candidate examples surface.
+
 ## ArcLM Agent Runtime
 
 Status: beta foundational subsystem, no version bump.
@@ -281,6 +314,10 @@ Encrypted artifacts and atomic writes:
 
 - `EncryptedArtifactStore` is root-scoped and validates relative paths before
   writing or reading.
+- Stored artifacts use envelope encryption: a fresh per-artifact data key
+  encrypts the payload, and the active key provider wraps that data key. Only
+  the wrapped data key and non-secret key identifiers are stored in the
+  envelope.
 - Encrypted writes use a temporary file in the destination directory, flush,
   `os.replace`, and cleanup on failure.
 - File permissions are tightened with `chmod(0o600)` where the platform
@@ -311,6 +348,8 @@ Secure checkpoint/model loading:
 Web Studio security:
 
 - Web Studio remains bound to `127.0.0.1` by default.
+- The current Web API CLI rejects non-loopback binding until a remote-secure
+  TLS/authentication deployment surface is implemented.
 - Security helpers validate remote-secure TLS policy, CORS origins, wildcard
   credential denial, CSRF tokens and conservative security headers.
 - Authentication and authorization are represented by an explicit boundary

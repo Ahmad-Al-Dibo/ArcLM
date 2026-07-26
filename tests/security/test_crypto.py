@@ -69,6 +69,16 @@ def test_malformed_envelope_unsupported_algorithm_version_and_size_limit():
     with pytest.raises(DecryptionError):
         EncryptedEnvelope.from_dict(values)
 
+    values = envelope.to_dict()
+    values["nonce"] = "!!!!"
+    with pytest.raises(DecryptionError):
+        EncryptedEnvelope.from_dict(values)
+
+    values = envelope.to_dict()
+    del values["ciphertext"]
+    with pytest.raises(DecryptionError):
+        EncryptedEnvelope.from_dict(values)
+
     policy = SecurityPolicy(max_encryption_bytes=4)
     with pytest.raises(Exception, match="too large"):
         encrypt_bytes(b"12345", key, policy=policy)

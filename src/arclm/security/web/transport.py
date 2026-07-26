@@ -24,7 +24,9 @@ class WebTransportPolicy:
 def validate_transport_policy(policy: WebTransportPolicy) -> None:
     """Validate local/remote transport behavior."""
 
-    if policy.is_remote and policy.mode is SecurityMode.REMOTE_SECURE and not policy.tls_enabled:
+    if not policy.is_remote:
+        return
+    if policy.mode is not SecurityMode.REMOTE_SECURE:
+        raise SecurityPolicyError("remote Web Studio binding requires remote_secure mode")
+    if not policy.tls_enabled:
         raise SecurityPolicyError("remote secure Web Studio mode requires TLS")
-    if policy.is_remote and policy.mode is SecurityMode.DEVELOPMENT:
-        raise SecurityPolicyError("development mode may not bind Web Studio remotely")

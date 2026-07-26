@@ -1130,7 +1130,14 @@ def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    for attempt in range(8):
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except PermissionError:
+            if attempt == 7:
+                raise
+            time.sleep(0.025)
+    raise WorkspaceApiError("json_read_failed", "Could not read workspace JSON", status_code=500)
 
 
 def _field_order(records: Iterable[Mapping[str, Any]]) -> list[str]:
