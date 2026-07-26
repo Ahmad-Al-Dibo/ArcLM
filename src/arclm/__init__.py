@@ -14,12 +14,9 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-from ._version import __version__, __api_version__
+from ._version import __version__
 
 __author__ = "Ahmad Al Dibo"
-LICENSE = "Apache-2.0"
-
-
 
 _EXPORTS = {
     "ArcLM": "arclm.models",
@@ -190,7 +187,6 @@ __all__ = sorted(
     [
         "__version__",
         "get_version",
-        "get_api_version",
         "get_device",
         "list_available_models",
         "load_training_checkpoint",
@@ -213,12 +209,9 @@ def __getattr__(name: str) -> Any:
 
 
 def get_version() -> str:
-    """Return the installed ArcLM version. optional: include the API version."""
+    """Return the installed ArcLM version."""
     return __version__
 
-def get_api_version() -> str:
-    """Return the installed ArcLM API version."""
-    return __api_version__
 
 def get_device():
     """Return the preferred local torch device."""
