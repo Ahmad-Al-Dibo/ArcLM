@@ -40,8 +40,6 @@ FORBIDDEN_PUBLIC_PATTERNS = [
     r"\bsrc[\\/]",
     r"\.\.[\\/]src",
     r"\.\.[\\/]tests",
-    r"\bdocs[\\/]",
-    r"github\.com",
     r"Verified by",
     r"Evidence",
     r"Implementation reference",
@@ -62,7 +60,7 @@ FORBIDDEN_KEYS = {
     "examplePaths",
 }
 
-ALLOWED_STATUSES = {"Stable", "Beta", "Experimental", "Deprecated", "Internal", "Unsupported"}
+ALLOWED_STATUSES = {"Stable", "Validated", "Beta", "Experimental", "Integration-compatible", "Internal", "Deprecated", "Planned", "Unsupported"}
 ALLOWED_MODEL_STATUSES = {"native", "tested", "compatible", "experimental", "unsupported"}
 
 
@@ -146,6 +144,8 @@ def test_navigation_pages_and_assets_resolve():
         html = html_path.read_text(encoding="utf-8")
         assert "styles.css" in html
         assert "app.js" in html
+        assert "version-select" in html
+        assert 'id="feedback"' in html
         for key in DATA_FILES:
             if key != "docs":
                 assert f"data/{DATA_FILES[key].name}" in html
@@ -175,8 +175,12 @@ def test_public_site_contains_no_internal_verification_or_repo_references():
 
 
 def test_public_data_explains_current_apis_and_modules_without_internal_paths():
+    import arclm
+
     docs = _js_data("docs")
-    assert docs["version"] == "0.10.0"
+    assert docs["version"] == arclm.__version__
+    assert docs["versions"]
+    assert any(version["current"] for version in docs["versions"])
     assert set(docs["statuses"]) == ALLOWED_STATUSES
 
     api_catalog = _js_data("api")
@@ -196,6 +200,8 @@ def test_public_data_explains_current_apis_and_modules_without_internal_paths():
         assert entry["summary"]
         assert entry["signature"]
         assert entry["usage"]
+        assert entry["canonicalImport"].startswith("from arclm")
+        assert entry["qualifiedName"].startswith("arclm")
         module_name = entry["importPath"].rsplit(".", 1)[0]
         importlib.import_module(module_name)
 
@@ -218,7 +224,41 @@ def test_public_data_explains_current_apis_and_modules_without_internal_paths():
         assert entry["status"] in ALLOWED_STATUSES
         assert entry["purpose"]
         assert entry["whenToUse"]
+        assert entry["exportCount"] == len(entry["exports"])
         assert "implementation" not in entry
+
+
+def test_public_api_catalog_covers_exported_modules_classes_and_functions():
+    modules = [
+        "arclm",
+        "arclm.datasets",
+        "arclm.tokenizers",
+        "arclm.models",
+        "arclm.training",
+        "arclm.finetuning",
+        "arclm.checkpoints",
+        "arclm.evaluation",
+        "arclm.inference",
+        "arclm.inspection",
+        "arclm.agents",
+        "arclm.security",
+        "arclm.web",
+        "arclm.peft",
+        "arclm.plugins",
+        "arclm.registry",
+    ]
+    documented = {entry["qualifiedName"] for entry in _js_data("api")}
+    public = set()
+    for module_name in modules:
+        module = importlib.import_module(module_name)
+        for name in getattr(module, "__all__", []):
+            getattr(module, name)
+            public.add(f"{module_name}.{name}")
+
+    missing = sorted(public - documented)
+    stale = sorted(qualified for qualified in documented if qualified.rsplit(".", 1)[0] in modules and qualified not in public)
+    assert not missing
+    assert not stale
 
 
 def test_supported_models_are_honest_and_filterable():
@@ -242,7 +282,10 @@ def test_supported_models_are_honest_and_filterable():
 
 def test_embedded_examples_are_self_contained_and_syntactically_valid():
     examples = _js_data("examples")
-    assert len(examples["examples"]) >= 8
+    manifest = json.loads((ROOT / "examples" / "manifest.json").read_text(encoding="utf-8"))
+    manifest_entries = manifest["entries"]
+    assert len(examples["examples"]) == len(manifest_entries)
+    assert len(examples["projects"]) == sum(1 for entry in manifest_entries if entry["category"] == "complete_projects")
 
     for item in examples["examples"]:
         assert item["code"].strip()
@@ -261,6 +304,36 @@ def test_search_index_points_to_existing_public_pages():
         assert item["page"] in pages
         assert item["title"]
         assert item["description"]
+
+    search_text = json.dumps(search).lower()
+    for query in ["inspect_text", "arclm.inspection", "trainer", "securitypolicy", "tool_invalid_arguments", "sft"]:
+        assert query in search_text
+
+
+def test_reference_pages_cover_versions_feedback_indexes_and_docs_ownership():
+    docs = _js_data("docs")
+    page_ids = {page["id"] for page in docs["pages"]}
+    for required in [
+        "classes",
+        "functions",
+        "deprecated-apis",
+        "optional-dependencies",
+        "compatibility",
+        "contributing-docs",
+        "version-current",
+        "version-history",
+        "migration",
+        "guide-agents",
+        "guide-security",
+        "guide-lab",
+    ]:
+        assert required in page_ids
+
+    app = (SITE / "app.js").read_text(encoding="utf-8")
+    assert "Page feedback" in app
+    assert "Open issue draft" in app
+    assert "rel=\"noopener noreferrer\"" in app
+    assert "sessionStorage" in app
 
 
 def test_site_can_be_copied_outside_repository(tmp_path):

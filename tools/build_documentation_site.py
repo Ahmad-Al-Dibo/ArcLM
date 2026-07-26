@@ -8,16 +8,71 @@ and status labels only.
 from __future__ import annotations
 
 import json
+import inspect
+import re
 import shutil
+import sys
 from pathlib import Path
 from textwrap import dedent
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "documentation-site"
+SRC = ROOT / "src"
 
-STATUSES = ["Stable", "Beta", "Experimental", "Deprecated", "Internal", "Unsupported"]
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+STATUSES = ["Stable", "Validated", "Beta", "Experimental", "Integration-compatible", "Internal", "Deprecated", "Planned", "Unsupported"]
 MODEL_STATUSES = ["native", "tested", "compatible", "experimental", "unsupported"]
+
+PUBLIC_MODULE_SPECS = {
+    "arclm": ("Stable", "Root lazy public API for common ArcLM names.", "Use for short imports and compatibility aliases.", "None"),
+    "arclm.datasets": ("Stable", "Dataset loading, validation, reporting, cleaning and streaming helpers.", "Use for local records and dataset preparation.", "Optional preprocess helpers for HTML/YAML paths."),
+    "arclm.tokenizers": ("Stable", "Native word and SentencePiece tokenizer public API.", "Use to build vocabularies and encode/decode text.", "sentencepiece"),
+    "arclm.models": ("Stable", "Native ArcLM model and model capability reporting.", "Use to create compact causal language models.", "None"),
+    "arclm.training": ("Stable", "Native training configuration, trainer, callbacks and compatibility helpers.", "Use for CPU/CUDA bounded native training.", "torch"),
+    "arclm.finetuning": ("Beta", "Supervised fine-tuning formatting, validation, labels and trainer helpers.", "Use for SFT preview and execution.", "Optional Hugging Face/PEFT for external paths."),
+    "arclm.checkpoints": ("Stable", "Checkpoint loading, inspection, adaptation and compatibility helpers.", "Use for trusted local checkpoint workflows.", "None"),
+    "arclm.evaluation": ("Stable", "Metrics, evaluation reports, diagnostics and small benchmark helpers.", "Use for local metrics and comparison reports.", "None"),
+    "arclm.inference": ("Beta", "Generation plus native/external model loading boundaries.", "Use for bounded local generation and inspected loading.", "Optional Hugging Face stack for external models."),
+    "arclm.inspection": ("Beta", "Pipeline trace helpers for one native model step.", "Use to explain token IDs, shapes and generated text.", "None"),
+    "arclm.agents": ("Beta", "Provider-independent Agent Runtime with tools, sessions, tracing and permissions.", "Use for deterministic local tool loops and adapters.", "Optional audio/web integrations."),
+    "arclm.security": ("Beta", "Security Core policies, hashing, signatures, encryption envelopes and redaction.", "Use for local secure metadata and artifact policy.", "cryptography"),
+    "arclm.web": ("Beta", "Local Web Studio backend app and settings.", "Use for the optional local visual workflow.", "fastapi, uvicorn"),
+    "arclm.peft": ("Experimental", "Native and optional PEFT adapter utilities.", "Use only with validated model/hardware combinations.", "peft, transformers, bitsandbytes for QLoRA paths."),
+    "arclm.plugins": ("Experimental", "Plugin metadata and extension helpers.", "Use for advanced extension planning.", "None"),
+    "arclm.registry": ("Experimental", "Registry helper surfaces.", "Use for advanced extension points.", "None"),
+    "arclm.configs": ("Deprecated", "Compatibility configuration exports.", "Prefer domain configuration objects.", "None"),
+    "arclm.exceptions": ("Stable", "Public exception compatibility namespace.", "Use for catching documented ArcLM errors.", "None"),
+}
+
+CATEGORY_BY_MODULE = {
+    "arclm": "root",
+    "arclm.datasets": "datasets",
+    "arclm.tokenizers": "tokenizers",
+    "arclm.models": "models",
+    "arclm.training": "training",
+    "arclm.finetuning": "finetuning",
+    "arclm.checkpoints": "checkpoints",
+    "arclm.evaluation": "evaluation",
+    "arclm.inference": "inference",
+    "arclm.inspection": "inspection",
+    "arclm.agents": "agents",
+    "arclm.security": "security",
+    "arclm.web": "web",
+    "arclm.peft": "peft",
+    "arclm.plugins": "plugins",
+    "arclm.registry": "registry",
+    "arclm.configs": "configuration",
+    "arclm.exceptions": "errors",
+}
+
+DEPRECATED_NAMES = {
+    "MiniGPT",
+    "checkpoint_is_compatible_for_tuining",
+    "arclm.configs",
+}
 
 INTERNAL_VERIFICATION = {
     "datasets": {"status": "verified"},
@@ -80,6 +135,257 @@ def api_usage(name: str) -> str:
     raise KeyError(f"Unknown API entry: {name}")
 
 
+def _first_sentence(text: str | None, fallback: str) -> str:
+    clean = " ".join((text or "").strip().split())
+    if not clean:
+        return fallback
+    match = re.match(r"(.+?[.!?])(?:\s|$)", clean)
+    return match.group(1) if match else clean[:220]
+
+
+def _safe_signature(obj) -> str:
+    try:
+        return f"{getattr(obj, '__name__', type(obj).__name__)}{inspect.signature(obj)}"
+    except (TypeError, ValueError):
+        return f"{getattr(obj, '__name__', type(obj).__name__)}(...)"
+
+
+def _kind(obj) -> str:
+    if inspect.isclass(obj):
+        return "exception" if issubclass(obj, BaseException) else "class"
+    if inspect.iscoroutinefunction(obj):
+        return "async function"
+    if inspect.isfunction(obj):
+        return "function"
+    return "constant"
+
+
+def _parameter_rows(obj) -> list[list[str]]:
+    try:
+        signature = inspect.signature(obj)
+    except (TypeError, ValueError):
+        return []
+    rows: list[list[str]] = []
+    for name, param in signature.parameters.items():
+        annotation = "Any" if param.annotation is inspect._empty else getattr(param.annotation, "__name__", str(param.annotation))
+        default = "required" if param.default is inspect._empty else repr(param.default)
+        rows.append([name, annotation, default])
+    return rows
+
+
+def _class_members(obj) -> list[list[str]]:
+    rows: list[list[str]] = []
+    if not inspect.isclass(obj):
+        return rows
+    for name, member in inspect.getmembers(obj):
+        if name.startswith("_"):
+            continue
+        if inspect.isfunction(member) or inspect.ismethod(member):
+            rows.append([f"{name}{_member_signature(member)}", _first_sentence(getattr(member, "__doc__", ""), "Public method.")])
+        if len(rows) >= 12:
+            break
+    return rows
+
+
+def _member_signature(member) -> str:
+    try:
+        return str(inspect.signature(member))
+    except (TypeError, ValueError):
+        return "(...)"
+
+
+def _usage_for(module_name: str, symbol_name: str, kind: str) -> str:
+    if kind == "class":
+        return f"from {module_name} import {symbol_name}\n\nprint({symbol_name})"
+    if kind == "exception":
+        return f"from {module_name} import {symbol_name}\n\ntry:\n    raise {symbol_name}(\"example\")\nexcept {symbol_name} as exc:\n    print(type(exc).__name__)"
+    if kind == "constant":
+        return f"from {module_name} import {symbol_name}\n\nprint({symbol_name})"
+    return f"from {module_name} import {symbol_name}\n\nprint({symbol_name})"
+
+
+def _status_for(module_name: str, symbol_name: str, obj) -> str:
+    if symbol_name in DEPRECATED_NAMES or "deprecated" in (inspect.getdoc(obj) or "").lower():
+        return "Deprecated"
+    return PUBLIC_MODULE_SPECS.get(module_name, ("Beta", "", "", ""))[0]
+
+
+def _category_for(module_name: str) -> str:
+    return CATEGORY_BY_MODULE.get(module_name, module_name.rsplit(".", 1)[-1])
+
+
+def build_api_catalog() -> list[dict]:
+    entries: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for module_name in PUBLIC_MODULE_SPECS:
+        try:
+            module = __import__(module_name, fromlist=["__all__"])
+        except Exception:
+            continue
+        for symbol_name in getattr(module, "__all__", []):
+            key = (module_name, symbol_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            try:
+                obj = getattr(module, symbol_name)
+            except Exception:
+                continue
+            kind = _kind(obj)
+            summary = _first_sentence(inspect.getdoc(obj), f"Public {kind} exported by {module_name}.")
+            qualified_name = f"{module_name}.{symbol_name}"
+            entries.append(
+                {
+                    "name": symbol_name,
+                    "qualifiedName": qualified_name,
+                    "importPath": qualified_name,
+                    "canonicalImport": f"from {module_name} import {symbol_name}",
+                    "alternativeImport": f"from arclm import {symbol_name}" if module_name != "arclm" and hasattr(__import__("arclm"), symbol_name) else "",
+                    "kind": kind,
+                    "category": _category_for(module_name),
+                    "status": _status_for(module_name, symbol_name, obj),
+                    "signature": _safe_signature(obj) if kind != "constant" else symbol_name,
+                    "summary": summary,
+                    "parameters": _parameter_rows(obj),
+                    "returns": "See the function or class docstring and type annotations.",
+                    "errors": ["Raises documented subsystem errors for invalid inputs or missing optional dependencies."],
+                    "sideEffects": "May allocate tensors, read local files or mutate configured local state depending on the API.",
+                    "optionalDependencies": PUBLIC_MODULE_SPECS.get(module_name, ("", "", "", "None"))[3],
+                    "threadAsync": "Synchronous unless the symbol name or signature explicitly indicates async behavior.",
+                    "security": "Use local trusted paths and documented Security Core policies for sensitive data.",
+                    "limitations": "Status label and subsystem guide describe the stable boundary.",
+                    "usage": _usage_for(module_name, symbol_name, kind),
+                    "members": _class_members(obj),
+                }
+            )
+    return sorted(entries, key=lambda item: (item["category"], item["kind"], item["name"].lower(), item["qualifiedName"]))
+
+
+def build_module_catalog() -> list[dict]:
+    rows: list[dict] = []
+    for module_name, (status, purpose, when_to_use, optional) in PUBLIC_MODULE_SPECS.items():
+        try:
+            module = __import__(module_name, fromlist=["__all__"])
+            exports = sorted(getattr(module, "__all__", []))
+        except Exception:
+            exports = []
+        rows.append(
+            {
+                "importPath": module_name,
+                "status": status,
+                "purpose": purpose,
+                "whenToUse": when_to_use,
+                "optionalDependencies": optional,
+                "exports": exports,
+                "exportCount": len(exports),
+                "examples": examples_for_category(_category_for(module_name)),
+                "limitations": "Documented as public only through package exports, public tests, verified examples or explicit policy.",
+            }
+        )
+    return rows
+
+
+def examples_for_category(category: str) -> list[str]:
+    mapping = {
+        "datasets": ["01_data"],
+        "tokenizers": ["02_tokenizers"],
+        "models": ["03_models"],
+        "training": ["04_training"],
+        "finetuning": ["05_finetuning"],
+        "checkpoints": ["06_checkpoints"],
+        "evaluation": ["07_evaluation_benchmarks"],
+        "inference": ["08_inference_local_models"],
+        "inspection": ["09_pipelines_inspection"],
+        "agents": ["10_agents_tools"],
+        "security": ["11_security"],
+    }
+    prefixes = mapping.get(category, [])
+    return [entry.get("title", "") for entry in read_examples_manifest() if any(str(entry.get("path") or "").startswith(prefix) for prefix in prefixes)]
+
+
+def read_examples_manifest() -> list[dict]:
+    manifest_path = ROOT / "examples" / "manifest.json"
+    if not manifest_path.exists():
+        return []
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return data.get("entries", data if isinstance(data, list) else [])
+
+
+def _difficulty(entry: dict) -> str:
+    category = entry.get("category", "")
+    if category in {"quick_start", "data", "tokenizers", "models"}:
+        return "Beginner"
+    if category in {"training", "finetuning", "checkpoints", "evaluation_benchmarks", "inference_local_models"}:
+        return "Intermediate"
+    return "Advanced"
+
+
+def _tags(entry: dict) -> list[str]:
+    tags = [entry.get("category", "").replace("_", " ").title()]
+    title = entry.get("title", "")
+    for word in ["Dataset", "Tokenizer", "Model", "Training", "Fine-Tuning", "Checkpoint", "Evaluation", "Benchmark", "Generation", "Inspection", "Agent", "Security", "Project"]:
+        if word.lower().replace("-", " ") in title.lower().replace("-", " "):
+            tags.append(word)
+    return sorted(set(tag for tag in tags if tag))
+
+
+def build_examples_catalog() -> tuple[list[dict], list[dict]]:
+    examples: list[dict] = []
+    projects: list[dict] = []
+    for entry in read_examples_manifest():
+        path = str(entry.get("path") or "")
+        source = ROOT / "examples" / path
+        code = source.read_text(encoding="utf-8") if source.exists() and source.suffix == ".py" else ""
+        download = "assets/examples/current/" + (path.replace("\\", "/") if path else f"{entry.get('id', 'manual-optional')}.py")
+        item = {
+            "id": entry.get("id", slug(path)),
+            "title": entry.get("title", path),
+            "difficulty": _difficulty(entry),
+            "status": entry.get("status", "manual_optional"),
+            "category": entry.get("category", ""),
+            "teaches": entry.get("title", "ArcLM example."),
+            "runtime": f"about {entry.get('estimated_seconds', 10)} seconds",
+            "device": "CPU" if not entry.get("requires_gpu") else "GPU",
+            "network": "required" if entry.get("requires_network") else "not required",
+            "downloadRequired": bool(entry.get("requires_download")),
+            "optionalDependencies": entry.get("optional_dependencies", []),
+            "command": f"python examples/run_examples.py run {entry.get('id')}",
+            "tags": _tags(entry),
+            "download": download,
+            "code": code or f"import arclm\n\n# Manual optional example: {entry.get('title', path)}\nprint(arclm.__version__)",
+            "expectedOutput": "JSON or text summary printed by the example runner.",
+        }
+        examples.append(item)
+        if entry.get("category") == "complete_projects":
+            projects.append(
+                {
+                    "id": item["id"],
+                    "title": item["title"],
+                    "difficulty": item["difficulty"],
+                    "goal": item["teaches"],
+                    "files": [path],
+                    "dataset": "Tiny local fixture or inline synthetic data.",
+                    "tokenizer": "Native tokenizer unless the example states otherwise.",
+                    "modelConfiguration": "Tiny native ArcLM configuration for verified projects.",
+                    "trainingConfiguration": "Bounded CPU/local run when runnable.",
+                    "expectedOutput": item["expectedOutput"],
+                    "download": download,
+                }
+            )
+    return examples, projects
+
+
+def public_api_summary(api_catalog: list[dict]) -> dict:
+    return {
+        "modules": len(PUBLIC_MODULE_SPECS),
+        "classes": sum(1 for item in api_catalog if item["kind"] == "class"),
+        "functions": sum(1 for item in api_catalog if item["kind"] in {"function", "async function"}),
+        "configuration": sum(1 for item in api_catalog if "Config" in item["name"] or item["name"].endswith("Policy")),
+        "errors": sum(1 for item in api_catalog if item["kind"] == "exception"),
+        "deprecated": sum(1 for item in api_catalog if item["status"] == "Deprecated"),
+    }
+
+
 NAVIGATION = [
     {
         "group": "Start",
@@ -105,6 +411,10 @@ NAVIGATION = [
             {"id": "guide-inference", "title": "Inference", "href": "guides/inference.html"},
             {"id": "guide-generation", "title": "Generation", "href": "guides/generation.html"},
             {"id": "guide-inspection", "title": "Inspection", "href": "guides/inspection.html"},
+            {"id": "guide-pipelines", "title": "Pipelines", "href": "guides/pipelines.html"},
+            {"id": "guide-agents", "title": "Agent Runtime", "href": "guides/agent-runtime.html"},
+            {"id": "guide-agent-tools", "title": "Agent Tools", "href": "guides/agent-tools.html"},
+            {"id": "guide-security", "title": "Security", "href": "guides/security.html"},
             {"id": "guide-external-models", "title": "External Models", "href": "guides/external-models.html"},
         ],
     },
@@ -115,6 +425,7 @@ NAVIGATION = [
             {"id": "guide-web-studio", "title": "ArcLM Studio", "href": "guides/web-studio.html"},
             {"id": "supported-models", "title": "Supported Models", "href": "reference/supported-models.html"},
             {"id": "dataset-formats", "title": "Dataset Formats", "href": "reference/dataset-formats.html"},
+            {"id": "guide-lab", "title": "Lab", "href": "guides/lab.html"},
         ],
     },
     {
@@ -127,6 +438,8 @@ NAVIGATION = [
             {"id": "examples-training", "title": "Training Examples", "href": "examples/training-examples.html"},
             {"id": "examples-evaluation", "title": "Evaluation Examples", "href": "examples/evaluation-examples.html"},
             {"id": "examples-generation", "title": "Generation Examples", "href": "examples/generation-examples.html"},
+            {"id": "examples-agents", "title": "Agent Examples", "href": "examples/agent-examples.html"},
+            {"id": "examples-security", "title": "Security Examples", "href": "examples/security-examples.html"},
             {"id": "examples-complete", "title": "Complete Projects", "href": "examples/complete-projects.html"},
         ],
     },
@@ -134,24 +447,51 @@ NAVIGATION = [
         "group": "Reference",
         "items": [
             {"id": "api-index", "title": "Public API", "href": "api/index.html"},
+            {"id": "api-root", "title": "Root API", "href": "api/root.html"},
             {"id": "api-datasets", "title": "Dataset API", "href": "api/datasets.html"},
             {"id": "api-tokenizers", "title": "Tokenizer API", "href": "api/tokenizers.html"},
             {"id": "api-models", "title": "Model API", "href": "api/models.html"},
             {"id": "api-training", "title": "Training API", "href": "api/training.html"},
+            {"id": "api-finetuning", "title": "Fine-Tuning API", "href": "api/finetuning.html"},
             {"id": "api-checkpoints", "title": "Checkpoint API", "href": "api/checkpoints.html"},
             {"id": "api-evaluation", "title": "Evaluation API", "href": "api/evaluation.html"},
             {"id": "api-inference", "title": "Inference API", "href": "api/inference.html"},
             {"id": "api-inspection", "title": "Inspection API", "href": "api/inspection.html"},
+            {"id": "api-agents", "title": "Agent API", "href": "api/agents.html"},
+            {"id": "api-security", "title": "Security API", "href": "api/security.html"},
             {"id": "api-peft", "title": "PEFT API", "href": "api/peft.html"},
             {"id": "api-web", "title": "Web API", "href": "api/web.html"},
             {"id": "api-plugins", "title": "Plugins API", "href": "api/plugins.html"},
             {"id": "api-registry", "title": "Registry API", "href": "api/registry.html"},
+            {"id": "api-configuration", "title": "Configuration API", "href": "api/configuration.html"},
+            {"id": "api-errors", "title": "Errors API", "href": "api/errors.html"},
             {"id": "api-utilities", "title": "Utilities API", "href": "api/utilities.html"},
             {"id": "modules", "title": "Module Explorer", "href": "reference/modules.html"},
+            {"id": "classes", "title": "Class Index", "href": "reference/classes.html"},
+            {"id": "functions", "title": "Function Index", "href": "reference/functions.html"},
             {"id": "configuration", "title": "Configuration", "href": "reference/configuration.html"},
             {"id": "errors", "title": "Errors", "href": "reference/errors.html"},
+            {"id": "optional-dependencies", "title": "Optional Dependencies", "href": "reference/optional-dependencies.html"},
+            {"id": "compatibility", "title": "Compatibility", "href": "reference/compatibility.html"},
+            {"id": "deprecated-apis", "title": "Deprecated APIs", "href": "reference/deprecated-apis.html"},
             {"id": "status-legend", "title": "Status Legend", "href": "reference/status-legend.html"},
             {"id": "limitations", "title": "Limitations", "href": "reference/limitations.html"},
+        ],
+    },
+    {
+        "group": "Contributing",
+        "items": [
+            {"id": "contributing-architecture", "title": "Architecture", "href": "contributing/architecture.html"},
+            {"id": "contributing-testing", "title": "Testing", "href": "contributing/testing.html"},
+            {"id": "contributing-docs", "title": "Docs Build", "href": "contributing/docs-build.html"},
+        ],
+    },
+    {
+        "group": "Releases",
+        "items": [
+            {"id": "version-current", "title": "Current Version", "href": "releases/current.html"},
+            {"id": "version-history", "title": "Version History", "href": "releases/version-history.html"},
+            {"id": "migration", "title": "Migration Guides", "href": "releases/migration.html"},
         ],
     },
 ]
@@ -805,6 +1145,27 @@ def build_pages() -> list[dict]:
             code_section("Inspect text", api_usage("inspect_text")),
             list_section("Limitations", ["One native generation step", "No attention maps", "No external-model tracing"]),
         ]),
+        "guide-pipelines": ("Pipelines", "guides/pipelines.html", "Compose the verified native lifecycle.", [
+            text_section("Lifecycle", "ArcLM pipelines are the practical sequence that connects records, tokenizer, model, trainer, checkpoint, evaluator, generator and inspection trace."),
+            list_section("Native flow", ["Dataset validation", "Tokenizer build", "Model creation", "Training", "Checkpoint save/load", "Evaluation", "Generation", "Inspection"]),
+            code_section("Inspect the pipeline", api_usage("inspect_text")),
+            list_section("Limits", ["Pipeline helpers are local Python flows, not a production orchestration service.", "External model flows remain optional integration boundaries."]),
+        ], "Beta"),
+        "guide-agents": ("Agent Runtime", "guides/agent-runtime.html", "Run deterministic provider-independent tool loops.", [
+            text_section("Runtime shape", "Agent Runtime separates model responses, tool schemas, sessions, traces, permissions and runner stop conditions. The core runtime does not require a hosted provider."),
+            code_section("Create a tool", "from arclm.agents import Agent, AgentRunner, ModelResponse, ToolCall, tool\n\n@tool\ndef add_numbers(a: int, b: int) -> int:\n    \"\"\"Add two integers.\"\"\"\n    return a + b\n\nclass FakeModel:\n    def __init__(self):\n        self.calls = 0\n    def generate_response(self, *, messages, tools, instructions, session):\n        self.calls += 1\n        if self.calls == 1:\n            return ModelResponse(tool_calls=[ToolCall(id=\"call_1\", name=\"add_numbers\", arguments={\"a\": 2, \"b\": 3})])\n        return ModelResponse(content=\"Done.\")\n\nagent = Agent(name=\"calculator\", instructions=\"Use tools when useful.\", model=FakeModel(), tools=[add_numbers])\nresult = AgentRunner(max_steps=2).run(agent, \"Add 2 and 3.\")\nprint(result.output)"),
+            list_section("Boundaries", ["No production autonomy claim", "No built-in shell execution", "No unrestricted filesystem tools", "Provider adapters must return ModelResponse objects"]),
+        ], "Beta"),
+        "guide-agent-tools": ("Agent Tools", "guides/agent-tools.html", "Define typed local tools with validation and permissions.", [
+            text_section("Tool contract", "Tools are typed Python callables wrapped with metadata. Arguments are validated before execution and tool calls are recorded in the session trace."),
+            code_section("Tool schema", "from arclm.agents import tool\n\n@tool\ndef calculate_total(price: float, quantity: int) -> float:\n    \"\"\"Calculate a total price.\"\"\"\n    return price * quantity\n\nprint(calculate_total.spec.name)"),
+            list_section("Security notes", ["Use explicit permissions for side effects.", "Keep secrets out of tool outputs.", "Prefer bounded workspace paths for document tools."]),
+        ], "Beta"),
+        "guide-security": ("Security", "guides/security.html", "Use Security Core for local policies, redaction, hashing, signatures and encryption.", [
+            text_section("Security Core", "Security Core provides typed policy objects, safe status reports, AEAD encryption envelopes, signed manifests, hashing helpers, redaction and Web/Agent boundary helpers."),
+            code_section("Encrypt and reject tampering", "import os\nfrom arclm.security import DecryptionError, decrypt_json, encrypt_json\n\nkey = os.urandom(32)\nenvelope = encrypt_json({\"prompt\": \"synthetic\"}, key)\ntampered = envelope.to_dict()\ntampered[\"ciphertext\"] = tampered[\"ciphertext\"][:-2] + \"AA\"\ntry:\n    decrypt_json(tampered, key)\nexcept DecryptionError:\n    print(\"tamper rejected\")"),
+            list_section("Boundaries", ["No security certification", "No production auth layer", "Untrusted pickle loading is blocked by policy unless explicitly treated as legacy trusted input"]),
+        ], "Beta"),
         "guide-external-models": ("External Models", "guides/external-models.html", "Optional lower-level Hugging Face causal-LM boundaries.", [
             text_section("Honest status", "External model loading exists through optional integration paths. It is not a universal loader and may require internet for first model download."),
             code_section("Inspect source boundary", "from arclm.inference.external import inspect_model_source\n\nsource = inspect_model_source(\"Qwen/Qwen3-0.6B\")\nprint(source)"),
@@ -819,39 +1180,45 @@ def build_pages() -> list[dict]:
             list_section("Workflow", ["Project", "Dataset", "Validation/report", "Tokenizer", "Record inspection", "Native model", "Training", "Checkpoint", "Evaluation", "Generation", "Pipeline inspection"]),
             list_section("Limitations", ["No auth", "No cloud", "No external model downloads", "No streaming", "No production serving"]),
         ], "Beta"),
+        "guide-lab": ("ArcLM Lab", "guides/lab.html", "Learn ArcLM architecture through four progressive levels.", [
+            text_section("Purpose", "The Lab teaches ArcLM concepts through learner exercises. It is educational scaffolding, not proof that every topic is a production feature."),
+            table_section("Levels", ["Level", "Focus"], [["Beginner", "Data, cleaning, validation, vocabulary and tokenization"], ["Intermediate", "Manifests, preprocessing, model configuration, forward pass, training loop and checkpoints"], ["Advanced", "Artifacts, SFT formatting, LoRA boundaries, evaluation, generation and inspection"], ["Expert", "Registries, events, dependency injection, distributed planning, fault tolerance and architecture decisions"]]),
+            code_section("Run the Lab", "python -m lab.runner list\npython -m lab.runner test-all", "bash"),
+        ], "Validated"),
     }
     for id_, (title, href, summary, sections, *rest) in guide_specs.items():
         pages.append(page(id_, title, "Learn", href, summary, sections, status=rest[0] if rest else "Stable"))
 
     for category, title in [
+        ("root", "Root API"),
         ("datasets", "Dataset API"),
         ("tokenizers", "Tokenizer API"),
         ("models", "Model API"),
         ("training", "Training API"),
+        ("finetuning", "Fine-Tuning API"),
         ("checkpoints", "Checkpoint API"),
         ("evaluation", "Evaluation API"),
         ("inference", "Inference API"),
         ("inspection", "Inspection API"),
+        ("agents", "Agent API"),
+        ("security", "Security API"),
         ("peft", "PEFT API"),
         ("web", "Web API"),
+        ("plugins", "Plugins API"),
+        ("registry", "Registry API"),
+        ("configuration", "Configuration API"),
+        ("errors", "Errors API"),
     ]:
         entries = [entry for entry in API_CATALOG if entry["category"] == category]
         sections = [text_section("Overview", f"{title} documents the public ArcLM APIs in this category.")]
         for entry in entries:
-            sections.append(text_section(entry["name"], entry["summary"]))
-            sections.append(table_section(f"{entry['name']} parameters", ["Name", "Type", "Meaning"], entry.get("parameters", [])))
+            sections.append(text_section(entry["name"], f"{entry['summary']} Canonical import: {entry['canonicalImport']}. Fully qualified name: {entry['qualifiedName']}. Status: {entry['status']}."))
+            sections.append(table_section(f"{entry['name']} parameters", ["Name", "Type", "Default"], entry.get("parameters", [])))
             sections.append(code_section(f"{entry['name']} example", entry["usage"]))
         pages.append(page(f"api-{category}", title, "Reference", f"api/{category}.html", f"Public {category} APIs.", sections))
     pages.append(page("api-index", "Public API Index", "Reference", "api/index.html", "Searchable public API catalog.", [
         text_section("How to use this page", "Use the search field to find public classes, functions and import paths. Deprecated imports are not recommended."),
     ]))
-    pages.append(page("api-plugins", "Plugins API", "Reference", "api/plugins.html", "Experimental plugin interfaces.", [
-        text_section("Status", "Plugin interfaces exist for advanced extension metadata. They are not required for the native workflow."),
-        list_section("Limitations", ["No public plugin marketplace built into ArcLM", "No automatic remote plugin execution"]),
-    ], status="Experimental"))
-    pages.append(page("api-registry", "Registry API", "Reference", "api/registry.html", "Experimental registry surfaces.", [
-        text_section("Status", "Registry helpers are advanced extension surfaces. Normal users should prefer canonical imports."),
-    ], status="Experimental"))
     pages.append(page("api-utilities", "Utilities API", "Reference", "api/utilities.html", "Small utility helpers.", [
         text_section("Status", "Utility modules are secondary. Prefer documented domain APIs for normal workflows."),
     ]))
@@ -864,6 +1231,8 @@ def build_pages() -> list[dict]:
         ("examples-training", "examples/training-examples.html", "Training Examples", "Training"),
         ("examples-evaluation", "examples/evaluation-examples.html", "Evaluation Examples", "Evaluation"),
         ("examples-generation", "examples/generation-examples.html", "Generation Examples", "Generation"),
+        ("examples-agents", "examples/agent-examples.html", "Agent Examples", "Agent"),
+        ("examples-security", "examples/security-examples.html", "Security Examples", "Security"),
     ]:
         sections = [text_section("How examples work", "Each example is embedded in the public site and available as a standalone download inside the site assets.")]
         if tag:
@@ -878,12 +1247,52 @@ def build_pages() -> list[dict]:
 
     pages.extend([
         page("modules", "Module Explorer", "Reference", "reference/modules.html", "Public-facing package organization.", [text_section("Use canonical modules", "Prefer arclm.datasets, arclm.tokenizers, arclm.models, arclm.training, arclm.checkpoints, arclm.evaluation, arclm.inference and arclm.inspection for new code.")]),
+        page("classes", "Class Index", "Reference", "reference/classes.html", "Search and filter public classes.", [
+            text_section("Coverage", "This page is generated from current public package exports and includes classes and public exceptions. Use the filters to narrow by subsystem or status."),
+        ]),
+        page("functions", "Function Index", "Reference", "reference/functions.html", "Search and filter public functions.", [
+            text_section("Coverage", "This page is generated from current public package exports and includes synchronous and asynchronous public functions."),
+        ]),
         page("supported-models", "Supported Models", "Reference", "reference/supported-models.html", "Editable model catalog with honest status labels.", [text_section("Status meanings", "Native means implemented directly by ArcLM. Compatible means handled through an optional integration boundary. Experimental means incomplete behavior. Unsupported means no current ArcLM path.")]),
         page("dataset-formats", "Dataset Formats", "Reference", "reference/dataset-formats.html", "Accepted local dataset shapes and examples.", [text_section("Choosing a format", "Use Python records for scripts, JSONL for instruction data, CSV for tables and TXT for tiny causal text experiments.")]),
         page("configuration", "Configuration Reference", "Reference", "reference/configuration.html", "Configuration fields users commonly set.", [text_section("Scope", "This reference covers public configuration fields for model, training, evaluation, generation and web workflows.")]),
         page("errors", "Errors Reference", "Reference", "reference/errors.html", "Stable user-facing errors and fixes.", [text_section("How to read errors", "Use the error code to find the meaning, common cause and recovery action.")]),
-        page("status-legend", "Status Legend", "Reference", "reference/status-legend.html", "Meaning of public status labels.", [table_section("Statuses", ["Status", "Meaning"], [["Stable", "Current reliable path."], ["Beta", "Useful but still maturing."], ["Experimental", "Incomplete or environment-specific."], ["Deprecated", "Compatibility only."], ["Internal", "Not stable public API."], ["Unsupported", "No current ArcLM path."]])]),
+        page("optional-dependencies", "Optional Dependencies", "Reference", "reference/optional-dependencies.html", "Extras and optional integration boundaries.", [
+            table_section("Extras", ["Extra", "Purpose"], INSTALL_COMMANDS),
+            list_section("Policy", ["Base imports should stay lightweight.", "Hugging Face, PEFT, Web and speech dependencies are optional.", "Missing optional dependencies should fail with clear errors."]),
+        ]),
+        page("compatibility", "Compatibility", "Reference", "reference/compatibility.html", "Deprecated and compatibility APIs.", [
+            text_section("Compatibility policy", "Deprecated imports remain documented with replacements while tests and users need them. New examples prefer canonical domain imports."),
+            list_section("Compatibility surfaces", ["Root lazy imports", "MiniGPT alias for ArcLM", "legacy module aliases", "checkpoint compatibility helpers"]),
+        ]),
+        page("deprecated-apis", "Deprecated APIs", "Reference", "reference/deprecated-apis.html", "Migration notes for compatibility-only names.", [
+            text_section("Migration rule", "Prefer canonical domain imports for new code. Deprecated names are compatibility-only and should not appear in new examples."),
+            table_section("Known deprecated entries", ["Deprecated", "Replacement"], [["MiniGPT", "ArcLM"], ["arclm.configs compatibility exports", "domain configuration objects"], ["checkpoint_is_compatible_for_tuining", "checkpoint_is_compatible_for_continue_training where applicable"]]),
+        ]),
+        page("status-legend", "Status Legend", "Reference", "reference/status-legend.html", "Meaning of public status labels.", [table_section("Statuses", ["Status", "Meaning"], [["Stable", "Current reliable path."], ["Validated", "Executed by maintained tests or examples."], ["Beta", "Useful but still maturing."], ["Experimental", "Incomplete or environment-specific."], ["Integration-compatible", "Supported through an optional integration boundary."], ["Internal", "Not stable public API."], ["Deprecated", "Compatibility only."], ["Planned", "Documented future boundary."], ["Unsupported", "No current ArcLM path."]])]),
         page("limitations", "Limitations", "Reference", "reference/limitations.html", "What ArcLM does not currently claim.", [list_section("Current limits", ["No universal Hugging Face support", "No production serving", "No OpenAI-compatible API", "No streaming", "No attention maps", "No native BERT/T5/diffusion/multimodal models", "No RLHF, DPO or GRPO"])]),
+        page("contributing-architecture", "Contributor Architecture", "Contributing", "contributing/architecture.html", "Repository structure and extension points.", [
+            text_section("Ownership model", "The Python package is the source of truth for public APIs. The documentation site is generated from repository data plus curated guide copy."),
+            list_section("Extension areas", ["Registries", "Plugins", "Events", "Dependency injection", "Lab challenges", "Examples suite"]),
+        ]),
+        page("contributing-testing", "Testing", "Contributing", "contributing/testing.html", "How to validate documentation and code changes.", [
+            code_section("Core checks", "python -m compileall -q src tests examples lab\npython -m pytest -q\npython examples/run_examples.py run-verified\npython -m lab.runner test-all", "bash"),
+        ]),
+        page("contributing-docs", "Docs Build", "Contributing", "contributing/docs-build.html", "Build and validate the static documentation website.", [
+            text_section("Docs ownership", "The `tools/build_documentation_site.py` generator owns the static site output in `documentation-site/`. Handwritten project notes remain in `docs/`."),
+            code_section("Build docs", "python tools/build_documentation_site.py\npython -m pytest -q", "bash"),
+            text_section("Feedback", "Each page exposes a local helpful button, copy-page-id action and optional issue link. No tracking service is used."),
+        ]),
+        page("version-current", "Current Version", "Releases", "releases/current.html", "Current documentation version and release state.", [
+            text_section("Current docs", "This documentation describes the installed package version reported by the current repository. It does not change the package version."),
+            list_section("Version strategy", ["Current docs are generated in place.", "Historical docs are included only when an accurate snapshot exists.", "Development docs should be generated from the active branch."]),
+        ]),
+        page("version-history", "Version History", "Releases", "releases/version-history.html", "Known documentation and package history.", [
+            table_section("Artifacts", ["Version", "Status"], [["1.0.0", "Current installed package metadata and built artifact"], ["0.10.0", "Previous release-candidate documentation marker"], ["0.9.0", "Older built artifact retained in dist for comparison"]]),
+        ]),
+        page("migration", "Migration Guides", "Releases", "releases/migration.html", "Migration notes for current users.", [
+            list_section("Recommended migrations", ["Use domain imports instead of legacy modules.", "Use numbered examples as canonical current examples.", "Treat external model and QLoRA paths as optional/manual until verified locally."]),
+        ]),
     ])
     return pages
 
@@ -896,7 +1305,9 @@ def search_index(pages: list[dict]) -> list[dict]:
             description = section.get("body") or section["title"]
             entries.append({"type": "section", "title": section["title"], "description": description, "page": page_["href"], "section": slug(section["title"])})
     for entry in API_CATALOG:
-        entries.append({"type": "api", "title": entry["name"], "description": entry["summary"], "page": f"api/{entry['category']}.html", "section": slug(entry["name"])})
+        entries.append({"type": "api", "title": entry["name"], "description": f"{entry['qualifiedName']} {entry['canonicalImport']} {entry['summary']}", "page": f"api/{entry['category']}.html", "section": slug(entry["name"])})
+    for module in MODULE_CATALOG:
+        entries.append({"type": "module", "title": module["importPath"], "description": f"{module['purpose']} {' '.join(module.get('exports', []))}", "page": "reference/modules.html", "section": "module-list"})
     for model in SUPPORTED_MODELS:
         entries.append({"type": "model", "title": model["name"], "description": model["notes"], "page": "reference/supported-models.html", "section": model["id"]})
     for fmt in DATASET_FORMATS:
@@ -910,6 +1321,14 @@ def search_index(pages: list[dict]) -> list[dict]:
         entries.append({"type": "example", "title": example["title"], "description": example["teaches"], "page": "examples/index.html", "section": "example-cards"})
     for project in COMPLETE_PROJECTS:
         entries.append({"type": "example project", "title": project["title"], "description": project["goal"], "page": "examples/complete-projects.html", "section": "complete-projects"})
+    entries.extend(
+        [
+            {"type": "alias", "title": "SFT", "description": "Supervised Fine-Tuning guide and APIs", "page": "guides/fine-tuning.html", "section": "sft-contract"},
+            {"type": "alias", "title": "checkpoint loading", "description": "Checkpoint load, inspect and validate workflows", "page": "guides/checkpoints.html", "section": "what-checkpoints-store"},
+            {"type": "alias", "title": "tool_invalid_arguments", "description": "Agent tool argument validation errors", "page": "reference/errors.html", "section": "error-list"},
+            {"type": "alias", "title": "response_only", "description": "Response-only SFT label masking", "page": "guides/fine-tuning.html", "section": "sft-contract"},
+        ]
+    )
     return entries
 
 
@@ -948,6 +1367,8 @@ def html_page(page_: dict, pages: list[dict]) -> str:
             <header class="mobile-bar">
               <button id="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button>
               <a href="{prefix}index.html" class="brand">ArcLM Docs</a>
+              <label class="version-label" for="version-select">Version</label>
+              <select id="version-select" aria-label="Documentation version"></select>
               <button id="theme-toggle" type="button">Theme</button>
             </header>
             <div class="layout">
@@ -955,6 +1376,7 @@ def html_page(page_: dict, pages: list[dict]) -> str:
               <main id="content" class="doc-main">
                 <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb"></nav>
                 <article id="page-content"></article>
+                <section id="feedback" class="feedback" aria-label="Page feedback"></section>
                 <nav id="prev-next" class="prev-next" aria-label="Previous and next pages"></nav>
               </main>
               <aside id="toc" class="toc" aria-label="Table of contents"></aside>
@@ -994,19 +1416,29 @@ def write_assets() -> None:
     for ex in EXAMPLES:
         (SITE / ex["download"]).parent.mkdir(parents=True, exist_ok=True)
         (SITE / ex["download"]).write_text(ex["code"] + "\n", encoding="utf-8")
-    project_files = {
+    legacy_assets = {
+        "dataset-report.py": "from arclm.datasets import build_dataset_report\n\nprint(build_dataset_report([{\"text\": \"ArcLM trains locally\"}]).summary())\n",
+        "evaluation-report.py": "from arclm.evaluation import calculate_perplexity\n\nprint(round(calculate_perplexity(2.0), 4))\n",
+        "load-python-records.py": "from arclm.datasets import load_dataset\n\nprint(load_dataset([{\"text\": \"ArcLM\"}]))\n",
+        "model-support-matrix.py": "from arclm.models import model_support_matrix\n\nprint(model_support_matrix())\n",
+        "pipeline-inspection.py": "from arclm.inspection import inspect_text\nfrom arclm.models import ArcLM\nfrom arclm.tokenizers import Tokenizer\n\ntokenizer = Tokenizer(max_vocab=16)\ntokenizer.build(\"ArcLM trains\")\nmodel = ArcLM(vocab_size=tokenizer.get_vocab_size(), embed_dim=8, block_size=8, num_blocks=1)\nprint(inspect_text(model=model, tokenizer=tokenizer, text=\"ArcLM\").to_dict())\n",
+        "tiny-native-model.py": "from arclm.models import ArcLM\n\nprint(ArcLM(vocab_size=16, embed_dim=8, block_size=8, num_blocks=1))\n",
+        "validate-sft.py": "from arclm.finetuning import validate_sft_records\n\nprint(validate_sft_records([{\"instruction\": \"Hi\", \"response\": \"Hello\"}], strict=False).summary())\n",
+        "word-tokenizer.py": "from arclm.tokenizers import Tokenizer\n\ntokenizer = Tokenizer(max_vocab=16)\ntokenizer.build(\"ArcLM trains locally\")\nprint(tokenizer.encode_text(\"ArcLM\"))\n",
+        "tiny-text-model/train.py": "from arclm.models import ArcLM\n\nprint(ArcLM(vocab_size=16, embed_dim=8, block_size=8, num_blocks=1))\n",
+        "tiny-text-model/evaluate.py": "from arclm.evaluation import calculate_perplexity\n\nprint(calculate_perplexity(2.0))\n",
+        "tiny-text-model/generate.py": "from arclm.inference import Generator\n\nprint(Generator)\n",
+        "instruction-finetuning/validate.py": "from arclm.finetuning import validate_sft_records\n\nprint(validate_sft_records([{\"instruction\": \"Hi\", \"response\": \"Hello\"}], strict=False).valid_count)\n",
+        "pipeline-inspection-project/inspect.py": "from arclm.inspection import inspect_text\n\nprint(inspect_text)\n",
+    }
+    legacy_data = {
         "tiny-text-model/data.jsonl": '{"text":"ArcLM trains locally."}\n{"text":"Tiny models teach the workflow."}\n',
         "tiny-text-model/configuration.json": json.dumps({"vocab_size": 32, "embed_dim": 16, "block_size": 8, "num_blocks": 1}, indent=2),
-        "tiny-text-model/train.py": EXAMPLES[2]["code"] + "\n",
-        "tiny-text-model/evaluate.py": EXAMPLES[5]["code"] + "\n",
-        "tiny-text-model/generate.py": EXAMPLES[3]["code"] + "\n",
         "instruction-finetuning/instructions.jsonl": '{"instruction":"Explain ArcLM.","response":"ArcLM is native-first."}\n',
-        "instruction-finetuning/validate.py": EXAMPLES[4]["code"] + "\n",
         "instruction-finetuning/configuration.json": json.dumps({"format": "instruction_response", "device": "cpu"}, indent=2),
-        "pipeline-inspection-project/inspect.py": EXAMPLES[3]["code"] + "\n",
         "pipeline-inspection-project/configuration.json": json.dumps({"max_new_tokens": 1, "include_values": False}, indent=2),
     }
-    for relative, content in project_files.items():
+    for relative, content in {**legacy_assets, **legacy_data}.items():
         path = SITE / "assets" / "examples" / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
@@ -1028,9 +1460,10 @@ def validate_model_catalog() -> None:
 def validate_api_catalog() -> None:
     seen: set[str] = set()
     for entry in API_CATALOG:
-        if entry["name"] in seen:
-            raise ValueError(f"duplicate API entry: {entry['name']}")
-        seen.add(entry["name"])
+        unique_name = entry.get("qualifiedName", entry["importPath"])
+        if unique_name in seen:
+            raise ValueError(f"duplicate API entry: {unique_name}")
+        seen.add(unique_name)
         for key in ["name", "importPath", "kind", "category", "status", "summary", "signature", "usage"]:
             if key not in entry:
                 raise ValueError(f"api entry missing {key}: {entry}")
@@ -1039,6 +1472,10 @@ def validate_api_catalog() -> None:
 
 
 def build() -> None:
+    global API_CATALOG, MODULE_CATALOG, EXAMPLES, COMPLETE_PROJECTS
+    API_CATALOG = build_api_catalog()
+    MODULE_CATALOG = build_module_catalog()
+    EXAMPLES, COMPLETE_PROJECTS = build_examples_catalog()
     validate_model_catalog()
     validate_api_catalog()
     clean()
@@ -1052,14 +1489,23 @@ def build() -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(html_page(page_, pages), encoding="utf-8")
 
-    docs_data = {"version": "0.10.0", "statuses": STATUSES, "pages": pages}
+    import arclm
+
+    docs_data = {
+        "version": arclm.__version__,
+        "versions": [
+            {"label": f"Current ({arclm.__version__})", "href": "index.html", "current": True},
+            {"label": "0.10 documentation marker", "href": "releases/version-history.html", "current": False},
+            {"label": "Development strategy", "href": "contributing/docs-build.html", "current": False},
+        ],
+        "statuses": STATUSES,
+        "summary": public_api_summary(API_CATALOG),
+        "pages": pages,
+    }
     (SITE / "docs-data.js").write_text(f"window.ARCLM_DOCS = {json.dumps(docs_data, indent=2)};\n", encoding="utf-8")
     write_js("site-navigation.js", "ARCLM_NAVIGATION", NAVIGATION)
     write_js("api-catalog.js", "ARCLM_API_CATALOG", API_CATALOG)
-    write_js("module-catalog.js", "ARCLM_MODULE_CATALOG", [
-        {"importPath": item[0], "status": item[1], "purpose": item[2], "whenToUse": item[3], "optionalDependencies": item[4]}
-        for item in MODULE_CATALOG
-    ])
+    write_js("module-catalog.js", "ARCLM_MODULE_CATALOG", MODULE_CATALOG)
     write_js("examples-catalog.js", "ARCLM_EXAMPLES", {"examples": EXAMPLES, "projects": COMPLETE_PROJECTS})
     write_js("supported-models.js", "ARCLM_SUPPORTED_MODELS", SUPPORTED_MODELS)
     write_js("dataset-formats.js", "ARCLM_DATASET_FORMATS", DATASET_FORMATS)
@@ -1126,7 +1572,7 @@ a { color: var(--accent-2); }
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto minmax(8rem, auto) auto;
   gap: 0.75rem;
   align-items: center;
   min-height: 3.5rem;
@@ -1135,6 +1581,7 @@ a { color: var(--accent-2); }
   border-bottom: 1px solid var(--border);
 }
 .brand { color: var(--text); font-weight: 800; text-decoration: none; }
+.version-label { color: var(--muted); font-weight: 700; }
 button, input, select {
   font: inherit;
   color: var(--text);
@@ -1297,12 +1744,38 @@ th, td {
   box-shadow: 0 20px 50px rgb(0 0 0 / 20%);
   z-index: 30;
 }
-.external::after { content: " ↗"; }
+.feedback {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.feedback h2 { margin-top: 0; font-size: 1.1rem; }
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+}
+.external::after { content: " external"; font-size: 0.8em; color: var(--muted); }
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 1100px) {
+  .mobile-bar { grid-template-columns: auto 1fr auto; }
+  .version-label, #version-select { display: none; }
   .layout { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed;
@@ -1377,6 +1850,7 @@ APP_JS = r"""
     document.querySelector("#breadcrumbs").innerHTML = `<a href="${prefix}index.html">ArcLM Docs</a><span>/</span><span>${esc(page.title)}</span>`;
     renderToc();
     renderPrevNext();
+    renderFeedback();
     enhanceCodeBlocks();
   }
   function renderSection(section) {
@@ -1393,6 +1867,9 @@ APP_JS = r"""
     if (pageId === "api-index") return apiIndex();
     if (pageId.startsWith("api-") && pageId !== "api-index") return apiDetails(pageId.replace("api-", ""));
     if (pageId === "modules") return moduleExplorer();
+    if (pageId === "classes") return apiKindIndex("class", "Public classes");
+    if (pageId === "functions") return apiKindIndex("function", "Public functions");
+    if (pageId === "deprecated-apis") return apiStatusIndex("Deprecated", "Deprecated public APIs");
     if (pageId === "supported-models") return supportedModels();
     if (pageId === "dataset-formats") return datasetFormatsView();
     if (pageId === "configuration") return configurationView();
@@ -1404,14 +1881,22 @@ APP_JS = r"""
     return `<section id="api-search"><h2>Search APIs</h2><div class="filter-row"><input id="api-filter" type="search" placeholder="Search API names, imports and categories" /></div><div id="api-results" class="card-grid"></div></section>`;
   }
   function apiCard(entry) {
-    return `<article class="card" id="${slug(entry.name)}"><span class="status">${esc(entry.status)}</span><h3>${esc(entry.name)}</h3><p><code>${esc(entry.importPath)}</code></p><p>${esc(entry.summary)}</p><p><strong>Signature:</strong> <code>${esc(entry.signature)}</code></p>${table(["Parameter", "Type", "Meaning"], entry.parameters || [])}${entry.members ? table(["Member", "Purpose"], entry.members) : ""}${codeBlock(entry.usage, "python")}</article>`;
+    return `<article class="card api-card" id="${slug(entry.name)}"><span class="status">${esc(entry.status)}</span><h3>${esc(entry.name)}</h3><p><strong>Fully qualified:</strong> <code>${esc(entry.qualifiedName || entry.importPath)}</code></p><p><strong>Canonical import:</strong> <code>${esc(entry.canonicalImport || entry.importPath)}</code></p>${entry.alternativeImport ? `<p><strong>Alternative import:</strong> <code>${esc(entry.alternativeImport)}</code></p>` : ""}<p>${esc(entry.summary)}</p><p><strong>Signature:</strong> <code>${esc(entry.signature)}</code></p>${table(["Parameter", "Type", "Default"], entry.parameters || [])}${entry.members && entry.members.length ? table(["Member", "Purpose"], entry.members) : ""}<p><strong>Returns:</strong> ${esc(entry.returns || "See docstring.")}</p><p><strong>Raises:</strong> ${esc((entry.errors || []).join(", ") || "No documented public errors.")}</p><p><strong>Optional dependencies:</strong> ${esc(entry.optionalDependencies || "None")}</p><p><strong>Security:</strong> ${esc(entry.security || "Follow subsystem guide.")}</p><p><strong>Limitations:</strong> ${esc(entry.limitations || "None listed.")}</p>${codeBlock(entry.usage, "python")}</article>`;
   }
   function apiDetails(category) {
     const entries = api.filter((entry) => entry.category === category);
     return `<section id="api-members"><h2>API members</h2><div class="card-grid">${entries.map(apiCard).join("") || "<p>No public entries in this category yet.</p>"}</div></section>`;
   }
+  function apiKindIndex(kind, title) {
+    const entries = api.filter((entry) => entry.kind === kind || (kind === "function" && entry.kind === "async function") || (kind === "class" && entry.kind === "exception"));
+    return `<section id="${slug(title)}"><h2>${esc(title)}</h2><div class="filter-row"><input id="kind-filter" type="search" placeholder="Search ${esc(title.toLowerCase())}" /><select id="kind-status"><option value="">All statuses</option>${docs.statuses.map((status) => `<option>${esc(status)}</option>`).join("")}</select></div><div id="kind-results" class="card-grid"></div></section>`;
+  }
+  function apiStatusIndex(status, title) {
+    const entries = api.filter((entry) => entry.status === status);
+    return `<section id="${slug(title)}"><h2>${esc(title)}</h2><div class="card-grid">${entries.map(apiCard).join("") || "<p>No deprecated public APIs are documented.</p>"}</div></section>`;
+  }
   function moduleExplorer() {
-    return `<section id="module-list"><h2>Modules</h2><div class="card-grid">${modules.map((mod) => `<article class="card"><span class="status">${esc(mod.status)}</span><h3><code>${esc(mod.importPath)}</code></h3><p>${esc(mod.purpose)}</p><p><strong>Use when:</strong> ${esc(mod.whenToUse)}</p><p><strong>Optional dependencies:</strong> ${esc(mod.optionalDependencies)}</p></article>`).join("")}</div></section>`;
+    return `<section id="module-list"><h2>Modules</h2><div class="card-grid">${modules.map((mod) => `<article class="card"><span class="status">${esc(mod.status)}</span><h3><code>${esc(mod.importPath)}</code></h3><p>${esc(mod.purpose)}</p><p><strong>Use when:</strong> ${esc(mod.whenToUse)}</p><p><strong>Public exports:</strong> ${esc(mod.exportCount || 0)}</p><p><strong>Examples:</strong> ${esc((mod.examples || []).join(", ") || "None mapped")}</p><p><strong>Optional dependencies:</strong> ${esc(mod.optionalDependencies)}</p><p><strong>Limitations:</strong> ${esc(mod.limitations || "")}</p></article>`).join("")}</div></section>`;
   }
   function supportedModels() {
     const providers = Array.from(new Set(models.map((m) => m.provider)));
@@ -1448,6 +1933,24 @@ APP_JS = r"""
     const nextHref = document.body.dataset.nextHref;
     document.querySelector("#prev-next").innerHTML = `${prevTitle ? `<a href="${esc(prevHref)}">Previous: ${esc(prevTitle)}</a>` : "<span></span>"}${nextTitle ? `<a href="${esc(nextHref)}">Next: ${esc(nextTitle)}</a>` : "<span></span>"}`;
   }
+  function renderFeedback() {
+    const issueTitle = encodeURIComponent(`Docs feedback: ${page.title}`);
+    const issueBody = encodeURIComponent(`Page: ${page.title}\nVersion: ${docs.version}\nURL: ${page.href}\n\nDescribe the issue or improvement:\n`);
+    document.querySelector("#feedback").innerHTML = `<h2>Page feedback</h2><p>This local widget does not submit or track anything automatically.</p><div class="feedback-actions"><button type="button" id="helpful-yes">Helpful</button><button type="button" id="copy-page-id">Copy page ID</button><a class="button-link external" target="_blank" rel="noopener noreferrer" href="https://github.com/ahmad-al-dibo/arclm/issues/new?title=${issueTitle}&body=${issueBody}">Open issue draft</a></div><p id="feedback-status" role="status"></p>`;
+    const status = document.querySelector("#feedback-status");
+    document.querySelector("#helpful-yes").addEventListener("click", () => {
+      status.textContent = "Thanks. Stored only in this browser session.";
+      try { sessionStorage.setItem(`arclm-docs-helpful-${page.id}`, "true"); } catch {}
+    });
+    document.querySelector("#copy-page-id").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(`${page.id} (${docs.version})`);
+        status.textContent = "Page ID copied.";
+      } catch {
+        status.textContent = `${page.id} (${docs.version})`;
+      }
+    });
+  }
   function enhanceCodeBlocks() {
     document.querySelectorAll(".copy-code").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -1472,6 +1975,25 @@ APP_JS = r"""
         enhanceCodeBlocks();
       };
       apiFilter.addEventListener("input", draw);
+      draw();
+    }
+    const kindFilter = document.querySelector("#kind-filter");
+    if (kindFilter) {
+      const results = document.querySelector("#kind-results");
+      const status = document.querySelector("#kind-status");
+      const wantClass = pageId === "classes";
+      const draw = () => {
+        const q = kindFilter.value.toLowerCase();
+        const s = status.value;
+        const filtered = api.filter((entry) => {
+          const kindMatches = wantClass ? (entry.kind === "class" || entry.kind === "exception") : (entry.kind === "function" || entry.kind === "async function");
+          return kindMatches && (!s || entry.status === s) && (!q || JSON.stringify(entry).toLowerCase().includes(q));
+        });
+        results.innerHTML = filtered.map(apiCard).join("");
+        enhanceCodeBlocks();
+      };
+      kindFilter.addEventListener("input", draw);
+      status.addEventListener("change", draw);
       draw();
     }
     const modelFilter = document.querySelector("#model-filter");
@@ -1537,11 +2059,21 @@ APP_JS = r"""
       try { localStorage.setItem("arclm-doc-theme", next); } catch {}
     });
   }
+  function initVersionSelector() {
+    const selector = document.querySelector("#version-select");
+    const versions = docs.versions || [{ label: `Current (${docs.version})`, href: "index.html", current: true }];
+    selector.innerHTML = versions.map((version) => `<option value="${esc(version.href)}" ${version.current ? "selected" : ""}>${esc(version.label)}</option>`).join("");
+    selector.addEventListener("change", () => {
+      const selected = selector.value;
+      if (selected && selected !== "index.html") window.location.href = prefix + selected;
+    });
+  }
   document.querySelector("#nav-toggle").addEventListener("click", () => {
     const open = document.body.classList.toggle("nav-open");
     document.querySelector("#nav-toggle").setAttribute("aria-expanded", String(open));
   });
   initTheme();
+  initVersionSelector();
   renderNav();
   renderPage();
   setupSpecialFilters();

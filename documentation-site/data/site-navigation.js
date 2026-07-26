@@ -88,6 +88,26 @@ window.ARCLM_NAVIGATION = [
         "href": "guides/inspection.html"
       },
       {
+        "id": "guide-pipelines",
+        "title": "Pipelines",
+        "href": "guides/pipelines.html"
+      },
+      {
+        "id": "guide-agents",
+        "title": "Agent Runtime",
+        "href": "guides/agent-runtime.html"
+      },
+      {
+        "id": "guide-agent-tools",
+        "title": "Agent Tools",
+        "href": "guides/agent-tools.html"
+      },
+      {
+        "id": "guide-security",
+        "title": "Security",
+        "href": "guides/security.html"
+      },
+      {
         "id": "guide-external-models",
         "title": "External Models",
         "href": "guides/external-models.html"
@@ -116,6 +136,11 @@ window.ARCLM_NAVIGATION = [
         "id": "dataset-formats",
         "title": "Dataset Formats",
         "href": "reference/dataset-formats.html"
+      },
+      {
+        "id": "guide-lab",
+        "title": "Lab",
+        "href": "guides/lab.html"
       }
     ]
   },
@@ -158,6 +183,16 @@ window.ARCLM_NAVIGATION = [
         "href": "examples/generation-examples.html"
       },
       {
+        "id": "examples-agents",
+        "title": "Agent Examples",
+        "href": "examples/agent-examples.html"
+      },
+      {
+        "id": "examples-security",
+        "title": "Security Examples",
+        "href": "examples/security-examples.html"
+      },
+      {
         "id": "examples-complete",
         "title": "Complete Projects",
         "href": "examples/complete-projects.html"
@@ -171,6 +206,11 @@ window.ARCLM_NAVIGATION = [
         "id": "api-index",
         "title": "Public API",
         "href": "api/index.html"
+      },
+      {
+        "id": "api-root",
+        "title": "Root API",
+        "href": "api/root.html"
       },
       {
         "id": "api-datasets",
@@ -193,6 +233,11 @@ window.ARCLM_NAVIGATION = [
         "href": "api/training.html"
       },
       {
+        "id": "api-finetuning",
+        "title": "Fine-Tuning API",
+        "href": "api/finetuning.html"
+      },
+      {
         "id": "api-checkpoints",
         "title": "Checkpoint API",
         "href": "api/checkpoints.html"
@@ -211,6 +256,16 @@ window.ARCLM_NAVIGATION = [
         "id": "api-inspection",
         "title": "Inspection API",
         "href": "api/inspection.html"
+      },
+      {
+        "id": "api-agents",
+        "title": "Agent API",
+        "href": "api/agents.html"
+      },
+      {
+        "id": "api-security",
+        "title": "Security API",
+        "href": "api/security.html"
       },
       {
         "id": "api-peft",
@@ -233,6 +288,16 @@ window.ARCLM_NAVIGATION = [
         "href": "api/registry.html"
       },
       {
+        "id": "api-configuration",
+        "title": "Configuration API",
+        "href": "api/configuration.html"
+      },
+      {
+        "id": "api-errors",
+        "title": "Errors API",
+        "href": "api/errors.html"
+      },
+      {
         "id": "api-utilities",
         "title": "Utilities API",
         "href": "api/utilities.html"
@@ -241,6 +306,16 @@ window.ARCLM_NAVIGATION = [
         "id": "modules",
         "title": "Module Explorer",
         "href": "reference/modules.html"
+      },
+      {
+        "id": "classes",
+        "title": "Class Index",
+        "href": "reference/classes.html"
+      },
+      {
+        "id": "functions",
+        "title": "Function Index",
+        "href": "reference/functions.html"
       },
       {
         "id": "configuration",
@@ -253,6 +328,21 @@ window.ARCLM_NAVIGATION = [
         "href": "reference/errors.html"
       },
       {
+        "id": "optional-dependencies",
+        "title": "Optional Dependencies",
+        "href": "reference/optional-dependencies.html"
+      },
+      {
+        "id": "compatibility",
+        "title": "Compatibility",
+        "href": "reference/compatibility.html"
+      },
+      {
+        "id": "deprecated-apis",
+        "title": "Deprecated APIs",
+        "href": "reference/deprecated-apis.html"
+      },
+      {
         "id": "status-legend",
         "title": "Status Legend",
         "href": "reference/status-legend.html"
@@ -261,6 +351,46 @@ window.ARCLM_NAVIGATION = [
         "id": "limitations",
         "title": "Limitations",
         "href": "reference/limitations.html"
+      }
+    ]
+  },
+  {
+    "group": "Contributing",
+    "items": [
+      {
+        "id": "contributing-architecture",
+        "title": "Architecture",
+        "href": "contributing/architecture.html"
+      },
+      {
+        "id": "contributing-testing",
+        "title": "Testing",
+        "href": "contributing/testing.html"
+      },
+      {
+        "id": "contributing-docs",
+        "title": "Docs Build",
+        "href": "contributing/docs-build.html"
+      }
+    ]
+  },
+  {
+    "group": "Releases",
+    "items": [
+      {
+        "id": "version-current",
+        "title": "Current Version",
+        "href": "releases/current.html"
+      },
+      {
+        "id": "version-history",
+        "title": "Version History",
+        "href": "releases/version-history.html"
+      },
+      {
+        "id": "migration",
+        "title": "Migration Guides",
+        "href": "releases/migration.html"
       }
     ]
   }

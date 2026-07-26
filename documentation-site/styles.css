@@ -49,7 +49,7 @@ a { color: var(--accent-2); }
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto minmax(8rem, auto) auto;
   gap: 0.75rem;
   align-items: center;
   min-height: 3.5rem;
@@ -58,6 +58,7 @@ a { color: var(--accent-2); }
   border-bottom: 1px solid var(--border);
 }
 .brand { color: var(--text); font-weight: 800; text-decoration: none; }
+.version-label { color: var(--muted); font-weight: 700; }
 button, input, select {
   font: inherit;
   color: var(--text);
@@ -220,12 +221,38 @@ th, td {
   box-shadow: 0 20px 50px rgb(0 0 0 / 20%);
   z-index: 30;
 }
-.external::after { content: " ↗"; }
+.feedback {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.feedback h2 { margin-top: 0; font-size: 1.1rem; }
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+}
+.external::after { content: " external"; font-size: 0.8em; color: var(--muted); }
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 1100px) {
+  .mobile-bar { grid-template-columns: auto 1fr auto; }
+  .version-label, #version-select { display: none; }
   .layout { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed;

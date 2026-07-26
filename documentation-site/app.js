@@ -53,6 +53,7 @@
     document.querySelector("#breadcrumbs").innerHTML = `<a href="${prefix}index.html">ArcLM Docs</a><span>/</span><span>${esc(page.title)}</span>`;
     renderToc();
     renderPrevNext();
+    renderFeedback();
     enhanceCodeBlocks();
   }
   function renderSection(section) {
@@ -69,6 +70,9 @@
     if (pageId === "api-index") return apiIndex();
     if (pageId.startsWith("api-") && pageId !== "api-index") return apiDetails(pageId.replace("api-", ""));
     if (pageId === "modules") return moduleExplorer();
+    if (pageId === "classes") return apiKindIndex("class", "Public classes");
+    if (pageId === "functions") return apiKindIndex("function", "Public functions");
+    if (pageId === "deprecated-apis") return apiStatusIndex("Deprecated", "Deprecated public APIs");
     if (pageId === "supported-models") return supportedModels();
     if (pageId === "dataset-formats") return datasetFormatsView();
     if (pageId === "configuration") return configurationView();
@@ -80,14 +84,22 @@
     return `<section id="api-search"><h2>Search APIs</h2><div class="filter-row"><input id="api-filter" type="search" placeholder="Search API names, imports and categories" /></div><div id="api-results" class="card-grid"></div></section>`;
   }
   function apiCard(entry) {
-    return `<article class="card" id="${slug(entry.name)}"><span class="status">${esc(entry.status)}</span><h3>${esc(entry.name)}</h3><p><code>${esc(entry.importPath)}</code></p><p>${esc(entry.summary)}</p><p><strong>Signature:</strong> <code>${esc(entry.signature)}</code></p>${table(["Parameter", "Type", "Meaning"], entry.parameters || [])}${entry.members ? table(["Member", "Purpose"], entry.members) : ""}${codeBlock(entry.usage, "python")}</article>`;
+    return `<article class="card api-card" id="${slug(entry.name)}"><span class="status">${esc(entry.status)}</span><h3>${esc(entry.name)}</h3><p><strong>Fully qualified:</strong> <code>${esc(entry.qualifiedName || entry.importPath)}</code></p><p><strong>Canonical import:</strong> <code>${esc(entry.canonicalImport || entry.importPath)}</code></p>${entry.alternativeImport ? `<p><strong>Alternative import:</strong> <code>${esc(entry.alternativeImport)}</code></p>` : ""}<p>${esc(entry.summary)}</p><p><strong>Signature:</strong> <code>${esc(entry.signature)}</code></p>${table(["Parameter", "Type", "Default"], entry.parameters || [])}${entry.members && entry.members.length ? table(["Member", "Purpose"], entry.members) : ""}<p><strong>Returns:</strong> ${esc(entry.returns || "See docstring.")}</p><p><strong>Raises:</strong> ${esc((entry.errors || []).join(", ") || "No documented public errors.")}</p><p><strong>Optional dependencies:</strong> ${esc(entry.optionalDependencies || "None")}</p><p><strong>Security:</strong> ${esc(entry.security || "Follow subsystem guide.")}</p><p><strong>Limitations:</strong> ${esc(entry.limitations || "None listed.")}</p>${codeBlock(entry.usage, "python")}</article>`;
   }
   function apiDetails(category) {
     const entries = api.filter((entry) => entry.category === category);
     return `<section id="api-members"><h2>API members</h2><div class="card-grid">${entries.map(apiCard).join("") || "<p>No public entries in this category yet.</p>"}</div></section>`;
   }
+  function apiKindIndex(kind, title) {
+    const entries = api.filter((entry) => entry.kind === kind || (kind === "function" && entry.kind === "async function") || (kind === "class" && entry.kind === "exception"));
+    return `<section id="${slug(title)}"><h2>${esc(title)}</h2><div class="filter-row"><input id="kind-filter" type="search" placeholder="Search ${esc(title.toLowerCase())}" /><select id="kind-status"><option value="">All statuses</option>${docs.statuses.map((status) => `<option>${esc(status)}</option>`).join("")}</select></div><div id="kind-results" class="card-grid"></div></section>`;
+  }
+  function apiStatusIndex(status, title) {
+    const entries = api.filter((entry) => entry.status === status);
+    return `<section id="${slug(title)}"><h2>${esc(title)}</h2><div class="card-grid">${entries.map(apiCard).join("") || "<p>No deprecated public APIs are documented.</p>"}</div></section>`;
+  }
   function moduleExplorer() {
-    return `<section id="module-list"><h2>Modules</h2><div class="card-grid">${modules.map((mod) => `<article class="card"><span class="status">${esc(mod.status)}</span><h3><code>${esc(mod.importPath)}</code></h3><p>${esc(mod.purpose)}</p><p><strong>Use when:</strong> ${esc(mod.whenToUse)}</p><p><strong>Optional dependencies:</strong> ${esc(mod.optionalDependencies)}</p></article>`).join("")}</div></section>`;
+    return `<section id="module-list"><h2>Modules</h2><div class="card-grid">${modules.map((mod) => `<article class="card"><span class="status">${esc(mod.status)}</span><h3><code>${esc(mod.importPath)}</code></h3><p>${esc(mod.purpose)}</p><p><strong>Use when:</strong> ${esc(mod.whenToUse)}</p><p><strong>Public exports:</strong> ${esc(mod.exportCount || 0)}</p><p><strong>Examples:</strong> ${esc((mod.examples || []).join(", ") || "None mapped")}</p><p><strong>Optional dependencies:</strong> ${esc(mod.optionalDependencies)}</p><p><strong>Limitations:</strong> ${esc(mod.limitations || "")}</p></article>`).join("")}</div></section>`;
   }
   function supportedModels() {
     const providers = Array.from(new Set(models.map((m) => m.provider)));
@@ -124,6 +136,24 @@
     const nextHref = document.body.dataset.nextHref;
     document.querySelector("#prev-next").innerHTML = `${prevTitle ? `<a href="${esc(prevHref)}">Previous: ${esc(prevTitle)}</a>` : "<span></span>"}${nextTitle ? `<a href="${esc(nextHref)}">Next: ${esc(nextTitle)}</a>` : "<span></span>"}`;
   }
+  function renderFeedback() {
+    const issueTitle = encodeURIComponent(`Docs feedback: ${page.title}`);
+    const issueBody = encodeURIComponent(`Page: ${page.title}\nVersion: ${docs.version}\nURL: ${page.href}\n\nDescribe the issue or improvement:\n`);
+    document.querySelector("#feedback").innerHTML = `<h2>Page feedback</h2><p>This local widget does not submit or track anything automatically.</p><div class="feedback-actions"><button type="button" id="helpful-yes">Helpful</button><button type="button" id="copy-page-id">Copy page ID</button><a class="button-link external" target="_blank" rel="noopener noreferrer" href="https://github.com/ahmad-al-dibo/arclm/issues/new?title=${issueTitle}&body=${issueBody}">Open issue draft</a></div><p id="feedback-status" role="status"></p>`;
+    const status = document.querySelector("#feedback-status");
+    document.querySelector("#helpful-yes").addEventListener("click", () => {
+      status.textContent = "Thanks. Stored only in this browser session.";
+      try { sessionStorage.setItem(`arclm-docs-helpful-${page.id}`, "true"); } catch {}
+    });
+    document.querySelector("#copy-page-id").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(`${page.id} (${docs.version})`);
+        status.textContent = "Page ID copied.";
+      } catch {
+        status.textContent = `${page.id} (${docs.version})`;
+      }
+    });
+  }
   function enhanceCodeBlocks() {
     document.querySelectorAll(".copy-code").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -148,6 +178,25 @@
         enhanceCodeBlocks();
       };
       apiFilter.addEventListener("input", draw);
+      draw();
+    }
+    const kindFilter = document.querySelector("#kind-filter");
+    if (kindFilter) {
+      const results = document.querySelector("#kind-results");
+      const status = document.querySelector("#kind-status");
+      const wantClass = pageId === "classes";
+      const draw = () => {
+        const q = kindFilter.value.toLowerCase();
+        const s = status.value;
+        const filtered = api.filter((entry) => {
+          const kindMatches = wantClass ? (entry.kind === "class" || entry.kind === "exception") : (entry.kind === "function" || entry.kind === "async function");
+          return kindMatches && (!s || entry.status === s) && (!q || JSON.stringify(entry).toLowerCase().includes(q));
+        });
+        results.innerHTML = filtered.map(apiCard).join("");
+        enhanceCodeBlocks();
+      };
+      kindFilter.addEventListener("input", draw);
+      status.addEventListener("change", draw);
       draw();
     }
     const modelFilter = document.querySelector("#model-filter");
@@ -213,11 +262,21 @@
       try { localStorage.setItem("arclm-doc-theme", next); } catch {}
     });
   }
+  function initVersionSelector() {
+    const selector = document.querySelector("#version-select");
+    const versions = docs.versions || [{ label: `Current (${docs.version})`, href: "index.html", current: true }];
+    selector.innerHTML = versions.map((version) => `<option value="${esc(version.href)}" ${version.current ? "selected" : ""}>${esc(version.label)}</option>`).join("");
+    selector.addEventListener("change", () => {
+      const selected = selector.value;
+      if (selected && selected !== "index.html") window.location.href = prefix + selected;
+    });
+  }
   document.querySelector("#nav-toggle").addEventListener("click", () => {
     const open = document.body.classList.toggle("nav-open");
     document.querySelector("#nav-toggle").setAttribute("aria-expanded", String(open));
   });
   initTheme();
+  initVersionSelector();
   renderNav();
   renderPage();
   setupSpecialFilters();

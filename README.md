@@ -151,6 +151,23 @@ speech-to-text boundaries are documented as manual optional entries in
 [`examples/manifest.json`](examples/manifest.json). Historical unnumbered
 examples are preserved, but the numbered suite is the current source of truth.
 
+## Documentation Website
+
+The static documentation website lives in [`documentation-site/`](documentation-site/).
+Open [`documentation-site/index.html`](documentation-site/index.html) directly
+for the offline site, including guides, API reference, examples, module index,
+configuration, errors, limitations, Lab, and release notes.
+
+The site is generated from repository data plus curated guide text:
+
+```bash
+python tools/build_documentation_site.py
+python -m pytest tests/docs -q
+```
+
+The generated API catalog is built from current public exports and signatures,
+so it should be regenerated whenever public APIs or examples change.
+
 ## Security
 
 ArcLM includes `arclm.security`, the ArcLM Security Core. It provides

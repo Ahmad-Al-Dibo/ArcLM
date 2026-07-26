@@ -1,5 +1,3 @@
-from arclm import validate_sft_records
+from arclm.finetuning import validate_sft_records
 
-records = [{"instruction": "Explain ArcLM.", "response": "ArcLM is native-first."}]
-result = validate_sft_records(records)
-print(result.summary())
+print(validate_sft_records([{"instruction": "Hi", "response": "Hello"}], strict=False).summary())
