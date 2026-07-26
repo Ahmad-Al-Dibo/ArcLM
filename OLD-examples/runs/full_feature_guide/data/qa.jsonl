@@ -1,0 +1,2 @@
+{"question": "What is ArcLM?", "context": "local model training", "answer": "ArcLM is a compact PyTorch language-model library."}
+{"question": "What does SmartLoader inspect?", "context": "model folders and checkpoints", "answer": "It inspects metadata, tokenizer files, weights, and resume state."}

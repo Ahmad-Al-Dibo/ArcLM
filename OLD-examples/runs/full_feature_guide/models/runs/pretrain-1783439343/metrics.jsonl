@@ -1,0 +1,3 @@
+{"current_epoch": 0, "device": "cpu", "epochs": 1, "event": "training_started", "level": "INFO", "time": 1783439357.1232011}
+{"epoch": 1, "epoch_seconds": 4.486153841018677, "event": "epoch_completed", "generalization_gap": -1.0149771181041432, "level": "METRIC", "time": 1783439361.6421669, "train_loss": 2.343400920773375, "val_loss": 1.3284238026692317, "val_perplexity": 3.7750884114154117, "val_token_accuracy": 0.7387820512820513}
+{"epochs_completed": 1, "event": "training_completed", "level": "INFO", "time": 1783439361.6453397, "total_seconds": 4.52124285697937}

@@ -1,0 +1,6 @@
+{
+  "vocab_size": 32,
+  "embed_dim": 16,
+  "block_size": 8,
+  "num_blocks": 1
+}
