@@ -1,0 +1,2 @@
+{"id":"arc_summary","prompt":"Return only JSON with keys task, answer, confidence, tags. Explain ArcLM for a developer evaluating local LLM tooling."}
+{"id":"adapter_fallback","prompt":"Return only JSON with keys task, answer, confidence, tags. Why should an example create an adapter from base classes when no model adapter exists?"}

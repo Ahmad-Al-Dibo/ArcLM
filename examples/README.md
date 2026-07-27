@@ -1,38 +1,63 @@
 # ArcLM Examples
 
-These examples target ArcLM 0.5.0. The numbered scripts are the maintained public examples and each focuses on one concept.
+This directory contains the maintained numbered ArcLM examples suite. It is
+designed for local, CPU-first verification: no example in the verified runner
+requires network access, automatic model downloads, a GPU, or remote services.
 
-Run from the repository root:
+The older unnumbered folders remain in place as preserved historical examples.
+Use the numbered folders and `manifest.json` as the source of truth for the
+current suite.
+
+## Run
+
+Install ArcLM for local development first:
 
 ```bash
-python examples/01_quickstart.py
+pip install -e ".[dev,security]"
 ```
 
-## Local Examples
+Then run examples directly:
 
-These create temporary data and run offline:
+```bash
+python examples/00_quick_start/01_first_arclm_workflow.py
+python examples/12_complete_projects/01_local_language_model/main.py
+```
 
-- `01_quickstart.py`: train a tiny native checkpoint.
-- `02_tokenization.py`: build and use the word tokenizer.
-- `03_data_processing.py`: load and format JSONL records.
-- `04_pretraining.py`: run native pretraining.
-- `05_continue_training.py`: continue a compatible native checkpoint.
-- `06_finetuning.py`: next-token fine-tune a checkpoint.
-- `07_native_sft.py`: native masked instruction tuning.
-- `11_inference.py`: train, load, and generate from a checkpoint.
-- `12_smart_loader.py`: inspect a local model-like folder.
-- `13_diagnostics.py`: inspect top-k predictions.
-- `14_custom_trainer.py`: override `Trainer.compute_loss`.
+Or use the suite runner:
 
-## Optional Examples
+```bash
+python examples/run_examples.py list
+python examples/run_examples.py run 00-01
+python examples/run_examples.py run-category data
+python examples/run_examples.py run-verified
+python examples/run_examples.py status
+```
 
-These need optional dependencies or network/model downloads:
+## Categories
 
-- `08_huggingface_sft.py`: Hugging Face SFT smoke test.
-- `09_lora_sft.py`: Hugging Face LoRA SFT smoke test.
-- `10_preprocess_pipeline.py`: JSONL preprocessing with `arclm[preprocess]`.
-- `15_custom_hf_sft_loop.py`: custom Hugging Face SFT loop using ArcLM's public SFT helper classes.
+| Folder | Purpose |
+| --- | --- |
+| `00_quick_start` | First native dataset-tokenizer-model-inspection workflows. |
+| `01_data` | Local JSONL and HTML fixtures, validation, manifests, reports. |
+| `02_tokenizers` | Word tokenizer and SentencePiece BPE examples. |
+| `03_models` | Tiny native model construction and state-dict loading. |
+| `04_training` | CPU-friendly one-step pretraining. |
+| `05_finetuning` | SFT validation and one tiny supervised step. |
+| `06_checkpoints` | Native checkpoint lifecycle. |
+| `07_evaluation_benchmarks` | Perplexity, accuracy, and top-k diagnostics. |
+| `08_inference_local_models` | Local generation and external-model loading policy. |
+| `09_pipelines_inspection` | Composed data pipeline and tensor inspection. |
+| `10_agents_tools` | Deterministic local agents, tools, documents, fake audio. |
+| `11_security` | Security Core status, encryption, hashing, signing, redaction. |
+| `12_complete_projects` | Six small end-to-end projects. |
 
-## Advanced Workflow
+## Status Rules
 
-- `qwen3_0_6b_sft/`: larger Qwen SFT workflow.
+`verified` examples are run by `run-verified`. `verified_with_fake_backend`
+examples are also run, but they intentionally use deterministic fake providers
+instead of real external services. `manual_optional` entries document supported
+boundaries that require a local model, GPU, or optional dependency and are not
+part of the default run.
+
+All runnable examples keep generated artifacts in temporary directories unless
+their README states otherwise.

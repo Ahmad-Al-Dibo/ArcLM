@@ -1,0 +1,487 @@
+{
+  "schema_version": 1,
+  "suite": "ArcLM verified examples",
+  "last_verified": "2026-07-26",
+  "verification_policy": {
+    "network_required_by_default": false,
+    "downloads_required_by_default": false,
+    "gpu_required_by_default": false,
+    "runner_verified_statuses": [
+      "verified",
+      "verified_with_fake_backend"
+    ],
+    "legacy_note": "The numbered examples are the maintained suite. Older unnumbered folders are preserved as historical examples."
+  },
+  "entries": [
+    {
+      "id": "00-01",
+      "category": "quick_start",
+      "title": "First ArcLM workflow",
+      "path": "00_quick_start/01_first_arclm_workflow.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "00-02",
+      "category": "quick_start",
+      "title": "Inspect one native text pass",
+      "path": "00_quick_start/02_inspect_text.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "01-01",
+      "category": "data",
+      "title": "Load, validate, manifest, and report JSONL records",
+      "path": "01_data/01_load_validate_report.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "01-02",
+      "category": "data",
+      "title": "Turn a local HTML fixture into dataset records",
+      "path": "01_data/02_local_website_dataset.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "02-01",
+      "category": "tokenizers",
+      "title": "Build and inspect a word tokenizer",
+      "path": "02_tokenizers/01_word_tokenizer.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "02-02",
+      "category": "tokenizers",
+      "title": "Train a tiny SentencePiece BPE tokenizer",
+      "path": "02_tokenizers/02_sentencepiece_bpe.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "03-01",
+      "category": "models",
+      "title": "Create a tiny native ArcLM model",
+      "path": "03_models/01_create_tiny_model.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "03-02",
+      "category": "models",
+      "title": "Save and reload a native model state dict",
+      "path": "03_models/02_save_and_load_state.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary weights.pt"
+      ]
+    },
+    {
+      "id": "04-01",
+      "category": "training",
+      "title": "Run one CPU pretraining optimization step",
+      "path": "04_training/01_tiny_pretraining_step.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "05-01",
+      "category": "finetuning",
+      "title": "Preview validated SFT records",
+      "path": "05_finetuning/01_preview_sft_data.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "05-02",
+      "category": "finetuning",
+      "title": "Run one tiny supervised fine-tuning step",
+      "path": "05_finetuning/02_tiny_sft_step.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "05-03",
+      "category": "finetuning",
+      "title": "PEFT and QLoRA real adapter training boundary",
+      "path": null,
+      "status": "manual_optional",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": true,
+      "requires_local_model": true,
+      "optional_dependencies": [
+        "peft",
+        "qlora",
+        "hf"
+      ],
+      "estimated_seconds": null,
+      "artifacts": [
+        "adapter weights"
+      ]
+    },
+    {
+      "id": "06-01",
+      "category": "checkpoints",
+      "title": "Save, load, and inspect a training checkpoint",
+      "path": "06_checkpoints/01_checkpoint_lifecycle.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary training.pt"
+      ]
+    },
+    {
+      "id": "07-01",
+      "category": "evaluation_benchmarks",
+      "title": "Compute perplexity, accuracy, and top-k predictions",
+      "path": "07_evaluation_benchmarks/01_evaluation_metrics.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "08-01",
+      "category": "inference_local_models",
+      "title": "Generate with greedy and sampled decoding",
+      "path": "08_inference_local_models/01_generation_sampling.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "08-02",
+      "category": "inference_local_models",
+      "title": "Inspect external local-model loading policy",
+      "path": "08_inference_local_models/02_external_local_model_status.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "08-03",
+      "category": "inference_local_models",
+      "title": "Load a real external local Hugging Face model",
+      "path": null,
+      "status": "manual_optional",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": true,
+      "optional_dependencies": [
+        "hf"
+      ],
+      "estimated_seconds": null,
+      "artifacts": [
+        "local model directory"
+      ]
+    },
+    {
+      "id": "09-01",
+      "category": "pipelines_inspection",
+      "title": "Compose validation, deduplication, tokenization, and reporting",
+      "path": "09_pipelines_inspection/01_data_pipeline.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "09-02",
+      "category": "pipelines_inspection",
+      "title": "Inspect tensors and generated text from a native pass",
+      "path": "09_pipelines_inspection/02_pipeline_inspection.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "10-01",
+      "category": "agents_tools",
+      "title": "Run a deterministic custom-tool agent",
+      "path": "10_agents_tools/01_custom_tool_agent.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "10-02",
+      "category": "agents_tools",
+      "title": "Run a secure local document agent",
+      "path": "10_agents_tools/02_secure_document_agent.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary document fixture"
+      ]
+    },
+    {
+      "id": "10-03",
+      "category": "agents_tools",
+      "title": "Transcribe a voice note with the fake STT backend",
+      "path": "10_agents_tools/03_voice_note_agent_fake.py",
+      "status": "verified_with_fake_backend",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary audio fixture"
+      ]
+    },
+    {
+      "id": "10-04",
+      "category": "agents_tools",
+      "title": "Transcribe with a real Whisper backend",
+      "path": null,
+      "status": "manual_optional",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": true,
+      "optional_dependencies": [
+        "agents-audio"
+      ],
+      "estimated_seconds": null,
+      "artifacts": [
+        "local audio model"
+      ]
+    },
+    {
+      "id": "11-01",
+      "category": "security",
+      "title": "Inspect ArcLM Security Core status",
+      "path": "11_security/01_security_status.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [
+        "security"
+      ],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "11-02",
+      "category": "security",
+      "title": "Encrypt, hash, sign, verify, and redact local data",
+      "path": "11_security/02_encrypt_hash_sign_redact.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [
+        "security"
+      ],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary encrypted payload"
+      ]
+    },
+    {
+      "id": "12-01",
+      "category": "complete_projects",
+      "title": "Local language model mini project",
+      "path": "12_complete_projects/01_local_language_model/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 20,
+      "artifacts": [
+        "temporary checkpoint"
+      ]
+    },
+    {
+      "id": "12-02",
+      "category": "complete_projects",
+      "title": "Domain SFT assistant mini project",
+      "path": "12_complete_projects/02_domain_sft_assistant/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 20,
+      "artifacts": []
+    },
+    {
+      "id": "12-03",
+      "category": "complete_projects",
+      "title": "Website knowledge pipeline mini project",
+      "path": "12_complete_projects/03_website_knowledge_pipeline/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "12-04",
+      "category": "complete_projects",
+      "title": "Local document agent mini project",
+      "path": "12_complete_projects/04_local_document_agent/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary document fixture"
+      ]
+    },
+    {
+      "id": "12-05",
+      "category": "complete_projects",
+      "title": "Model benchmark lab mini project",
+      "path": "12_complete_projects/05_model_benchmark_lab/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "12-06",
+      "category": "complete_projects",
+      "title": "Secure local AI workspace mini project",
+      "path": "12_complete_projects/06_secure_local_ai_workspace/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [
+        "security"
+      ],
+      "estimated_seconds": 10,
+      "artifacts": [
+        "temporary encrypted artifact"
+      ]
+    }
+  ]
+}

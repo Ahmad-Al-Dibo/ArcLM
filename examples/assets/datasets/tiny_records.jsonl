@@ -1,0 +1,4 @@
+{"id":"doc-1","text":"ArcLM loads local records for tiny experiments."}
+{"id":"doc-2","text":"Tokenizers convert text into repeatable token ids."}
+{"id":"doc-3","text":"Evaluation reports summarize local model behavior."}
+

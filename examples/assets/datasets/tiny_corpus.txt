@@ -1,0 +1,4 @@
+ArcLM trains tiny native language models on local data.
+Local examples stay small, bounded, and inspectable.
+Tiny models help developers understand tokenization training evaluation generation.
+
