@@ -1,0 +1,9 @@
+{
+  "dataset_file": "D:\\AhmadAlDibo2026-2030\\2026\\Projects\\ArcLM-LLMs-Library\\ArcLM-opensorce\\ArcLM\\examples\\models\\data\\qwen3_0_6b\\train_messages.jsonl",
+  "reason": "Tokenisatiepreview vereist --allow-download of --offline om verborgen tokenizerdownloads te vermijden.",
+  "records_seen": 6,
+  "schema_preview": [
+    "messages"
+  ],
+  "status": "not_tested"
+}

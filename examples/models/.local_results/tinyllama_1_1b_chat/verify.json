@@ -1,0 +1,66 @@
+{
+  "download": {
+    "reason": "--allow-download ontbreekt",
+    "status": "not_tested"
+  },
+  "load_generate": {
+    "reason": "Download of lokale cache ontbreekt.",
+    "status": "not_tested"
+  },
+  "model_id": "tinyllama_1_1b_chat",
+  "preflight": {
+    "cache_root": "C:\\Users\\User\\.cache\\huggingface",
+    "disk": {
+      "cache_root": {
+        "exists": true,
+        "free_bytes": 167924740096,
+        "path": "C:\\Users\\User\\.cache\\huggingface",
+        "total_bytes": 511029800960,
+        "used_bytes": 343105060864
+      },
+      "model_root": {
+        "error": "[WinError 3] The system cannot find the path specified",
+        "path": "models\\external"
+      },
+      "workspace": {
+        "exists": true,
+        "free_bytes": 1192383201280,
+        "path": "D:\\AhmadAlDibo2026-2030\\2026\\Projects\\ArcLM-LLMs-Library\\ArcLM-opensorce\\ArcLM",
+        "total_bytes": 1972216262656,
+        "used_bytes": 779833061376
+      }
+    },
+    "gpu": {
+      "cuda_available": false,
+      "device_count": 0,
+      "devices": []
+    },
+    "model_root": "models\\external",
+    "operating_system": "Windows-11-10.0.22631-SP0",
+    "packages": {
+      "arclm": null,
+      "flask": "3.1.3",
+      "huggingface_hub": "1.24.0",
+      "peft": null,
+      "safetensors": "0.8.0",
+      "torch": "2.13.0",
+      "transformers": "5.14.1"
+    },
+    "python_executable": "D:\\AhmadAlDibo2026-2030\\2026\\Projects\\ArcLM-LLMs-Library\\ArcLM-opensorce\\ArcLM\\.venv\\Scripts\\python.exe",
+    "python_version": "3.12.10",
+    "ram": {
+      "available": "unknown",
+      "note": "psutil ontbreekt of faalde: No module named 'psutil'"
+    },
+    "supported_dtypes": [
+      "float32"
+    ]
+  },
+  "repository_id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+  "security": {
+    "preferred_weight_format": "safetensors",
+    "status": "verified_manual",
+    "trust_remote_code": false,
+    "warnings": []
+  }
+}

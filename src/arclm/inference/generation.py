@@ -91,6 +91,74 @@ class Generator:
             if was_training:
                 self.model.train()
 
+    def generate_stream(
+        self,
+        start_text,
+        max_new_tokens=20,
+        temperature=1.0,
+        repetition_penalty=1.0,
+        top_k=None,
+        top_p=None,
+        cancel_check=None,
+    ):
+        """Yield decoded generated token text during native ArcLM inference."""
+
+        self._validate_generation_args(
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+            top_k=top_k,
+            top_p=top_p,
+        )
+        was_training = self.model.training
+        self.model.eval()
+
+        try:
+            if self.tokenizer is not None and hasattr(self.tokenizer, "encode_text"):
+                prompt_ids = self.tokenizer.encode_text(start_text.lower())
+            else:
+                words = start_text.lower().split()
+                prompt_ids = [self.stoi[w] for w in words if w in self.stoi]
+
+            if not prompt_ids:
+                return
+
+            idx = torch.tensor([prompt_ids], device=self.device)
+            emitted_ids = []
+            with torch.no_grad():
+                for _ in range(max_new_tokens):
+                    if cancel_check is not None and cancel_check():
+                        break
+                    idx_cond = idx[:, -self.block_size:]
+                    logits = self.model(idx_cond)
+                    logits = logits[:, -1, :] / temperature
+
+                    if repetition_penalty != 1.0:
+                        logits = self._apply_repetition_penalty(logits, idx[0], repetition_penalty)
+
+                    if top_k is not None:
+                        logits = self._apply_top_k(logits, top_k)
+
+                    if top_p is not None:
+                        logits = self._apply_top_p(logits, top_p)
+
+                    probs = torch.softmax(logits, dim=-1)
+                    next_token = torch.multinomial(probs, 1)
+                    idx = torch.cat([idx, next_token], dim=1)
+                    token_id = int(next_token[0, 0].item())
+                    emitted_ids.append(token_id)
+                    if self.tokenizer is not None and hasattr(self.tokenizer, "decode_string"):
+                        text = self.tokenizer.decode_string([token_id])
+                    else:
+                        text = str(self.itos.get(token_id, ""))
+                        if emitted_ids:
+                            text = (" " if len(emitted_ids) > 1 and text else "") + text
+                    if text:
+                        yield {"text": text, "token_id": token_id}
+        finally:
+            if was_training:
+                self.model.train()
+
     def _validate_generation_args(
         self,
         *,

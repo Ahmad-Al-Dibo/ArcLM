@@ -1,0 +1,3 @@
+{"messages":[{"role":"user","content":"Name one allowed safe tool."},{"role":"assistant","content":"A text statistics tool is allowed."}]}
+{"messages":[{"role":"user","content":"Que faut-il éviter dans les logs?"},{"role":"assistant","content":"Il faut éviter les jetons d'accès et les chemins sensibles complets."}]}
+{"messages":[{"role":"user","content":"¿Qué limita max_new_tokens?"},{"role":"assistant","content":"Limita la longitud de la generación."}]}

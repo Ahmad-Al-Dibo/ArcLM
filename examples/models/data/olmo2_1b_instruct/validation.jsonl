@@ -1,0 +1,3 @@
+{"messages":[{"role":"user","content":"What is an honest SFT status if only formatting ran?"},{"role":"assistant","content":"Preparation verified."}]}
+{"messages":[{"role":"user","content":"Why record a revision hash?"},{"role":"assistant","content":"It makes the downloaded model state reproducible."}]}
+{"messages":[{"role":"user","content":"What should memory compaction preserve?"},{"role":"assistant","content":"System instructions and recent user-visible context."}]}

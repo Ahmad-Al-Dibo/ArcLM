@@ -1,0 +1,8 @@
+{
+  "model_id": "falcon3_1b_instruct",
+  "schema": "messages",
+  "languages": ["en", "fr", "es"],
+  "records_are_synthetic": true,
+  "contains_personal_information": false,
+  "contains_hidden_chain_of_thought": false
+}

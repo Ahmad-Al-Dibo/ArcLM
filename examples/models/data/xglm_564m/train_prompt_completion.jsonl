@@ -1,0 +1,6 @@
+{"prompt":"Een checkpoint bevat onder andere","completion":" modelgewichten, configuratie en trainingsstatus."}
+{"prompt":"Offline laden betekent","completion":" dat lokale bestanden worden gebruikt zonder netwerkverzoek."}
+{"prompt":"A safe loader rejects","completion":" unreviewed remote code and unexpected executable files."}
+{"prompt":"يقسم tokenizer النص إلى","completion":" رموز يمكن للنموذج معالجتها."}
+{"prompt":"Een benchmark noteert hardware,","completion":" softwareversies, promptlengte en gemeten tijden."}
+{"prompt":"Local model memory stores","completion":" visible conversation messages and allowed tool results."}

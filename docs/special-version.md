@@ -43,6 +43,7 @@ Readiness beleid:
 | --- | --- | --- | --- |
 | Native public APIs | Stable candidate | Public API, smoke and full-suite tests pass for datasets, tokenizers, model, training, checkpoints, evaluation, generation and inspection. | Root exports blijven breed; post-release root API trim blijft technical debt. |
 | Web Studio workflow | Beta | Local FastAPI and Next.js tests cover project, data, tokenizer, model, run, checkpoint, evaluation, generation and inspection paths. | Single-process local app; no auth, database, streaming or production serving. |
+| GPT-style Simple Interface | Beta | `python -m arclm --run simple-interface` still launches the Flask app; focused tests cover backend model-operation state, terminal events, true streaming for streaming-capable adapters, sequential SQLite prompt queues, response lifecycle/timing records, token metrics, Agent-mode safe tool execution, load success/failure/cancellation, local chat persistence, deterministic follow-up context, template validation/preview, context trimming, memory-disabled behavior and chat search/rename/delete. | Local single-user JSON plus SQLite sidecar storage; only adapters that expose real incremental output are marked streaming; no cloud sync, vector memory, production auth or encrypted chat store by default. |
 | Diagnostics | Beta | `/api/system/status` and `arclm doctor` share safe runtime diagnostics. | Hardware-specific CUDA/multi-GPU paths blijven afhankelijk van lokale hardware. |
 | Optional integrations | Beta/Experimental | Availability is detected without importing heavy optional packages. | Hugging Face/PEFT/QLoRA runtime claims blijven model- and hardware-specific. |
 | Deprecated compatibility paths | Deprecated but retained | Compatibility tests cover old imports. | Retain through 1.x; removal should only be considered for 2.0 with migration notes. |
@@ -59,9 +60,9 @@ Public API stability inventory:
 | Classification | APIs |
 | --- | --- |
 | Stable candidate | `ArcLM`, `TrainingConfig`, `Trainer`, `load_dataset`, `validate_records`, `create_dataset_manifest`, `build_dataset_report`, `Tokenizer`, `SentencePieceTokenizer`, `Generator`, `Evaluator`, `build_evaluation_report`, `SmartLoader`, native checkpoint helpers |
-| Beta | `inspect_text`, `PipelineTrace`, `ModelCapabilityReport`, `model_support_matrix`, `RunTracker`, local FastAPI `create_app`, Web Studio endpoints |
+| Beta | `inspect_text`, `PipelineTrace`, `ModelCapabilityReport`, `model_support_matrix`, `RunTracker`, local FastAPI `create_app`, Web Studio endpoints, `arclm.simple_interface` GPT-style local chat endpoints |
 | Experimental | External HF causal-LM loading boundaries, QLoRA/quantization runtime helpers, distributed runtime helpers, advanced preprocessing/search surfaces |
-| Deprecated | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders`, `MiniGPT`, Flask simple interface |
+| Deprecated | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders`, `MiniGPT` |
 | Unsupported | Native BERT/T5/LLaMA/Mistral/Qwen implementations, diffusion, multimodal, RLHF/DPO/GRPO, OpenAI-compatible APIs, production serving, attention-map capture, WebSockets/streaming generation |
 
 ## Verified Examples Suite
@@ -96,6 +97,308 @@ training, SFT preparation, checkpoints, evaluation, local inference, pipeline
 inspection, agents/tools, Security Core, and six complete projects. Older
 unnumbered examples are preserved for history; the numbered suite is the
 maintained release candidate examples surface.
+
+## GPT-Style Simple Interface
+
+Status: beta local chat surface, no version bump.
+
+Launch remains:
+
+```bash
+python -m arclm --run simple-interface
+```
+
+The command still routes through `arclm.cli.run_command` to
+`arclm.simple_interface.run_simple_interface`, starts the Flask app, and keeps
+the existing model cache. Model inspection, model loading, local path/model ID
+entry, device/dtype/quantization options, model saving, generation settings,
+`/model/inspect`, `/model/load`, `/model/save`, `/predict`, `/generate` and
+`/health` remain available.
+
+The first screen is now a GPT-style local chat application:
+
+- left sidebar with new chat, local search, previous chats, current model and
+  settings;
+- main area with conversation title, model status, message history, suggestions,
+  context inspection and a multiline composer;
+- settings dialog for general, appearance, model, chat template, context and
+  memory, generation, system instructions, storage/privacy and advanced views.
+
+Conversation records use backend-generated IDs, not display titles. Each chat
+stores title, created/updated timestamps, selected model/source, template ID,
+system instructions, persistent request instructions, context settings,
+generation settings, full messages, optional summary and metadata. Messages
+store ID, conversation ID, normalized role, content, timestamp, status, model
+metadata, token count, generation metadata and error details where applicable.
+
+Storage is a backend-owned versioned JSON file at
+`workspace/simple-interface/chat-store.json` by default, or
+`ARCLM_SIMPLE_INTERFACE_STORE` when configured. Writes are atomic on Windows and
+Unix through a temporary file plus replace. Browser storage is limited to
+harmless appearance preferences. The chat store does not contain model weights,
+large tensors, passwords or encryption keys. It is local plaintext unless a
+separate Security Core encrypted storage integration is configured in a future
+phase.
+
+A unified SQLite sidecar is created next to the JSON store as
+`chat-store.sqlite3`. It records queryable `conversations`, `messages`,
+`models`, `model_loads`, `generation_runs`, `chat_templates`, `tool_calls`,
+`tool_results`, `training_candidates` and `settings`. Model weights are not
+stored in SQLite. Training collection is separate from saved history and remains
+off unless `allow_training_collection` is enabled and a response is explicitly
+approved for training.
+
+Generation uses one backend pipeline:
+
+```text
+receive user message -> validate chat/model -> save user message
+-> resolve settings and instructions -> load optional memory and summary
+-> select active history -> calculate token budget -> apply chat template
+-> generate with the loaded model -> save assistant response
+-> update conversation metadata
+```
+
+Each response also has a canonical lifecycle record:
+
+```text
+queued -> preparing -> waiting_for_tool -> running_tool -> generating
+-> revealing -> saving -> completed
+```
+
+Failure states are `failed`, `tool_failed` and `cancelled`. The Flask backend is
+the source of truth for these records. The visible thinking indicator displays
+real operational stages such as preparing context, checking tools, running a
+tool, generating, saving and completed. It is not private model reasoning,
+chain-of-thought or a hidden rationale summary.
+
+Recorded timestamps include `request_received_at`, preparation start/end, tool
+execution start/end, generation start/end, frontend reveal start/end and
+`response_saved_at` only when those stages occur. Durations are derived from
+recorded timestamps. `first_chunk_received_at` and time-to-first-token are not
+populated because the current Flask path returns the complete response before
+the frontend token reveal animation starts.
+
+Token metrics use the active tokenizer when available and are labelled
+`estimated` when the fallback regex counter is used. The stored breakdown covers
+system, memory, summary, history, current user, template overhead, total input,
+generated output and total tokens. Tokens per second is calculated only from
+output tokens divided by backend generation duration, excluding context
+preparation, tool time and frontend reveal.
+
+Agent mode is explicit in the composer. Chat mode does not run tools. Agent mode
+uses `arclm.agents.Agent`, `AgentRunner`, `Tool`, `ToolPolicy`, tool schemas,
+structured `ToolResult` values and Agent trace events. The Simple Interface
+allowlist includes safe pure/read-only helpers already supported by ArcLM:
+arithmetic operations, `current_datetime`, text statistics, JSON parse/format,
+Markdown/HTML to text and local ArcLM inspection tools for model, tokenizer and
+context. Shell execution, arbitrary command execution, arbitrary Python,
+`eval`, `exec`, unrestricted filesystem access and terminal command execution
+are not exposed. Tool cards in the message timeline show requested/completed,
+failed or denied states, permission category, side effect and bounded structured
+results.
+
+Model operations use one backend-owned state machine exposed through
+`/api/operations/status` and mirrored in `/api/models/active`. The canonical
+states are:
+
+```text
+no_model -> queued -> loading -> ready -> generating -> unloading -> error/cancelled
+```
+
+The frontend does not infer model readiness from terminal text. After a refresh,
+the ModelPill and composer restore from the Flask backend status. The ModelPill
+shows the known model source, displays loading/indeterminate state while a model
+load is active, disables chat input and incompatible model controls during busy
+states, changes to Ready only after the backend verifies the loaded model, shows
+Error on failed loads, and allows retry from Error or Cancelled. When available,
+it also displays actual device and dtype from model parameters/buffers plus
+requested device, resolved devices, sharding, GPU name, quantization and PyTorch
+memory metadata from the backend.
+
+The bottom terminal drawer is a read-only progress viewer backed by structured
+operation events. It cannot execute shell commands or arbitrary Python. Events
+use this shape:
+
+```json
+{
+  "event_id": "event_...",
+  "operation_id": "model_load_...",
+  "timestamp": "2026-07-26T20:00:00+00:00",
+  "category": "model",
+  "level": "info",
+  "stage": "loading_weights",
+  "message": "Loading model weight files.",
+  "progress": null,
+  "details": {}
+}
+```
+
+Supported levels are `debug`, `info`, `success`, `warning` and `error`; debug
+events are hidden by default. The current transport is Server-Sent Events at
+`/api/operations/stream` with a bounded polling fallback at
+`/api/operations/events`. Events are ordered by insertion, carry operation IDs,
+use bounded history, support reconnect by `after` event ID, prune completed
+operation metadata, and are safe for multiple browser tabs.
+
+Terminal stages cover model-source validation, configuration loading, tokenizer
+loading, model-weight loading, device selection, precision selection, moving the
+model to its device, model validation, model inspection, unloading, generation
+startup, cancellation and recoverable errors. Progress is never fabricated:
+exact counts are shown only when the backend has exact progress data; otherwise
+the UI displays indeterminate text such as `Loading model weights...`.
+
+Terminal event text is sanitized before it is sent to the browser. ArcLM
+Security Core redaction is used when available; otherwise a focused fallback
+redacts secret-looking keys and avoids exposing complete private local paths.
+Normal terminal events do not include user prompts or internal stack traces.
+
+Model loading can be cancelled by operation ID where the active stage can safely
+observe cancellation. Cancellation updates the backend status to `cancelled`,
+emits a terminal event, restores controls, and preserves the previous working
+model when the replacement load had not been committed. It does not terminate
+the Flask server. Response cancellation can stop pre-generation work when the
+backend observes the cancellation request and can always stop the frontend token
+reveal animation. Non-interruptible model calls are marked accurately rather
+than force-terminating the Flask process.
+
+Assistant responses use true streaming only when the active adapter emits
+decoded deltas while model inference is running. Streaming events are delivered
+over generation-scoped Server-Sent Events and include monotonically increasing
+sequence numbers, generation IDs, conversation IDs, assistant message IDs and
+timestamps. The final stored assistant message is the concatenation of all
+accepted deltas. Non-streaming adapters keep the complete-response path and may
+use the frontend token reveal animation as an accurately labelled visual
+fallback. ArcLM does not simulate streaming by splitting completed answers.
+
+Generation timing records `request_received_at`, `preparation_started_at`,
+`generation_started_at`, `first_token_emitted_at` when streaming produces a
+delta, and `generation_completed_at`. Time to first token is measured from
+request receipt; model first-token latency is measured from generation start.
+Tokens per second is calculated from the finalized output-token count divided
+by backend generation duration.
+
+Prompt submission uses a persistent sequential queue. Requests are stored in
+the unified SQLite database with conversation ID, user/assistant message IDs,
+model source, model-load ID, chat-template ID/version, settings snapshot,
+status, FIFO queue sequence and timestamps. The worker claims the next queued
+row atomically, executes one request at a time against the shared model runtime,
+streams live deltas when supported, finalizes one assistant message, then starts
+the next queued request. The composer remains usable while a request is active.
+Queued context is built at execution time, so queued follow-ups normally include
+previous completed user/assistant turns. Failed responses and cancelled partials
+are marked non-context by default.
+
+The active context window is distinct from saved history. Context settings cover
+maximum context tokens, reserved response tokens, maximum history messages and
+strategy (`all_messages`, `recent_messages`, `token_budget`,
+`summary_plus_recent`, `manual`). Token estimates prefer a tokenizer when the
+loaded model exposes one and otherwise use a conservative local estimate.
+Current user messages are retained; older messages can be excluded when the
+budget is exceeded. Context inspection reports the model context limit when
+known, estimated input tokens, reserved output tokens, included/excluded message
+IDs, summary/memory inclusion, template used and the final model input preview.
+
+Summaries are stored separately from messages but remain disabled by default in
+this phase. Cross-chat memory is also disabled by default. When enabled,
+memories remain local, inspectable, editable and deletable, and are injected as
+structured context visible in context inspection. The interface does not
+automatically memorize sensitive information and does not use a vector database.
+
+System instruction precedence is:
+
+```text
+conversation instructions -> model profile instructions -> global default instructions
+```
+
+Persistent request instructions are visible in settings and context inspection.
+Generation settings follow the same global -> profile -> conversation ->
+request override direction, with the current implementation covering the
+simple-interface global and per-chat layers plus per-request composer payload.
+
+Chat templates are validated JSON and never execute arbitrary code. Built-ins
+include basic role/content messages, plain completion, ChatML-style text,
+instruction/response, prompt/completion and tokenizer-native mode. Custom
+templates can map ArcLM roles to model-specific roles, choose an output mode,
+set the user input field and preview the exact model input before saving.
+
+Complete role/content example:
+
+```json
+{
+  "schema_version": 1,
+  "id": "basic-chat",
+  "name": "Basic Chat",
+  "description": "A standard role/content chat template.",
+  "message_format": {
+    "role_field": "role",
+    "content_field": "content"
+  },
+  "roles": {
+    "system": "system",
+    "user": "user",
+    "assistant": "assistant",
+    "tool": "tool"
+  },
+  "input_mapping": {
+    "user_role": "user",
+    "user_input_field": "content"
+  },
+  "system_message": {
+    "enabled": true,
+    "role": "system"
+  },
+  "output": {
+    "type": "messages"
+  }
+}
+```
+
+Field meanings:
+
+- `schema_version`: version of the ArcLM template schema.
+- `id`: stable template ID; display names are not identifiers.
+- `message_format`: field names used for structured message output.
+- `roles`: normalized ArcLM role to model role mapping.
+- `input_mapping.user_input_field`: property that receives the typed prompt.
+- `system_message`: whether and how system instructions are represented.
+- `output.type`: one of `messages`, `formatted_text`,
+  `tokenizer_chat_template` or `prompt_completion`.
+
+Formatted causal-model example:
+
+```json
+{
+  "schema_version": 1,
+  "id": "causal-human-assistant",
+  "name": "Causal Human Assistant",
+  "description": "Formats a chat as one causal-LM prompt.",
+  "roles": {
+    "system": "system",
+    "user": "human",
+    "assistant": "assistant"
+  },
+  "input_mapping": {
+    "user_role": "user",
+    "user_input_field": "content"
+  },
+  "output": {
+    "type": "formatted_text"
+  },
+  "template": "System: {{system}}\n{{history}}\nHuman: {{user_input}}\nAssistant:",
+  "assistant_prefix": "Assistant:"
+}
+```
+
+Allowed formatted placeholders are `{{system}}`, `{{memory}}`, `{{summary}}`,
+`{{history}}`, `{{user_input}}` and `{{assistant_prefix}}`. Unknown
+placeholders fail validation, and invalid templates cannot become active.
+
+Deferred features: streaming for Hugging Face adapters without an explicit
+streamer, hard interruption of non-interruptible model kernels, visual
+branch-tree rendering, automatic high-quality summarization, encrypted
+conversation storage, vector retrieval, cross-device sync, multi-user accounts,
+remote authentication, universal tokenizer-template compatibility and automatic
+model downloads.
 
 ## ArcLM Agent Runtime
 
@@ -731,7 +1034,7 @@ runtime data and are not part of the package.
 | Preprocess pipeline | `arclm.preprocess` | preprocess config/pipeline helpers | Experimental | Optional preprocess deps | Older JSONL pipeline; not the main dataset API. |
 | FastAPI Web API | `arclm.web` | `create_app`, `WebConfig`, `/api/system/status`, `/api/projects`, project dataset/tokenizer/model/run endpoints, `POST /api/inspection/text` | Beta | Optional `fastapi`, `uvicorn` | Local Studio API only; native training jobs are single-process/threaded and not production serving. |
 | Next.js frontend | Optional Studio frontend | Project, data, tokenizer, model, train, runs, checkpoints, evaluation, generation, system and pipeline-learning pages | Experimental | Node/npm stack | Optional Studio UI; streaming logs, attention maps, auth, database, external downloads and production serving are deferred. |
-| Flask simple interface | `arclm.simple_interface` | `run_simple_interface` | Deprecated | Optional `flask` | Compatibility-only; not canonical. |
+| GPT-style Simple Interface | `arclm.simple_interface`, `arclm.simple_chat` | `run_simple_interface`, `/api/chats`, `/api/templates`, `/api/settings`, `/api/models`, `/api/operations`, `/api/generation-runs`, `/api/queue`, `/api/model-profiles`, `/api/memories` | Beta | Optional `flask`, required inference deps | Local single-user JSON chat store plus SQLite sidecar; operation events and generation deltas use SSE with bounded polling/replay. Only streaming-capable adapters emit live deltas. No auth, vector memory or encrypted storage by default. |
 | Legacy import shims | `arclm.data`, `arclm.dataset`, `arclm.model`, `arclm.tokenizer`, `arclm.trainer`, `arclm.pipeline`, `arclm.pipeline_v2`, `arclm.diagnostics`, `arclm.generator`, `arclm.external_inference`, `arclm.loaders` | Old import paths | Deprecated | Same deps as canonical modules | Keep small re-export shims; `pipeline_v2` is compatibility-only, not a second pipeline. |
 | Native BERT/T5/LLaMA/Mistral/MoE/vision/multimodal | None | None | Unsupported | N/A | Use external HF causal LM paths where compatible; no native implementation. |
 | RLHF/DPO/GRPO/production serving/OpenAI-compatible API/GGUF/ONNX/TensorRT | None | None | Unsupported | N/A | Out of current baseline scope. |

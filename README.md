@@ -35,6 +35,91 @@ The local Studio backend is optional:
 python -m arclm web-api
 ```
 
+The local GPT-style Simple Interface is also available through the legacy
+launch command:
+
+```bash
+python -m arclm --run simple-interface
+```
+
+It starts a Flask app on `127.0.0.1:5000` by default. The interface keeps the
+existing model workflow: inspect a model source, select device and dtype, load
+registered or local model paths, save compatible loaded models, and generate
+with the same ArcLM inference backend. It now adds local conversation history,
+new/open/rename/delete/duplicate chat controls, backend-side context building,
+context inspection, per-chat system instructions, persistent request
+instructions, model profiles, generation defaults, and editable chat templates.
+Model operation state is backend-authoritative and survives page refreshes. The
+ModelPill reflects `no_model`, `queued`, `loading`, `ready`, `generating`,
+`unloading`, `error`, and `cancelled`, disables incompatible controls while a
+model is busy, and exposes an Open Terminal action for live progress. When a
+model is loaded the pill also reports backend-inspected runtime details such as
+the actual primary device, resolved devices, dtype, quantization and PyTorch
+memory when those values are available from model parameters or buffers.
+
+During a chat request the visible thinking row shows observable application
+stages only, such as preparing context, running an approved tool, generating,
+saving and completion. It is not hidden chain-of-thought and does not ask the
+model to reveal private reasoning. Response run records store real timestamps
+for request receipt, preparation, tool execution, generation, frontend reveal
+and saving when those stages occur, plus non-negative durations derived from
+those timestamps. Token metrics use the active tokenizer when possible and are
+labelled `estimated` when the fallback regex counter is used. Tokens per second
+is calculated only as output tokens divided by backend generation duration.
+
+The composer has explicit `Chat` and `Agent` modes. Chat mode sends the
+backend-prepared context directly to the model. Agent mode uses the existing
+`arclm.agents` runtime with strict JSON tool-call parsing, allowlisted tools,
+permission metadata, bounded steps, bounded result sizes and trace events. The
+initial Simple Interface catalog exposes only safe pure/read-only helpers such
+as arithmetic operations, current date/time, JSON formatting, Markdown/HTML to
+text, and ArcLM inspection tools for the active model, tokenizer and context.
+It does not expose shell execution, arbitrary Python, `eval`, unrestricted file
+access or command execution.
+
+The bottom terminal drawer is a read-only operation viewer. It uses structured
+Server-Sent Events with bounded polling fallback for model validation,
+configuration loading, tokenizer loading, model weight loading, device and
+precision selection, movement to device, validation, inspection, unloading,
+generation startup, cancellation and recoverable errors. Events are redacted
+before they reach the browser and do not execute shell commands or arbitrary
+Python. Exact progress is shown only when the backend has exact counts; otherwise
+the UI shows indeterminate progress text such as "Loading model weights...".
+
+The Simple Interface now supports true backend streaming for model adapters that
+emit decoded deltas while inference is still running. Native ArcLM models expose
+`native_token_streaming`; custom loaded models can expose `stream_generate`,
+`generate_stream` or `stream` for text chunks. Other adapters are reported as
+`non_streaming` and keep the complete-response path, optionally with the
+frontend token reveal animation as a visual fallback. ArcLM does not simulate
+streaming by splitting a completed answer.
+
+Prompts are accepted into a persistent sequential queue so the composer remains
+usable during active generation. The initial scheduler is FIFO across the
+single loaded model runtime, claims queued rows atomically from SQLite, and
+builds conversation context only when each request starts. That means a queued
+follow-up normally sees earlier completed assistant responses. Failed attempts
+and cancelled partials are marked as non-context messages by default.
+
+Conversations are saved locally as versioned JSON under
+`workspace/simple-interface/chat-store.json` unless `ARCLM_SIMPLE_INTERFACE_STORE`
+points elsewhere. A unified SQLite sidecar at `chat-store.sqlite3` records
+queryable conversations, messages, generation runs, chat templates, tool calls,
+tool results, generation queue requests, training-candidate decisions and
+settings. Browser storage is used only for harmless appearance preferences such
+as the theme. The store does not contain model weights, large tensors,
+passwords, or encryption keys, and it is not described as encrypted unless you
+add a separate encrypted storage layer.
+
+Chat templates use a validated JSON schema with normalized ArcLM roles mapped
+to model-specific roles. Built-in templates include basic role/content messages,
+plain completion, ChatML-style text, instruction/response, prompt/completion,
+and tokenizer-native mode where the loaded tokenizer supports it. Formatted
+templates use restricted placeholders such as `{{system}}`, `{{history}}`,
+`{{tool_calls}}`, `{{tool_results}}`, `{{user_input}}`, and
+`{{assistant_prefix}}`; arbitrary code execution is not part of the template
+system.
+
 ## Quick Start
 
 ```python

@@ -1,0 +1,6 @@
+{"messages":[{"role":"system","content":"You are a safe local assistant."},{"role":"user","content":"Explain safe loading."},{"role":"assistant","content":"Safe loading pins a revision, avoids remote code, and prefers safetensors."}]}
+{"messages":[{"role":"user","content":"Explique le rechargement hors ligne."},{"role":"assistant","content":"Le modèle est chargé depuis des fichiers locaux sans contacter le réseau."}]}
+{"messages":[{"role":"user","content":"Explica una prueba de generación limitada."},{"role":"assistant","content":"Usa una entrada corta y un número máximo pequeño de tokens nuevos."}]}
+{"messages":[{"role":"user","content":"What should an agent tool not do?"},{"role":"assistant","content":"It should not execute arbitrary shell commands or read unrestricted files."}]}
+{"messages":[{"role":"user","content":"Pourquoi mesurer le temps de chargement?"},{"role":"assistant","content":"Pour comprendre le coût pratique du modèle sur ce matériel."}]}
+{"messages":[{"role":"user","content":"¿Qué datos evita el dataset?"},{"role":"assistant","content":"Evita información personal, secretos y texto largo con copyright."}]}

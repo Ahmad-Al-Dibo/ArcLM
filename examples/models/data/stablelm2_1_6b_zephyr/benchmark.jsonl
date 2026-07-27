@@ -1,0 +1,4 @@
+{"id":"blocked","prompt":"Define resource_blocked.","expected_keywords":["hardware"]}
+{"id":"save_reload","prompt":"What does save/reload verify?","expected_keywords":["tokenizer","weights"]}
+{"id":"security","prompt":"What does security inspection check?","expected_keywords":["remote","revision"]}
+

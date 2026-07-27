@@ -1,0 +1,6 @@
+{"instruction":"Leg uit wat een manifeststatus is.","response":"Een manifeststatus beschrijft de verificatie van één specifieke operatie."}
+{"instruction":"ما المقصود بتحميل النموذج؟","response":"يعني قراءة الأوزان والتكوين والتجهيز للاستدلال ضمن حدود آمنة."}
+{"instruction":"Explain why tokenizer and model vocabularies must match.","response":"Token IDs must stay within the embedding and output vocabulary ranges."}
+{"instruction":"Noem twee onderdelen van een checkpoint.","response":"Een checkpoint kan gewichten, configuratie en trainingsstatus bevatten."}
+{"instruction":"اذكر فائدة التحميل دون اتصال.","response":"يسمح بالتحقق من الملفات المحلية دون استخدام الشبكة."}
+{"instruction":"Define a bounded benchmark.","response":"A bounded benchmark uses fixed prompts, short limits, and recorded hardware settings."}

@@ -1,0 +1,4 @@
+{"id":"nl_security","language":"nl","prompt":"Noem twee veilige laadregels voor lokale modellen.","expected_keywords":["remote","safetensors"]}
+{"id":"ar_reload","language":"ar","prompt":"اشرح بإيجاز معنى التحميل المحلي دون اتصال.","expected_keywords":["محلي","الشبكة"]}
+{"id":"en_memory","language":"en","prompt":"Explain why agent memory should avoid secrets.","expected_keywords":["secrets","memory"]}
+

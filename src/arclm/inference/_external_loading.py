@@ -267,6 +267,29 @@ class ExternalLoadedModel:
             return self._generate_native(prompt, **generation_kwargs)
         return self._generate_huggingface(prompt, **generation_kwargs)
 
+    def stream_generate(self, prompt: PromptLike, **generation_kwargs: Any):
+        """Yield real native ArcLM text deltas when this loaded model supports it.
+
+        Hugging Face models loaded by this wrapper remain non-streaming until a
+        dedicated streamer is integrated; callers must not simulate streaming
+        by splitting a completed response.
+        """
+
+        cancel_check = generation_kwargs.pop("cancel_check", None)
+        if self._generation_error:
+            raise RuntimeError(self._generation_error)
+        if self.source_info.source_type != "native_arclm" and self._native_loaded is None:
+            raise RuntimeError("This loaded model does not expose native streaming.")
+        native = self._native_loaded
+        generator = getattr(native, "generator", None)
+        if generator is None or not hasattr(generator, "generate_stream"):
+            raise RuntimeError("Native ArcLM streaming is unavailable for this model.")
+        if not isinstance(prompt, str):
+            prompt = _messages_to_simple_text(_normalize_messages(prompt), add_generation_prompt=True)
+        allowed = {"max_new_tokens", "temperature", "repetition_penalty", "top_k", "top_p"}
+        native_kwargs = {key: value for key, value in generation_kwargs.items() if key in allowed}
+        yield from generator.generate_stream(prompt, cancel_check=cancel_check, **native_kwargs)
+
     def chat(self, messages: Sequence[Mapping[str, str]], **generation_kwargs: Any) -> str:
         """Generate a response from OpenAI-style chat messages."""
 
