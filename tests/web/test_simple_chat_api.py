@@ -56,6 +56,14 @@ class AgentToolFakeModel(ContextAwareFakeModel):
         return super().generate(prepared_input, **kwargs)
 
 
+class PlainTextAgentFakeModel(ContextAwareFakeModel):
+    device = "cpu"
+
+    def generate(self, prepared_input, **kwargs):
+        self.inputs.append(prepared_input)
+        return "I can answer normally even when the tool protocol is not used."
+
+
 class BlockingStreamingFakeModel(ContextAwareFakeModel):
     source_info = FakeSourceInfo()
     device = "cpu"
@@ -386,6 +394,20 @@ def test_agent_mode_combines_prior_context_and_tool_result(monkeypatch, tmp_path
     assert "inspect_model" in final_agent_prompt
 
 
+def test_agent_mode_falls_back_to_plain_text_when_model_does_not_emit_json(monkeypatch, tmp_path):
+    client, fake = make_client_with_model(monkeypatch, tmp_path, PlainTextAgentFakeModel())
+    chat = client.post("/api/chats", json={"model_source": "fake/plain-agent"}).json["conversation"]
+
+    response = client.post(f"/api/chats/{chat['id']}/messages", json={"content": "Answer in agent mode.", "mode": "agent"})
+
+    assert response.status_code == 200
+    assistant = response.json["assistant_message"]
+    assert assistant["content"] == "I can answer normally even when the tool protocol is not used."
+    agent = assistant["generation_metadata"]["agent"]
+    assert agent["fallback"]["mode"] == "plain_text_final"
+    assert fake.inputs
+
+
 def test_template_validation_preview_and_invalid_template_rejection(monkeypatch, tmp_path):
     client, _ = make_client(monkeypatch, tmp_path)
     valid_template = {
@@ -595,3 +617,20 @@ def test_chat_title_rename_delete_and_search(monkeypatch, tmp_path):
     assert duplicate["id"] != chat["id"]
     assert deleted.status_code == 200
     assert client.get(f"/api/chats/{chat['id']}").status_code == 404
+
+
+def test_delete_all_chats_clears_conversations_and_sidecar_rows(monkeypatch, tmp_path):
+    client, _ = make_client(monkeypatch, tmp_path)
+    first = client.post("/api/chats", json={"title": "First"}).json["conversation"]
+    second = client.post("/api/chats", json={"title": "Second"}).json["conversation"]
+    client.post(f"/api/chats/{first['id']}/messages", json={"content": "First message"})
+    client.post(f"/api/chats/{second['id']}/messages", json={"content": "Second message"})
+
+    response = client.delete("/api/chats")
+
+    assert response.status_code == 200
+    assert response.json["deleted_count"] == 2
+    assert client.get("/api/chats").json["chats"] == []
+    assert client.get(f"/api/chats/{first['id']}").status_code == 404
+    assert client.get(f"/api/chats/{second['id']}").status_code == 404
+    assert client.get("/api/queue").json["queue"]["global_queued_count"] == 0

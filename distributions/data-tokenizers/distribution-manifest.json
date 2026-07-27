@@ -1,0 +1,79 @@
+{
+  "capabilities": [
+    "datasets",
+    "validation",
+    "cleaning",
+    "deduplication",
+    "tokenizers",
+    "preprocessing"
+  ],
+  "commands": [
+    "python -c \"from arclm.tokenizers import Tokenizer; print(Tokenizer)\""
+  ],
+  "description": "Dataset loading, validation, cleaning, deduplication, statistics and tokenizer utilities.",
+  "documentation": [
+    "README.md",
+    "docs/distributions.md"
+  ],
+  "examples": [
+    "examples/distributions/data_tokenizers_example.py"
+  ],
+  "excluded_apis": [
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.web",
+    "arclm.agents"
+  ],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.agents",
+    "arclm.security",
+    "arclm.models"
+  ],
+  "id": "data-tokenizers",
+  "include_assets": [
+    "arclm/py.typed"
+  ],
+  "include_module_prefixes": [],
+  "include_modules": [
+    "arclm._version",
+    "arclm.datasets",
+    "arclm.tokenizers",
+    "arclm.preprocess",
+    "arclm.data_processor",
+    "arclm.configs",
+    "arclm.exceptions",
+    "arclm.utils"
+  ],
+  "license": "Apache-2.0",
+  "name": "ArcLM Data and Tokenizers",
+  "optional_dependencies": {
+    "preprocess": [
+      "beautifulsoup4>=4.12,<5",
+      "PyYAML>=6,<7",
+      "tqdm>=4.66,<5"
+    ]
+  },
+  "public_api": [
+    "arclm.datasets",
+    "arclm.tokenizers",
+    "arclm.preprocess"
+  ],
+  "python_dependencies": [
+    "numpy>=1.24,<3",
+    "sentencepiece>=0.2,<0.3"
+  ],
+  "required_distributions": [
+    "core"
+  ],
+  "schema_version": 1,
+  "source_package": "src/arclm",
+  "tests": [
+    "tests/unit/datasets",
+    "tests/unit/test_data_processor.py"
+  ]
+}

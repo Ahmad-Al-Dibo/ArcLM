@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arclm-security"
+version = "1.13.4"
+description = "Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Ahmad Al Dibo" }]
+dependencies = [
+  "cryptography>=42,<47"
+]
+
+[project.optional-dependencies]
+keyring = ["keyring>=25,<27"]
+
+[project.scripts]
+arclm = "arclm.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arclm*"]
+
+[tool.setuptools.package-data]
+arclm = ["templates/*.html", "py.typed"]

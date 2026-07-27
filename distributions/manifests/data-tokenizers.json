@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "data-tokenizers",
+  "name": "ArcLM Data and Tokenizers",
+  "description": "Dataset loading, validation, cleaning, deduplication, statistics and tokenizer utilities.",
+  "source_package": "src/arclm",
+  "capabilities": ["datasets", "validation", "cleaning", "deduplication", "tokenizers", "preprocessing"],
+  "include_modules": ["arclm._version", "arclm.datasets", "arclm.tokenizers", "arclm.preprocess", "arclm.data_processor", "arclm.configs", "arclm.exceptions", "arclm.utils"],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": ["core"],
+  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.finetuning", "arclm.evaluation", "arclm.agents", "arclm.security", "arclm.models"],
+  "python_dependencies": ["numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
+  "optional_dependencies": {"preprocess": ["beautifulsoup4>=4.12,<5", "PyYAML>=6,<7", "tqdm>=4.66,<5"]},
+  "public_api": ["arclm.datasets", "arclm.tokenizers", "arclm.preprocess"],
+  "excluded_apis": ["arclm.training", "arclm.finetuning", "arclm.web", "arclm.agents"],
+  "commands": ["python -c \"from arclm.tokenizers import Tokenizer; print(Tokenizer)\""],
+  "tests": ["tests/unit/datasets", "tests/unit/test_data_processor.py"],
+  "examples": ["examples/distributions/data_tokenizers_example.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}

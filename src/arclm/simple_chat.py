@@ -565,6 +565,26 @@ class SimpleChatDatabase:
                 updated += 1
         return updated
 
+    def delete_conversation_records(self, conversation_ids: Sequence[str]) -> int:
+        """Delete SQLite sidecar rows owned by the given conversations."""
+
+        ids = [str(item) for item in conversation_ids if item]
+        if not ids:
+            return 0
+        self.initialize()
+        placeholders = ", ".join("?" for _ in ids)
+        with self._lock, self._connect() as db:
+            run_rows = db.execute(f"SELECT id FROM generation_runs WHERE conversation_id IN ({placeholders})", tuple(ids)).fetchall()
+            run_ids = [str(row[0]) for row in run_rows]
+            deleted = 0
+            if run_ids:
+                run_placeholders = ", ".join("?" for _ in run_ids)
+                deleted += db.execute(f"DELETE FROM tool_results WHERE generation_run_id IN ({run_placeholders})", tuple(run_ids)).rowcount
+                deleted += db.execute(f"DELETE FROM tool_calls WHERE generation_run_id IN ({run_placeholders})", tuple(run_ids)).rowcount
+            for table in ("training_candidates", "generation_requests", "generation_runs", "messages", "conversations"):
+                deleted += db.execute(f"DELETE FROM {table} WHERE conversation_id IN ({placeholders})" if table != "conversations" else f"DELETE FROM {table} WHERE id IN ({placeholders})", tuple(ids)).rowcount
+        return deleted
+
     def upsert_tool_call(self, call: Mapping[str, Any]) -> None:
         self.initialize()
         with self._lock, self._connect() as db:
@@ -750,7 +770,22 @@ class SimpleChatStore:
             raise ChatApiError("chat_not_found", "Conversation was not found.", status_code=404)
         deleted = conversations.pop(chat_id)
         self.save()
+        self.database.delete_conversation_records([chat_id])
         return copy.deepcopy(deleted)
+
+    def delete_all_chats(self) -> dict[str, Any]:
+        data = self.load()
+        conversations = data.get("conversations") or {}
+        chat_ids = list(conversations.keys())
+        deleted = list(conversations.values())
+        data["conversations"] = {}
+        self.save()
+        sidecar_rows_deleted = self.database.delete_conversation_records(chat_ids)
+        return {
+            "deleted_count": len(deleted),
+            "deleted_ids": chat_ids,
+            "sidecar_rows_deleted": sidecar_rows_deleted,
+        }
 
     def duplicate_chat(self, chat_id: str) -> dict[str, Any]:
         source = copy.deepcopy(self.get_chat(chat_id))
@@ -1368,8 +1403,12 @@ class SimpleChatRequestBuilder:
     ) -> tuple[str, dict[str, Any]]:
         from arclm.agents import Agent, AgentMessage, AgentRunner, AgentSession, ArcLMJSONToolAdapter, AutoApprovalHandler, DenyApprovalHandler, ToolPermission, ToolPolicy
 
+        last_agent_model_text = {"value": ""}
+
         def generate_agent_text(prompt: str) -> str:
-            return adapter.generate(prompt, generation_settings)
+            text = adapter.generate(prompt, generation_settings)
+            last_agent_model_text["value"] = str(text or "")
+            return text
 
         agent_settings = _deep_merge(DEFAULT_SETTINGS["agent"], settings.get("agent") or {})
         enabled_tools = set(agent_settings.get("enabled_tools") or [])
@@ -1411,6 +1450,12 @@ class SimpleChatRequestBuilder:
             self.store.database.upsert_tool_call(call)
         for tool_result in tool_results:
             self.store.database.upsert_tool_result(tool_result)
+        if not result.success and result.error_code == "agent_invalid_model_response" and last_agent_model_text["value"].strip():
+            metadata["fallback"] = {
+                "mode": "plain_text_final",
+                "reason": result.error_message or "model response was not valid JSON",
+            }
+            return assistant_output_text(last_agent_model_text["value"], ""), {"trace": metadata.get("trace"), "session": metadata.get("session"), "tool_calls": tool_calls, "tool_results": tool_results, "fallback": metadata["fallback"]}
         if not result.success:
             raise ChatApiError(result.error_code or "agent_failed", result.error_message or "Agent run failed.", status_code=500)
         return result.output or "", {"trace": metadata.get("trace"), "session": metadata.get("session"), "tool_calls": tool_calls, "tool_results": tool_results}

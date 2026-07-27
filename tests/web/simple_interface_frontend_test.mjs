@@ -46,6 +46,7 @@ let activeStatus = {
 };
 let fetchCalls = [];
 let sentMessages = 0;
+let sentMessageContents = [];
 
 class FakeEventSource {
   constructor(url) {
@@ -80,6 +81,7 @@ const dom = new JSDOM(html, {
   beforeParse(window) {
     window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
     window.navigator.clipboard = { writeText() {} };
+    window.confirm = () => true;
     window.EventSource = FakeEventSource;
     window.fetch = async (path, options = {}) => {
       fetchCalls.push({ path: String(path), options });
@@ -126,6 +128,9 @@ const dom = new JSDOM(html, {
           }
         });
       }
+      if (path === "/api/chats" && options.method === "DELETE") {
+        return jsonResponse({ success: true, deleted_count: 1, deleted_ids: ["chat_1"], sidecar_rows_deleted: 3 });
+      }
       if (path === "/api/operations/events") {
         return jsonResponse({ success: true, events, status: activeStatus });
       }
@@ -156,18 +161,25 @@ const dom = new JSDOM(html, {
       }
       if (String(path).startsWith("/api/chats/") && String(path).endsWith("/messages")) {
         sentMessages += 1;
+        const request = JSON.parse(options.body || "{}");
+        sentMessageContents.push(request.content);
+        const runId = `run_${sentMessages}`;
+        const assistantId = `msg_assistant_${sentMessages}`;
         return jsonResponse({
           success: true,
           conversation: {
             id: "chat_1",
             title: "New chat",
             messages: [
-              { id: "msg_user", role: "user", content: "Hello", status: "complete" },
-              { id: "msg_assistant", role: "assistant", content: "Hi there", status: "complete" }
+              { id: `msg_user_${sentMessages}`, role: "user", content: request.content, status: "complete" },
+              { id: assistantId, role: "assistant", content: "", status: "queued" }
             ],
             chat_template_id: "basic-chat"
           },
-          assistant_message: { id: "msg_assistant", role: "assistant", content: "Hi there", status: "complete" }
+          generation_run: { id: runId, operation_id: `operation_${sentMessages}` },
+          generation_request: { id: runId, status: "queued" },
+          assistant_message: { id: assistantId, role: "assistant", content: "", status: "queued" },
+          queue: { global_queued_count: 0, conversation_queued_count: 0 }
         });
       }
       return jsonResponse({ success: true });
@@ -328,15 +340,81 @@ activeStatus = {
   cancel_requested: false
 };
 await window.refreshOperationStatus();
+evalInWindow('state.activeResponse = null; state.activeGenerations = {};');
 window.document.getElementById("composerInput").value = "Hello";
-window.composerKeydown(new window.KeyboardEvent("keydown", { key: "Enter", shiftKey: false, bubbles: true }));
+await window.sendMessage();
 await delay(30);
 assert.equal(sentMessages, 1);
+assert.deepEqual(sentMessageContents, ["Hello"]);
+window.handleGenerationEvent({
+  generation_id: "run_1",
+  operation_id: "operation_1",
+  conversation_id: "chat_1",
+  message_id: "msg_assistant_1",
+  type: "generation_completed",
+  sequence: 1,
+  final_text: "Hi there"
+});
+await delay(30);
+
+window.document.getElementById("composerInput").value = "First question?\nSecond question?\nThird question?";
+await window.sendMessage();
+await delay(30);
+assert.equal(sentMessages, 2);
+assert.deepEqual(sentMessageContents.slice(-1), ["First question?"]);
+assert.match(window.document.getElementById("promptQueuePanel").textContent, /2 prompts staged/);
+assert.match(window.document.getElementById("promptQueuePanel").textContent, /Second question/);
+assert.match(window.document.getElementById("promptQueuePanel").textContent, /Third question/);
+
+window.handleGenerationEvent({
+  generation_id: "run_2",
+  operation_id: "operation_2",
+  conversation_id: "chat_1",
+  message_id: "msg_assistant_2",
+  type: "generation_completed",
+  sequence: 1,
+  final_text: "Answer one"
+});
+await delay(30);
+assert.equal(sentMessages, 3);
+assert.deepEqual(sentMessageContents.slice(-1), ["Second question?"]);
+assert.match(window.document.getElementById("promptQueuePanel").textContent, /1 prompt staged/);
+
+window.handleGenerationEvent({
+  generation_id: "run_3",
+  operation_id: "operation_3",
+  conversation_id: "chat_1",
+  message_id: "msg_assistant_3",
+  type: "generation_completed",
+  sequence: 1,
+  final_text: "Answer two"
+});
+await delay(30);
+assert.equal(sentMessages, 4);
+assert.deepEqual(sentMessageContents.slice(-1), ["Third question?"]);
+const messagesPane = window.document.getElementById("messagesPane");
+Object.defineProperty(messagesPane, "scrollHeight", { value: 1000, configurable: true });
+Object.defineProperty(messagesPane, "clientHeight", { value: 300, configurable: true });
+messagesPane.scrollTop = 120;
+evalInWindow('state.chatAutoScroll = false; state.currentChat.messages = [{ id: "old_user", role: "user", content: "Older message", status: "complete" }, { id: "old_assistant", role: "assistant", content: "Older answer", status: "streaming" }];');
+window.renderConversation({ preserveAnimation: true });
+assert.equal(messagesPane.scrollTop, 120);
+assert.equal(window.document.getElementById("jumpLatestButton").classList.contains("hidden"), false);
+window.jumpToLatest();
+assert.equal(messagesPane.scrollTop, 1000);
+assert.equal(window.document.getElementById("jumpLatestButton").classList.contains("hidden"), true);
+assert.match(window.document.querySelector(".sidebar-footer").textContent, /Delete all chats/);
+evalInWindow('state.chats = [{ id: "chat_1", title: "New chat", message_count: 2 }]; state.activeResponse = null; state.activeGenerations = {};');
+await window.deleteAllChats();
+assert.ok(fetchCalls.some(call => call.path === "/api/chats" && call.options.method === "DELETE"));
+assert.match(window.document.getElementById("composerContext").textContent, /Mode: Agent|Mode: Chat/);
 
 const source = readFileSync(htmlPath, "utf8");
 assert.match(source, /@media \(max-width: 880px\)/);
 assert.match(source, /\.terminal-drawer \{ left: 0; \}/);
 assert.match(source, /prefers-reduced-motion: reduce/);
+assert.match(source, /jumpLatestButton/);
+assert.match(source, /scrollChatToBottomIfPinned/);
 assert.match(source, /thinking-indicator/);
 assert.match(source, /Agent/);
 assert.match(source, /tool-card/);

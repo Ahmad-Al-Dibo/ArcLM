@@ -1,0 +1,84 @@
+{
+  "capabilities": [
+    "model_loading",
+    "checkpoint_loading",
+    "inference",
+    "generation",
+    "inspection"
+  ],
+  "commands": [
+    "python -c \"from arclm.inference import GenerationConfig; print(GenerationConfig())\""
+  ],
+  "description": "Standalone model construction, checkpoint loading, inspection and generation utilities.",
+  "documentation": [
+    "README.md",
+    "docs/distributions.md"
+  ],
+  "examples": [
+    "examples/distributions/loading_inference_example.py"
+  ],
+  "excluded_apis": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.agents"
+  ],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.simple_chat",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.agents",
+    "arclm.security.web",
+    "arclm.peft",
+    "arclm.search"
+  ],
+  "id": "loading-inference",
+  "include_assets": [
+    "arclm/py.typed"
+  ],
+  "include_module_prefixes": [],
+  "include_modules": [
+    "arclm._version",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.checkpoints",
+    "arclm.tokenizers",
+    "arclm.configs",
+    "arclm.exceptions",
+    "arclm.inspection",
+    "arclm.lifecycle",
+    "arclm.utils"
+  ],
+  "license": "Apache-2.0",
+  "name": "ArcLM Loading and Inference",
+  "optional_dependencies": {
+    "hf": [
+      "transformers>=4.51,<6",
+      "accelerate>=0.30,<2",
+      "safetensors>=0.4,<1"
+    ]
+  },
+  "public_api": [
+    "arclm.inference",
+    "arclm.models",
+    "arclm.checkpoints",
+    "arclm.inspection"
+  ],
+  "python_dependencies": [
+    "torch>=2.1,<3",
+    "numpy>=1.24,<3",
+    "sentencepiece>=0.2,<0.3"
+  ],
+  "required_distributions": [
+    "core"
+  ],
+  "schema_version": 1,
+  "source_package": "src/arclm",
+  "tests": [
+    "tests/distributions/test_distribution_tooling.py",
+    "tests/public_api/test_root_import.py"
+  ]
+}

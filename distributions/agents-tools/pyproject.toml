@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arclm-agents-tools"
+version = "1.13.4"
+description = "Provider-independent Agent runtime, safe tools, permissions, approvals, tracing and sessions."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Ahmad Al Dibo" }]
+dependencies = []
+
+[project.optional-dependencies]
+audio = ["openai-whisper>=20231117"]
+
+[project.scripts]
+arclm = "arclm.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arclm*"]
+
+[tool.setuptools.package-data]
+arclm = ["templates/*.html", "py.typed"]

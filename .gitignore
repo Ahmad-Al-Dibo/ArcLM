@@ -46,6 +46,7 @@ workspace/
 /.venv-gpu-validation
 /.clean-wheel-*/
 /.real-stream-smoke-chat-store*
+/.compile-cache-check/
 
 web/node_modules/
 web/.next/

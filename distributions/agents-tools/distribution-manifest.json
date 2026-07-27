@@ -1,0 +1,69 @@
+{
+  "capabilities": [
+    "agents",
+    "tools",
+    "permissions",
+    "approvals",
+    "tracing",
+    "sessions"
+  ],
+  "commands": [
+    "python -c \"from arclm.agents import Agent, AgentRunner; print(Agent, AgentRunner)\""
+  ],
+  "description": "Provider-independent Agent runtime, safe tools, permissions, approvals, tracing and sessions.",
+  "documentation": [
+    "README.md",
+    "docs/agent-runtime.md",
+    "docs/distributions.md"
+  ],
+  "examples": [
+    "examples/distributions/agents_tools_example.py"
+  ],
+  "excluded_apis": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.finetuning"
+  ],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.peft",
+    "arclm.search"
+  ],
+  "id": "agents-tools",
+  "include_assets": [
+    "arclm/py.typed"
+  ],
+  "include_module_prefixes": [],
+  "include_modules": [
+    "arclm._version",
+    "arclm.agents",
+    "arclm.security.redaction",
+    "arclm.security.paths",
+    "arclm.security.network",
+    "arclm.exceptions",
+    "arclm.utils"
+  ],
+  "license": "Apache-2.0",
+  "name": "ArcLM Agents and Tools",
+  "optional_dependencies": {
+    "audio": [
+      "openai-whisper>=20231117"
+    ]
+  },
+  "public_api": [
+    "arclm.agents"
+  ],
+  "python_dependencies": [],
+  "required_distributions": [
+    "core"
+  ],
+  "schema_version": 1,
+  "source_package": "src/arclm",
+  "tests": [
+    "tests/agents"
+  ]
+}

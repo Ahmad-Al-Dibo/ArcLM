@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "evaluation-benchmarks",
+  "name": "ArcLM Evaluation and Benchmarks",
+  "description": "Evaluation metrics, reports, checkpoint comparison and local benchmark helpers.",
+  "source_package": "src/arclm",
+  "capabilities": ["evaluation", "metrics", "perplexity", "reports", "benchmarks"],
+  "include_modules": ["arclm._version", "arclm.evaluation", "arclm.models", "arclm.inference", "arclm.checkpoints", "arclm.datasets", "arclm.tokenizers", "arclm.configs", "arclm.exceptions", "arclm.utils"],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": ["core", "loading-inference", "data-tokenizers"],
+  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.training.trainer", "arclm.agents", "arclm.security.web"],
+  "python_dependencies": ["torch>=2.1,<3", "numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
+  "optional_dependencies": {},
+  "public_api": ["arclm.evaluation"],
+  "excluded_apis": ["arclm.simple_interface", "arclm.web", "arclm.agents"],
+  "commands": ["python -c \"from arclm.evaluation import EvaluationResult; print(EvaluationResult)\""],
+  "tests": ["tests/unit/evaluation"],
+  "examples": ["examples/distributions/evaluation_benchmarks_example.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}

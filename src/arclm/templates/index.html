@@ -193,6 +193,7 @@ label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weig
 .model-pill-subtitle { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #a8b4c0; font-size: 12px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .main {
+    position: relative;
     min-width: 0;
     height: 100vh;
     overflow: hidden;
@@ -217,6 +218,26 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
 .messages {
     overflow: auto;
     padding: 22px max(18px, calc((100vw - 1120px) / 2));
+}
+.jump-latest {
+    position: sticky;
+    bottom: 12px;
+    z-index: 4;
+    justify-self: center;
+    margin: 14px auto 0;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    background: var(--surface-elevated);
+}
+.jump-latest::after {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
 }
 .empty-state {
     display: grid;
@@ -392,6 +413,78 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
     margin: 0 auto;
     display: grid;
     gap: 8px;
+}
+.prompt-queue {
+    display: grid;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    background: var(--surface);
+    box-shadow: 0 10px 24px rgba(17, 24, 32, 0.08);
+}
+.prompt-queue-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+.prompt-queue-list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.prompt-queue-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+}
+.prompt-queue-index {
+    width: 22px;
+    height: 22px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--accent);
+    font-size: 11px;
+    font-weight: 800;
+}
+.prompt-queue-text {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.prompt-queue-status {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+.prompt-queue-more {
+    color: var(--muted);
+    font-size: 12px;
+}
+.prompt-queue-actions {
+    display: flex;
+    gap: 6px;
+}
+.prompt-queue-actions button {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 12px;
 }
 .composer-box {
     display: grid;
@@ -689,6 +782,8 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
     .mobile-menu { display: inline-grid; }
     .topbar { grid-template-columns: auto minmax(0, 1fr); }
     .toolbar { grid-column: 1 / -1; justify-content: start; }
+    .prompt-queue-item { grid-template-columns: auto minmax(0, 1fr); }
+    .prompt-queue-status { grid-column: 2; }
     .suggestions, .settings-grid, .dialog-body, .preview-hero, .preview-message { grid-template-columns: 1fr; }
     .tabs { border-right: 0; border-bottom: 1px solid var(--line); grid-template-columns: repeat(2, minmax(0, 1fr)); }
     body { overflow: hidden; }
@@ -721,6 +816,7 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
             <div id="modelPill" class="model-pill">No model loaded</div>
             <button id="openTerminalButton" type="button" onclick="toggleTerminal(true)">Open Terminal</button>
             <button type="button" onclick="openSettings()">Settings</button>
+            <button class="danger" type="button" onclick="deleteAllChats()">Delete all chats</button>
         </div>
     </aside>
 
@@ -739,7 +835,7 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
             </div>
         </header>
 
-        <section id="messagesPane" class="messages" aria-live="polite">
+        <section id="messagesPane" class="messages" aria-live="polite" onscroll="handleMessagesScroll()">
             <div id="emptyState" class="empty-state">
                 <div class="empty-title">Start a local ArcLM conversation</div>
                 <div class="suggestions">
@@ -750,10 +846,22 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
                 </div>
             </div>
             <div id="messageList" class="message-list"></div>
+            <button id="jumpLatestButton" class="jump-latest hidden" type="button" onclick="jumpToLatest()">Jump to latest</button>
         </section>
 
         <footer class="composer-wrap">
             <div class="composer">
+                <section id="promptQueuePanel" class="prompt-queue hidden" aria-live="polite">
+                    <div class="prompt-queue-head">
+                        <span id="promptQueueSummary">Prompt queue</span>
+                        <div class="prompt-queue-actions">
+                            <button type="button" onclick="retryPromptQueue()">Retry</button>
+                            <button type="button" onclick="clearPromptQueue()">Clear queue</button>
+                        </div>
+                    </div>
+                    <ol id="promptQueueList" class="prompt-queue-list"></ol>
+                    <div id="promptQueueMore" class="prompt-queue-more hidden"></div>
+                </section>
                 <div class="composer-box">
                     <label class="hidden" for="composerInput">Message</label>
                     <textarea id="composerInput" rows="1" placeholder="Message ArcLM" onkeydown="composerKeydown(event)" oninput="updateTokenEstimate()"></textarea>
@@ -971,6 +1079,9 @@ let state = {
     activeGenerations: {},
     generationEventSources: {},
     generationSequences: {},
+    stagedPromptQueue: [],
+    stagedPromptSending: false,
+    chatAutoScroll: true,
     queue: { global_queued_count: 0, conversation_queued_count: 0 },
     thinkingTimer: null
 };
@@ -1123,9 +1234,11 @@ function renderModelStatus() {
         </div>`;
     pill.title = status.message || label;
     document.getElementById("modelInfo").textContent = [modelName || "Model", label, queuedCount ? `${queuedCount} queued` : "", device || "Device unavailable", dtype].filter(Boolean).join(" / ");
-    document.getElementById("composerInput").disabled = loadingDisabled || currentState === "error" || currentState === "no_model";
-    document.getElementById("sendButton").disabled = loadingDisabled || currentState === "error" || currentState === "no_model";
+    const composerUnavailable = loadingDisabled || currentState === "error" || currentState === "no_model";
+    document.getElementById("composerInput").disabled = composerUnavailable;
+    document.getElementById("sendButton").disabled = composerUnavailable || state.stagedPromptSending;
     document.getElementById("stopResponseButton").disabled = !Object.keys(state.activeGenerations || {}).length && !state.busy && !state.tokenRevealAnimation;
+    renderPromptQueue();
     setModelControlsDisabled(modelBusy);
     const cancelButton = document.getElementById("cancelOperationButton");
     cancelButton.disabled = !status.can_cancel || !status.operation_id;
@@ -1249,7 +1362,8 @@ async function newChat(render = true) {
     });
     state.currentChat = data.conversation;
     await loadChats();
-    if (render) renderConversation();
+    state.chatAutoScroll = true;
+    if (render) renderConversation({ forceScroll: true });
     toggleSidebar(false);
 }
 
@@ -1257,7 +1371,8 @@ async function openChat(chatId) {
     const data = await api(`/api/chats/${chatId}`);
     state.currentChat = data.conversation;
     await refreshQueue();
-    renderConversation();
+    state.chatAutoScroll = true;
+    renderConversation({ forceScroll: true });
     renderChatList();
     toggleSidebar(false);
 }
@@ -1268,18 +1383,62 @@ function renderConversation(options = {}) {
     }
     const chat = state.currentChat;
     if (!chat) return;
+    const pane = document.getElementById("messagesPane");
+    const shouldStickToBottom = Boolean(options.forceScroll) || state.chatAutoScroll || isChatNearBottom(pane);
     document.getElementById("conversationTitle").textContent = chat.title || "New chat";
     document.getElementById("chatTitleInput").value = chat.title || "";
     document.getElementById("chatSystemInput").value = chat.system_instructions || "";
     document.getElementById("chatPersistentInput").value = chat.persistent_instructions || "";
     setSelectValue("activeTemplateSelect", chat.chat_template_id || state.settings?.active_template_id || "basic-chat");
-    document.getElementById("composerContext").textContent = `Template: ${chat.chat_template_id || "basic-chat"}`;
+    updateComposerContext();
     const list = document.getElementById("messageList");
     list.innerHTML = "";
     const messages = chat.messages || [];
     document.getElementById("emptyState").classList.toggle("hidden", messages.length > 0);
     messages.forEach(message => list.appendChild(renderMessage(message)));
-    document.getElementById("messagesPane").scrollTop = document.getElementById("messagesPane").scrollHeight;
+    if (shouldStickToBottom) {
+        scrollChatToBottom();
+    } else {
+        updateJumpLatestButton();
+    }
+}
+
+function isChatNearBottom(pane = document.getElementById("messagesPane")) {
+    if (!pane) return true;
+    return pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
+}
+
+function scrollChatToBottom() {
+    const pane = document.getElementById("messagesPane");
+    if (!pane) return;
+    pane.scrollTop = pane.scrollHeight;
+    state.chatAutoScroll = true;
+    updateJumpLatestButton();
+}
+
+function scrollChatToBottomIfPinned() {
+    if (state.chatAutoScroll || isChatNearBottom()) {
+        scrollChatToBottom();
+    } else {
+        updateJumpLatestButton();
+    }
+}
+
+function handleMessagesScroll() {
+    state.chatAutoScroll = isChatNearBottom();
+    updateJumpLatestButton();
+}
+
+function updateJumpLatestButton() {
+    const button = document.getElementById("jumpLatestButton");
+    if (!button) return;
+    const hasMessages = Boolean(state.currentChat?.messages?.length);
+    button.classList.toggle("hidden", !hasMessages || state.chatAutoScroll || isChatNearBottom());
+}
+
+function jumpToLatest() {
+    state.chatAutoScroll = true;
+    scrollChatToBottom();
 }
 
 function renderMessage(message) {
@@ -1357,13 +1516,76 @@ function formatDuration(ms) {
 
 async function sendMessage() {
     const input = document.getElementById("composerInput");
-    const content = input.value.trim();
-    if (!content) return;
+    const prompts = parseComposerPrompts(input.value);
+    if (!prompts.length) return;
+    stagePromptQueue(prompts);
+    input.value = "";
+    updateTokenEstimate();
+    renderPromptQueue();
+    await drainPromptQueue();
+}
+
+function parseComposerPrompts(rawText) {
+    const text = String(rawText || "").replace(/\r\n/g, "\n").trim();
+    if (!text) return [];
+    const blocks = text.split(/\n\s*\n+/).map(item => item.trim()).filter(Boolean);
+    if (blocks.length > 1) return blocks;
+    const lines = text.split("\n").map(item => item.trim()).filter(Boolean);
+    const listLike = lines.length > 1 && lines.every(item => /^([-*]|\d+[.)])\s+/.test(item) || /[?؟!]\s*$/.test(item));
+    if (listLike) return lines.map(item => item.replace(/^([-*]|\d+[.)])\s+/, "").trim()).filter(Boolean);
+    const questionParts = text.match(/[^?؟!]+[?؟!]+(?=\s|$)/g) || [];
+    const consumed = questionParts.join("").trim();
+    if (questionParts.length > 1 && consumed.length >= text.length * 0.85) {
+        return questionParts.map(item => item.trim()).filter(Boolean);
+    }
+    return [text];
+}
+
+function stagePromptQueue(prompts) {
+    prompts.forEach(content => {
+        state.stagedPromptQueue.push({
+            id: `staged_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            content,
+            status: "waiting",
+            createdAt: new Date().toISOString()
+        });
+    });
+}
+
+function responseInFlight() {
+    return state.stagedPromptSending || Boolean(state.activeResponse) || Object.keys(state.activeGenerations || {}).length > 0;
+}
+
+async function drainPromptQueue() {
+    if (responseInFlight()) {
+        renderPromptQueue();
+        return;
+    }
+    const item = state.stagedPromptQueue.find(prompt => prompt.status === "waiting");
+    if (!item) {
+        renderPromptQueue();
+        return;
+    }
+    item.status = "sending";
+    state.stagedPromptSending = true;
+    renderPromptQueue();
+    try {
+        await submitPrompt(item.content);
+        state.stagedPromptQueue = state.stagedPromptQueue.filter(prompt => prompt.id !== item.id);
+    } catch (error) {
+        item.status = "error";
+        item.error = error.message;
+    } finally {
+        state.stagedPromptSending = false;
+        renderPromptQueue();
+    }
+}
+
+async function submitPrompt(content) {
     if (!state.currentChat) await newChat(false);
     state.busy = true;
     document.getElementById("sendButton").disabled = true;
     document.getElementById("stopResponseButton").disabled = false;
-    input.value = "";
     const pendingUser = { id: "pending_user", role: "user", content, created_at: new Date().toISOString(), status: "complete" };
     const pendingAssistant = { id: "pending_assistant", role: "assistant", content: "", created_at: new Date().toISOString(), status: "queued" };
     state.activeResponse = { operationId: null, stage: "Queued", startedAt: pendingAssistant.created_at, messageId: pendingAssistant.id };
@@ -1380,7 +1602,9 @@ async function sendMessage() {
         const run = data.generation_run || {};
         const assistant = data.assistant_message || {};
         state.activeResponse = { ...(state.activeResponse || {}), operationId: run.operation_id, generationId: run.id, stage: "Queued", messageId: assistant.id };
-        state.activeGenerations[run.id] = { operationId: run.operation_id, messageId: assistant.id, conversationId: state.currentChat.id, text: "", sequence: 0, tokenCount: 0, startedAt: new Date().toISOString() };
+        if (run.id) {
+            state.activeGenerations[run.id] = { operationId: run.operation_id, messageId: assistant.id, conversationId: state.currentChat.id, text: "", sequence: 0, tokenCount: 0, startedAt: new Date().toISOString() };
+        }
         renderConversation({ preserveAnimation: true });
         connectGenerationStream(run.id);
         await Promise.all([loadChats(), refreshModel(), refreshQueue()]);
@@ -1393,6 +1617,45 @@ async function sendMessage() {
         renderModelStatus();
         updateTokenEstimate();
     }
+}
+
+function renderPromptQueue() {
+    const panel = document.getElementById("promptQueuePanel");
+    const list = document.getElementById("promptQueueList");
+    const summary = document.getElementById("promptQueueSummary");
+    const more = document.getElementById("promptQueueMore");
+    if (!panel || !list || !summary || !more) return;
+    const prompts = state.stagedPromptQueue || [];
+    panel.classList.toggle("hidden", prompts.length === 0);
+    summary.textContent = prompts.length === 1 ? "1 prompt staged" : `${prompts.length} prompts staged`;
+    const visible = prompts.slice(0, 4);
+    list.innerHTML = visible.map((prompt, index) => `
+        <li class="prompt-queue-item">
+            <span class="prompt-queue-index">${index + 1}</span>
+            <span class="prompt-queue-text" title="${escapeHtml(prompt.content)}">${escapeHtml(prompt.content)}</span>
+            <span class="prompt-queue-status">${escapeHtml(prompt.status === "sending" ? "Sending now" : prompt.status === "error" ? "Needs retry" : "Waiting")}</span>
+        </li>
+    `).join("");
+    const remaining = prompts.length - visible.length;
+    more.classList.toggle("hidden", remaining <= 0);
+    more.textContent = remaining > 0 ? `+ ${remaining} more prompt${remaining === 1 ? "" : "s"} waiting` : "";
+}
+
+function clearPromptQueue() {
+    state.stagedPromptQueue = state.stagedPromptQueue.filter(prompt => prompt.status === "sending");
+    renderPromptQueue();
+    updateTokenEstimate();
+}
+
+function retryPromptQueue() {
+    state.stagedPromptQueue.forEach(prompt => {
+        if (prompt.status === "error") {
+            prompt.status = "waiting";
+            delete prompt.error;
+        }
+    });
+    renderPromptQueue();
+    drainPromptQueue();
 }
 
 function connectGenerationStream(generationId) {
@@ -1459,14 +1722,20 @@ function handleGenerationEvent(event) {
         updateStreamedMessage(active.messageId, event.final_text != null ? event.final_text : active.text, "complete");
         closeGenerationStream(generationId);
         refreshCurrentChatSoon();
+        renderModelStatus();
+        return;
     } else if (event.type === "generation_cancelled") {
         updateStreamedMessage(active.messageId, event.text || active.text, "cancelled");
         closeGenerationStream(generationId);
         refreshCurrentChatSoon();
+        renderModelStatus();
+        return;
     } else if (event.type === "generation_failed") {
         updateStreamedMessage(active.messageId, active.text, "error", event.error_code || "Generation failed");
         closeGenerationStream(generationId);
         refreshCurrentChatSoon();
+        renderModelStatus();
+        return;
     }
     state.activeGenerations[generationId] = active;
     renderModelStatus();
@@ -1490,6 +1759,7 @@ function closeGenerationStream(generationId) {
     if (!Object.keys(state.activeGenerations).length) {
         stopThinkingTimer();
         state.activeResponse = null;
+        drainPromptQueue();
     }
 }
 
@@ -1590,7 +1860,7 @@ async function runTokenRevealAnimation(messageId, finalText, generationRunId) {
             partial += tokens[index] || "";
             message.content = partial;
             body.innerHTML = renderMarkdown(partial);
-            document.getElementById("messagesPane").scrollTop = document.getElementById("messagesPane").scrollHeight;
+            scrollChatToBottomIfPinned();
             index += 1;
             if (index < tokens.length) {
                 state.tokenRevealAnimation = window.setTimeout(step, tokenRevealDelay(tokens[index]));
@@ -1631,10 +1901,10 @@ function tokenRevealDelay(token) {
     return 28;
 }
 
-function composerKeydown(event) {
+async function composerKeydown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        sendMessage();
+        await sendMessage();
     }
 }
 
@@ -1652,7 +1922,8 @@ function updateTokenEstimate() {
     const value = document.getElementById("composerInput").value;
     const count = Math.max(0, (value.match(/\w+|[^\w\s]/g) || []).length);
     const queued = state.queue?.conversation_queued_count || state.queue?.global_queued_count || 0;
-    document.getElementById("tokenEstimate").textContent = `${count} estimated tokens${queued ? ` / ${queued} queued` : ""}`;
+    const staged = state.stagedPromptQueue?.length || 0;
+    document.getElementById("tokenEstimate").textContent = `${count} estimated tokens${queued ? ` / ${queued} backend queued` : ""}${staged ? ` / ${staged} staged` : ""}`;
 }
 
 async function renameChat() {
@@ -1677,9 +1948,23 @@ async function deleteChat() {
     if (!state.currentChat || !confirm(`Delete "${state.currentChat.title}"?`)) return;
     await api(`/api/chats/${state.currentChat.id}`, { method: "DELETE" });
     state.currentChat = null;
+    state.stagedPromptQueue = [];
     await loadChats();
     if (state.chats.length) await openChat(state.chats[0].id);
     else await newChat();
+}
+
+async function deleteAllChats() {
+    const count = state.chats?.length || 0;
+    if (!count || !confirm(`Delete all ${count} chat${count === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    await api("/api/chats", { method: "DELETE" });
+    state.currentChat = null;
+    state.stagedPromptQueue = [];
+    state.activeResponse = null;
+    state.activeGenerations = {};
+    await loadChats();
+    await newChat();
+    await refreshQueue();
 }
 
 async function inspectContext() {
@@ -1805,9 +2090,16 @@ async function setConversationMode(mode, persist = true) {
     state.responseMode = mode === "agent" ? "agent" : "chat";
     document.getElementById("chatModeButton")?.classList.toggle("active", state.responseMode === "chat");
     document.getElementById("agentModeButton")?.classList.toggle("active", state.responseMode === "agent");
+    updateComposerContext();
     if (persist && state.settings) {
         state.settings = (await api("/api/settings", { method: "PATCH", body: JSON.stringify({ agent: { mode: state.responseMode } }) })).settings;
     }
+}
+
+function updateComposerContext() {
+    const templateId = state.currentChat?.chat_template_id || state.settings?.active_template_id || "basic-chat";
+    const mode = state.responseMode === "agent" ? "Agent" : "Chat";
+    document.getElementById("composerContext").textContent = `Mode: ${mode} / Template: ${templateId}`;
 }
 
 async function saveChatSettings() {

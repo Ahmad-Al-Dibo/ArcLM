@@ -33,9 +33,6 @@ from ..checkpoints.loaders.arclm_checkpoint import ArcLMCheckpointLoader
 from ..checkpoints.loaders.smart_loader import (
     inspect_model_source as _legacy_inspect_model_source,
 )
-from ..training import train_model
-from ..finetuning import SFTTrainingResult, train_sft
-
 
 PathLike = Union[str, Path]
 PromptLike = Union[str, Sequence[Mapping[str, str]]]
@@ -489,6 +486,8 @@ def fine_tune_external_model(
 ) -> SFTTrainingResult:
     """Fine-tune an external model through supported ArcLM training backends."""
 
+    from ..finetuning import train_sft
+
     normalized_method = method.lower().replace("-", "_").strip()
     if normalized_method != "sft":
         raise NotImplementedError(
@@ -518,6 +517,8 @@ def fine_tune_external_model(
 def train_native_model(*, data: str, output: str, **kwargs: Any) -> Any:
     """Train a native ArcLM model by delegating to ``train_model(mode='pretrain')``."""
 
+    from ..training import train_model
+
     return train_model(mode="pretrain", data=data, output=output, **kwargs)
 
 
@@ -529,6 +530,8 @@ def fine_tune_native_model(
     **kwargs: Any,
 ) -> Any:
     """Fine-tune a native ArcLM checkpoint via ``train_model``."""
+
+    from ..training import train_model
 
     return train_model(
         mode="finetune",
@@ -547,6 +550,8 @@ def continue_native_training(
     **kwargs: Any,
 ) -> Any:
     """Continue native ArcLM training via ``train_model``."""
+
+    from ..training import train_model
 
     return train_model(
         mode="continue_training",

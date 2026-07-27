@@ -411,6 +411,7 @@ class PromptQueueWorker:
         assistant_message = None
         run = None
         text = ""
+        agent_metadata = {}
         try:
             if self.operation_hub.is_cancelled(operation_id):
                 raise ChatApiError("generation_cancelled", "Generation was cancelled.", status_code=499)
@@ -557,6 +558,7 @@ class PromptQueueWorker:
                     "response_lifecycle": dict(run),
                     "response_metrics": dict(run.get("performance_metrics") or {}),
                     "token_metrics": dict(token_metrics),
+                    "agent": dict(agent_metadata or {}),
                     "settings": dict(generation_settings),
                     "context_report": context["report"],
                 },
@@ -1403,6 +1405,23 @@ def create_simple_interface_app(storage_path=None):
         """Create a new persisted conversation."""
         try:
             return api_response(conversation=chat_store.create_chat(request.get_json(silent=True) or {}))
+        except Exception as exc:
+            return error_response(exc)
+
+    @app.route("/api/chats", methods=["DELETE"])
+    def delete_all_chats():
+        """Delete every persisted conversation and related runtime records."""
+        try:
+            result = chat_store.delete_all_chats()
+            _operation_hub.emit(
+                _operation_hub.status().get("operation_id") or f"chat_delete_{new_short_id()}",
+                category="chat",
+                level="warning",
+                stage="chats_deleted",
+                message=f"Deleted {result['deleted_count']} chat(s).",
+                details={"deleted_count": result["deleted_count"]},
+            )
+            return api_response(**result)
         except Exception as exc:
             return error_response(exc)
 

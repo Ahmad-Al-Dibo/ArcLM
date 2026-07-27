@@ -8,7 +8,6 @@ import torch
 
 from ..configs import Config
 from .generation import Generator
-from ..training import build_model
 from ..tokenizers import SentencePieceTokenizer
 
 
@@ -99,6 +98,8 @@ def load_model(model_path=None, device=None, prefer_best=True):
 
     This can not load external Hugging Face models; use load_any_model() for that.
     """
+    from ..training import build_model
+
     resolved_path = Path(model_path or DEFAULT_MODEL_PATH)
     resolved_device = _resolve_device(device)
 
