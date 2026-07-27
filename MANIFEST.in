@@ -1,0 +1,19 @@
+include docs/special-version.md
+recursive-include examples *.md *.py *.json *.jsonl *.txt *.html
+recursive-include tests *.py
+recursive-include src/arclm/templates *.html
+include src/arclm/py.typed
+prune .venv
+prune .venv-training-core
+prune build
+prune dist
+prune examples/_outputs
+prune examples/.venv
+prune examples/runs
+prune examples/qwen3_0_6b_sft/output
+prune reports
+prune web/node_modules
+exclude src/the-transformer.py
+exclude src/the-transformer.md
+global-exclude __pycache__ *.py[cod]
+global-exclude .pytest_cache

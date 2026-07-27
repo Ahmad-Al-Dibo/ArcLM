@@ -9,7 +9,7 @@
   - `torch>=2.1,<3`
   - `numpy>=1.24,<3`
   - `sentencepiece>=0.2,<0.3`
-  - `transformers>=4.38,<6`
+  - `transformers>=4.51,<6`
 - Optional web dependency:
   - `flask>=3,<4`
 - Optional preprocessing dependencies:
@@ -23,24 +23,20 @@
 - Optional external source support:
   - `safetensors` is loaded only when installed and when a `.safetensors`
     source is requested.
+- Optional Hugging Face workflow extras:
+  - `accelerate`
+  - `datasets`
+  - `peft`
 - Packaging:
   - Build backend: `setuptools.build_meta`.
   - Version source: `arclm._version.__version__`.
   - License: Apache License 2.0.
   - Explicit package list includes `arclm.logics`, `arclm.loaders`,
     `arclm.preprocess`, `arclm.tokenizers`, and `arclm.training`.
-- Dependency verification:
-  - Date checked from shell: `2026-06`.
-  - Latest PyPI versions observed in that check:
-    - `torch==2.12.1`, requires Python `>=3.10`
-    - `numpy==2.5.0`, requires Python `>=3.12`
-    - `sentencepiece==0.2.1`, requires Python `>=3.9`
-    - `transformers==5.12.1`, requires Python `>=3.10.0`
-    - `pytest==9.1.1`, requires Python `>=3.10`
-    - `build==1.5.0`, requires Python `>=3.10`
-    - `twine==6.2.0`, requires Python `>=3.9`
-    - `flask==3.1.3`, requires Python `>=3.9`
-    - `safetensors==0.8.0`, requires Python `>=3.10`
+- Release baseline:
+  - Public version: `0.5.0`
+  - Canonical project name: ArcLM
+  - Import package: `arclm`
 
 [SYSTEM_FLOW]
 
@@ -132,10 +128,10 @@ Verifiable goals:
   pipeline implementation.
 - `arclm.preprocess.PreprocessPipeline` filters, redacts, deduplicates, writes
   cleaned JSONL, and emits reports.
-- `examples/full_feature_guide.py` runs end-to-end with generated tiny local
-  data and covers preprocessing, training, fine-tuning, inference, diagnostics,
-  loaders, config persistence, and local tracking.
-- `examples/preprocess_dataset.py` runs a tiny JSONL preprocessing workflow.
+- `examples/01_quickstart.py` through `examples/15_custom_hf_sft_loop.py` are the
+  maintained public examples. Each script is short, independent, and focused on
+  one workflow.
+- `examples/qwen3_0_6b_sft/` is the larger advanced SFT workflow.
 
 [ARCHITECTURE]
 
@@ -187,8 +183,9 @@ Verifiable goals:
   cleaning, filtering, reporting, and statistics helpers.
 - `examples/`: executable examples for preparation, pretraining, fine-tuning,
   preprocessing, external loading, and broad feature walkthroughs.
-  - `preprocess_dataset.py`: JSONL cleaning/filtering/deduplication/redaction
-    and report example.
+  - `01_quickstart.py` through `15_custom_hf_sft_loop.py`: maintained public
+    examples with one concept per script.
+  - `qwen3_0_6b_sft/`: advanced Hugging Face SFT workflow.
 - `docs/USAGE.md`: short usage guide.
 - `docs/FULL_FEATURE_GUIDE.md`: complete documentation for current public
   workflows and features.
@@ -216,8 +213,9 @@ Architecture rules:
   older dependency resolutions or raise the package Python baseline.
 - `arclm/pipeline_v2.py` is a compatibility shim for old imports. New code
   should import unified training classes from `arclm.training`.
-- `checkpoint_is_compatible_for_tuining` contains a spelling error in the public
-  export. Renaming it would be a breaking API change unless an alias is kept.
+- `checkpoint_is_compatible_for_tuining` contains a spelling error in the
+  public export. Renaming it would be a breaking API change unless an alias is
+  kept.
 - `app.py` is an optional local API demo and is not covered by the current test
   suite.
 - No CI workflow is present in the repository.

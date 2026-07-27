@@ -1,0 +1,789 @@
+{
+  "schema_version": 1,
+  "levels": [
+    "beginner",
+    "intermediate",
+    "advanced",
+    "expert"
+  ],
+  "categories": [
+    "architecture",
+    "artifacts",
+    "checkpoints",
+    "data",
+    "distributed",
+    "evaluation",
+    "events",
+    "fine_tuning",
+    "inference",
+    "inspection",
+    "lifecycle",
+    "models",
+    "peft",
+    "plugins",
+    "preprocessing",
+    "registry",
+    "tokenization",
+    "training"
+  ],
+  "statuses": [
+    "stub",
+    "in_progress",
+    "completed",
+    "verified",
+    "deprecated"
+  ],
+  "challenge_types": [
+    "from_scratch",
+    "arclm_integration"
+  ],
+  "packaging": {
+    "sdist": "top-level repository content; verify through build output when packaging policy changes",
+    "wheel": "excluded because setuptools discovers packages only under src/arclm*"
+  },
+  "challenges": [
+    {
+      "id": "beginner-01-data-loading",
+      "title": "Load safe local records",
+      "level": "beginner",
+      "category": "data",
+      "type": "from_scratch",
+      "path": "lab/beginner/01_data_loading",
+      "points": 100,
+      "estimated_minutes": 45,
+      "prerequisites": [],
+      "concepts": [
+        "records",
+        "plain text",
+        "JSON",
+        "JSONL",
+        "safe fixture paths"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-02-text-cleaning",
+      "title": "Clean text deterministically",
+      "level": "beginner",
+      "category": "preprocessing",
+      "type": "from_scratch",
+      "path": "lab/beginner/02_text_cleaning",
+      "points": 80,
+      "estimated_minutes": 35,
+      "prerequisites": [
+        "beginner-01-data-loading"
+      ],
+      "concepts": [
+        "whitespace normalization",
+        "Unicode text",
+        "empty records",
+        "punctuation preservation"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-03-dataset-validation",
+      "title": "Validate dataset records",
+      "level": "beginner",
+      "category": "data",
+      "type": "from_scratch",
+      "path": "lab/beginner/03_dataset_validation",
+      "points": 100,
+      "estimated_minutes": 45,
+      "prerequisites": [
+        "beginner-01-data-loading",
+        "beginner-02-text-cleaning"
+      ],
+      "concepts": [
+        "schema",
+        "required fields",
+        "warnings versus errors",
+        "validation reports"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-04-vocabulary",
+      "title": "Build a deterministic vocabulary",
+      "level": "beginner",
+      "category": "tokenization",
+      "type": "from_scratch",
+      "path": "lab/beginner/04_vocabulary",
+      "points": 100,
+      "estimated_minutes": 45,
+      "prerequisites": [
+        "beginner-02-text-cleaning"
+      ],
+      "concepts": [
+        "frequency",
+        "special tokens",
+        "token IDs",
+        "deterministic ordering"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-05-word-tokenizer",
+      "title": "Implement a tiny word tokenizer",
+      "level": "beginner",
+      "category": "tokenization",
+      "type": "from_scratch",
+      "path": "lab/beginner/05_word_tokenizer",
+      "points": 120,
+      "estimated_minutes": 60,
+      "prerequisites": [
+        "beginner-04-vocabulary"
+      ],
+      "concepts": [
+        "tokenization",
+        "unknown tokens",
+        "encode",
+        "decode",
+        "round trip behavior"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-06-sequence-preparation",
+      "title": "Prepare causal LM sequences",
+      "level": "beginner",
+      "category": "training",
+      "type": "from_scratch",
+      "path": "lab/beginner/06_sequence_preparation",
+      "points": 120,
+      "estimated_minutes": 60,
+      "prerequisites": [
+        "beginner-05-word-tokenizer"
+      ],
+      "concepts": [
+        "input IDs",
+        "shifted labels",
+        "padding",
+        "truncation",
+        "ignore index"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-07-training-counters",
+      "title": "Track training progress",
+      "level": "beginner",
+      "category": "training",
+      "type": "from_scratch",
+      "path": "lab/beginner/07_training_counters",
+      "points": 100,
+      "estimated_minutes": 45,
+      "prerequisites": [
+        "beginner-06-sequence-preparation"
+      ],
+      "concepts": [
+        "epoch",
+        "batch",
+        "global step",
+        "examples seen",
+        "tokens seen",
+        "serialization"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "beginner-08-beginner-capstone",
+      "title": "Build a tiny dataset inspector",
+      "level": "beginner",
+      "category": "data",
+      "type": "from_scratch",
+      "path": "lab/beginner/08_beginner_capstone",
+      "points": 180,
+      "estimated_minutes": 90,
+      "prerequisites": [
+        "beginner-01-data-loading",
+        "beginner-02-text-cleaning",
+        "beginner-03-dataset-validation",
+        "beginner-04-vocabulary",
+        "beginner-05-word-tokenizer"
+      ],
+      "concepts": [
+        "capstone",
+        "statistics",
+        "integration",
+        "reuse"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-01-dataset-manifest",
+      "title": "Create dataset manifests and statistics",
+      "level": "intermediate",
+      "category": "data",
+      "type": "from_scratch",
+      "path": "lab/intermediate/01_dataset_manifest",
+      "points": 130,
+      "estimated_minutes": 75,
+      "prerequisites": [
+        "beginner-03-dataset-validation"
+      ],
+      "concepts": [
+        "fingerprints",
+        "metadata",
+        "schema summary",
+        "deterministic hashing"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-02-preprocessing-pipeline",
+      "title": "Build a preprocessing pipeline",
+      "level": "intermediate",
+      "category": "preprocessing",
+      "type": "from_scratch",
+      "path": "lab/intermediate/02_preprocessing_pipeline",
+      "points": 150,
+      "estimated_minutes": 90,
+      "prerequisites": [
+        "beginner-02-text-cleaning",
+        "intermediate-01-dataset-manifest"
+      ],
+      "concepts": [
+        "stage order",
+        "configuration",
+        "errors",
+        "non-mutating transforms"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-03-tokenizer-persistence",
+      "title": "Persist a tokenizer safely",
+      "level": "intermediate",
+      "category": "tokenization",
+      "type": "from_scratch",
+      "path": "lab/intermediate/03_tokenizer_persistence",
+      "points": 130,
+      "estimated_minutes": 75,
+      "prerequisites": [
+        "beginner-05-word-tokenizer"
+      ],
+      "concepts": [
+        "serialization",
+        "schema version",
+        "round trip",
+        "safe paths"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-04-model-configuration",
+      "title": "Validate tiny model configuration",
+      "level": "intermediate",
+      "category": "models",
+      "type": "from_scratch",
+      "path": "lab/intermediate/04_model_configuration",
+      "points": 130,
+      "estimated_minutes": 75,
+      "prerequisites": [
+        "beginner-06-sequence-preparation"
+      ],
+      "concepts": [
+        "vocab size",
+        "embedding size",
+        "context length",
+        "configuration validation"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-05-forward-pass",
+      "title": "Implement a tiny forward pass",
+      "level": "intermediate",
+      "category": "models",
+      "type": "from_scratch",
+      "path": "lab/intermediate/05_forward_pass",
+      "points": 160,
+      "estimated_minutes": 90,
+      "prerequisites": [
+        "intermediate-04-model-configuration"
+      ],
+      "concepts": [
+        "batch dimension",
+        "logits",
+        "finite tensors",
+        "causal LM output shape"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-06-training-loop",
+      "title": "Implement a tiny training loop",
+      "level": "intermediate",
+      "category": "training",
+      "type": "from_scratch",
+      "path": "lab/intermediate/06_training_loop",
+      "points": 180,
+      "estimated_minutes": 120,
+      "prerequisites": [
+        "beginner-07-training-counters",
+        "intermediate-05-forward-pass"
+      ],
+      "concepts": [
+        "zero grad",
+        "loss",
+        "backward",
+        "gradient clipping",
+        "optimizer step"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-07-checkpoint-lifecycle",
+      "title": "Save and restore training state",
+      "level": "intermediate",
+      "category": "checkpoints",
+      "type": "from_scratch",
+      "path": "lab/intermediate/07_checkpoint_lifecycle",
+      "points": 160,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "intermediate-06-training-loop"
+      ],
+      "concepts": [
+        "model state",
+        "optimizer state",
+        "metadata",
+        "resume"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "intermediate-08-intermediate-capstone",
+      "title": "Build a tiny training workbench",
+      "level": "intermediate",
+      "category": "training",
+      "type": "from_scratch",
+      "path": "lab/intermediate/08_intermediate_capstone",
+      "points": 220,
+      "estimated_minutes": 150,
+      "prerequisites": [
+        "intermediate-01-dataset-manifest",
+        "intermediate-02-preprocessing-pipeline",
+        "intermediate-03-tokenizer-persistence",
+        "intermediate-04-model-configuration",
+        "intermediate-06-training-loop",
+        "intermediate-07-checkpoint-lifecycle"
+      ],
+      "concepts": [
+        "capstone",
+        "training report",
+        "reload",
+        "component integration"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-01-artifacts-and-tracking",
+      "title": "Track artifacts safely",
+      "level": "advanced",
+      "category": "artifacts",
+      "type": "from_scratch",
+      "path": "lab/advanced/01_artifacts_and_tracking",
+      "points": 140,
+      "estimated_minutes": 75,
+      "prerequisites": [
+        "intermediate-07-checkpoint-lifecycle"
+      ],
+      "concepts": [
+        "artifact identity",
+        "ownership",
+        "metadata",
+        "relationships",
+        "retention"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-02-finetuning-formatting",
+      "title": "Format supervised fine-tuning records",
+      "level": "advanced",
+      "category": "fine_tuning",
+      "type": "from_scratch",
+      "path": "lab/advanced/02_finetuning_formatting",
+      "points": 160,
+      "estimated_minutes": 90,
+      "prerequisites": [
+        "beginner-03-dataset-validation"
+      ],
+      "concepts": [
+        "instruction response",
+        "prompt completion",
+        "plain text",
+        "formatting tags",
+        "end behavior"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-03-sft-dataset-preparation",
+      "title": "Prepare SFT examples identically",
+      "level": "advanced",
+      "category": "fine_tuning",
+      "type": "arclm_integration",
+      "path": "lab/advanced/03_sft_dataset_preparation",
+      "points": 180,
+      "estimated_minutes": 110,
+      "prerequisites": [
+        "advanced-02-finetuning-formatting",
+        "intermediate-03-tokenizer-persistence"
+      ],
+      "concepts": [
+        "input IDs",
+        "labels",
+        "ignore index",
+        "response-only labels",
+        "truncation"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-04-peft-and-lora",
+      "title": "Explore PEFT and LoRA boundaries",
+      "level": "advanced",
+      "category": "peft",
+      "type": "from_scratch",
+      "path": "lab/advanced/04_peft_and_lora",
+      "points": 180,
+      "estimated_minutes": 120,
+      "prerequisites": [
+        "intermediate-05-forward-pass"
+      ],
+      "concepts": [
+        "rank",
+        "alpha",
+        "target modules",
+        "frozen parameters",
+        "adapter metadata"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-05-evaluation",
+      "title": "Build evaluation reports",
+      "level": "advanced",
+      "category": "evaluation",
+      "type": "from_scratch",
+      "path": "lab/advanced/05_evaluation",
+      "points": 150,
+      "estimated_minutes": 90,
+      "prerequisites": [
+        "intermediate-06-training-loop"
+      ],
+      "concepts": [
+        "loss",
+        "perplexity",
+        "token accuracy",
+        "JSON-safe reports"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-06-inference-and-generation",
+      "title": "Implement bounded generation",
+      "level": "advanced",
+      "category": "inference",
+      "type": "from_scratch",
+      "path": "lab/advanced/06_inference_and_generation",
+      "points": 170,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "advanced-05-evaluation"
+      ],
+      "concepts": [
+        "greedy decoding",
+        "temperature",
+        "top-k",
+        "top-p",
+        "context limits",
+        "seed"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-07-pipeline-inspection",
+      "title": "Trace one model step",
+      "level": "advanced",
+      "category": "inspection",
+      "type": "arclm_integration",
+      "path": "lab/advanced/07_pipeline_inspection",
+      "points": 170,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "advanced-06-inference-and-generation"
+      ],
+      "concepts": [
+        "tokens",
+        "token IDs",
+        "tensor shapes",
+        "logits",
+        "selected token",
+        "decoded output"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "advanced-08-advanced-capstone",
+      "title": "Build a domain adaptation toolkit",
+      "level": "advanced",
+      "category": "fine_tuning",
+      "type": "arclm_integration",
+      "path": "lab/advanced/08_advanced_capstone",
+      "points": 260,
+      "estimated_minutes": 180,
+      "prerequisites": [
+        "advanced-01-artifacts-and-tracking",
+        "advanced-02-finetuning-formatting",
+        "advanced-03-sft-dataset-preparation",
+        "advanced-05-evaluation",
+        "advanced-06-inference-and-generation",
+        "advanced-07-pipeline-inspection"
+      ],
+      "concepts": [
+        "capstone",
+        "SFT flow",
+        "evaluation",
+        "generation",
+        "inspection"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-01-registry-and-plugins",
+      "title": "Build a safe component registry",
+      "level": "expert",
+      "category": "registry",
+      "type": "from_scratch",
+      "path": "lab/expert/01_registry_and_plugins",
+      "points": 170,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "intermediate-04-model-configuration"
+      ],
+      "concepts": [
+        "registration",
+        "aliases",
+        "duplicates",
+        "metadata",
+        "plugin lifecycle"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-02-events-and-dependency-injection",
+      "title": "Design events and dependency injection",
+      "level": "expert",
+      "category": "events",
+      "type": "from_scratch",
+      "path": "lab/expert/02_events_and_dependency_injection",
+      "points": 190,
+      "estimated_minutes": 120,
+      "prerequisites": [
+        "expert-01-registry-and-plugins"
+      ],
+      "concepts": [
+        "event order",
+        "cancellation",
+        "singleton",
+        "transient",
+        "scoped services"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-03-distributed-runtime",
+      "title": "Plan distributed runtime safely",
+      "level": "expert",
+      "category": "distributed",
+      "type": "from_scratch",
+      "path": "lab/expert/03_distributed_runtime",
+      "points": 170,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "intermediate-06-training-loop"
+      ],
+      "concepts": [
+        "world size",
+        "local batch",
+        "gradient accumulation",
+        "rank assignment"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-04-ddp-planning",
+      "title": "Model DDP responsibilities",
+      "level": "expert",
+      "category": "distributed",
+      "type": "from_scratch",
+      "path": "lab/expert/04_ddp_planning",
+      "points": 180,
+      "estimated_minutes": 110,
+      "prerequisites": [
+        "expert-03-distributed-runtime"
+      ],
+      "concepts": [
+        "rank",
+        "local rank",
+        "sampler partitioning",
+        "rank-zero side effects"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-05-fsdp-checkpoint-policy",
+      "title": "Design FSDP checkpoint policy",
+      "level": "expert",
+      "category": "checkpoints",
+      "type": "from_scratch",
+      "path": "lab/expert/05_fsdp_checkpoint_policy",
+      "points": 190,
+      "estimated_minutes": 120,
+      "prerequisites": [
+        "expert-04-ddp-planning"
+      ],
+      "concepts": [
+        "full state dict",
+        "sharded state dict",
+        "rank-local files",
+        "restore policy"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-06-fault-tolerance",
+      "title": "Design resumable job coordination",
+      "level": "expert",
+      "category": "lifecycle",
+      "type": "from_scratch",
+      "path": "lab/expert/06_fault_tolerance",
+      "points": 190,
+      "estimated_minutes": 120,
+      "prerequisites": [
+        "expert-03-distributed-runtime"
+      ],
+      "concepts": [
+        "status transitions",
+        "heartbeat",
+        "stale jobs",
+        "retry",
+        "idempotency"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-07-architecture-decisions",
+      "title": "Write and review architecture decisions",
+      "level": "expert",
+      "category": "architecture",
+      "type": "from_scratch",
+      "path": "lab/expert/07_architecture_decisions",
+      "points": 170,
+      "estimated_minutes": 100,
+      "prerequisites": [
+        "expert-02-events-and-dependency-injection"
+      ],
+      "concepts": [
+        "trade-offs",
+        "compatibility",
+        "failure isolation",
+        "migration path"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    },
+    {
+      "id": "expert-08-expert-capstone",
+      "title": "Build a runtime architecture simulator",
+      "level": "expert",
+      "category": "architecture",
+      "type": "from_scratch",
+      "path": "lab/expert/08_expert_capstone",
+      "points": 260,
+      "estimated_minutes": 180,
+      "prerequisites": [
+        "expert-03-distributed-runtime",
+        "expert-04-ddp-planning",
+        "expert-05-fsdp-checkpoint-policy",
+        "expert-06-fault-tolerance",
+        "expert-07-architecture-decisions"
+      ],
+      "concepts": [
+        "capstone",
+        "resource allocation",
+        "rank assignment",
+        "checkpoint policy",
+        "resume plan"
+      ],
+      "requires_gpu": false,
+      "requires_network": false,
+      "status": "stub"
+    }
+  ]
+}
