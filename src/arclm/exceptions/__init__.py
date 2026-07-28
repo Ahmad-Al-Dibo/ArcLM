@@ -17,6 +17,9 @@ from .base import (
     FormattingError,
     InferenceError,
     MetricError,
+    DatasetFormatError,
+    ModelCompatibilityError,
+    ModelError,
     ModelAdapterError,
     ModelLoadError,
     OptionalDependencyError,
@@ -29,6 +32,7 @@ from .base import (
     TrainingConfigError,
     TokenizerError,
     TrainingError,
+    UnsupportedModelError,
 )
 
 __all__ = [
@@ -37,6 +41,7 @@ __all__ = [
     "CleaningError",
     "ConfigurationError",
     "DatasetError",
+    "DatasetFormatError",
     "DatasetLoadError",
     "DatasetValidationError",
     "DatasetVersionError",
@@ -48,7 +53,9 @@ __all__ = [
     "FormattingError",
     "InferenceError",
     "MetricError",
+    "ModelCompatibilityError",
     "ModelAdapterError",
+    "ModelError",
     "ModelLoadError",
     "OptionalDependencyError",
     "PipelineError",
@@ -60,4 +67,5 @@ __all__ = [
     "TrainingConfigError",
     "TokenizerError",
     "TrainingError",
+    "UnsupportedModelError",
 ]
