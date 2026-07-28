@@ -1,6 +1,6 @@
 # Speciale ArcLM Versie
 
-Framework version: `1.13.4`.
+Framework version: `2.12.3`.
 
 API compatibility version: `0.10.0`.
 
@@ -731,14 +731,14 @@ Known limitations:
 Examples live in [`examples/security/`](../examples/security/).
 
 Release status after the repository and documentation verification pass:
-`1.13.4` is the real framework version reported by `arclm.__version__`, package
+`2.12.3` is the real framework version reported by `arclm.__version__`, package
 metadata, built artifacts, Web Studio diagnostics and generated documentation.
 `0.10.0` remains the separate API compatibility version reported by
 `arclm.__api_version__`.
 
-## ArcLM 1.13.4 Framework Version
+## ArcLM 2.12.3 Framework Version
 
-ArcLM `1.13.4` is the current framework version for the completed native Studio
+ArcLM `2.12.3` is the current framework version for the completed native Studio
 workflow and verified documentation pass. The release gate uses a clean
 installed wheel, `arclm[web]`, a temporary workspace and real Uvicorn HTTP
 requests for:
@@ -765,7 +765,7 @@ Privacy and workspace behavior:
   payloads through existing read endpoints.
 
 Release recommendation: treat this repository state as framework version
-`1.13.4` after owner review. Keep `0.10.0` only as the Web/API compatibility
+`2.12.3` after owner review. Keep `0.10.0` only as the Web/API compatibility
 marker until an intentional API-version bump is made.
 
 ## Transparent Pipeline Inspection
