@@ -416,6 +416,7 @@ NAVIGATION = [
             {"id": "guide-agent-tools", "title": "Agent Tools", "href": "guides/agent-tools.html"},
             {"id": "guide-security", "title": "Security", "href": "guides/security.html"},
             {"id": "guide-external-models", "title": "External Models", "href": "guides/external-models.html"},
+            {"id": "guide-distributions", "title": "Distributions", "href": "guides/distributions.html"},
         ],
     },
     {
@@ -1171,6 +1172,32 @@ def build_pages() -> list[dict]:
             code_section("Inspect source boundary", "from arclm.inference.external import inspect_model_source\n\nsource = inspect_model_source(\"Qwen/Qwen3-0.6B\")\nprint(source)"),
             list_section("Limitations", ["Requires optional packages", "First download may require internet", "Only exact verified operations should be trusted"]),
         ], "Experimental"),
+        "guide-distributions": ("Distributions", "guides/distributions.html", "Generate smaller standalone ArcLM editions from the canonical source.", [
+            text_section("Source of truth", "The maintained source remains the canonical ArcLM package source tree. Standalone editions are generated from explicit manifests and should not be hand-copied forks."),
+            table_section("Editions", ["Edition", "Purpose"], [
+                ["core", "Native datasets, tokenizers, models, checkpoints, evaluation, inference and inspection."],
+                ["simple-interface", "Local Flask GPT-style chat interface with model loading, prompt queue, terminal events and optional safe agents."],
+                ["loading-inference", "Model loading, checkpoint loading, generation, inspection and lifecycle helpers without training loops."],
+                ["data-tokenizers", "Dataset validation, reporting, preprocessing and tokenizer utilities."],
+                ["training", "Native model training, checkpoints and evaluation."],
+                ["finetuning", "SFT, adapter and PEFT/LoRA-oriented fine-tuning helpers."],
+                ["evaluation-benchmarks", "Evaluation, benchmark suites and inspection helpers."],
+                ["agents-tools", "Agent runtime, typed tools, safe built-ins and required security boundaries."],
+                ["security", "Security Core policy, redaction, hashing, signing, encryption and safe path/network helpers."],
+            ]),
+            code_section("Build and verify", "python tools/build_arclm_distributions.py list\npython tools/build_arclm_distributions.py inspect simple-interface\npython tools/build_arclm_distributions.py build simple-interface\npython tools/build_arclm_distributions.py verify simple-interface\npython tools/build_arclm_distributions.py test-all\npython tools/build_arclm_distributions.py check-drift", "bash"),
+            list_section("Boundary rules", [
+                "Required module-load imports cannot cross excluded manifest boundaries.",
+                "Function-scope and TYPE_CHECKING imports are reported as optional lazy edges.",
+                "Generated editions include pyproject metadata, docs, examples, manifests and source inventories.",
+                "Editions keep the arclm namespace and are meant to be installed independently.",
+            ]),
+            list_section("Limitations", [
+                "Manifests are curated and require review when public imports change.",
+                "Optional lazy edges are reported but not complete runtime proof for every optional dependency path.",
+                "Wheel size budgets and clean-environment publishing checks are still manual.",
+            ]),
+        ], "Beta"),
         "guide-cli": ("CLI", "guides/cli.html", "Use ArcLM from the command line.", [
             table_section("Commands", ["Command", "Purpose"], [["arclm train --help", "Show training options"], ["arclm eval --help", "Show evaluation options"], ["arclm generate --help", "Show generation options"], ["arclm doctor", "Print safe local diagnostics"], ["python -m arclm web-api", "Start the local Web API"]]),
             code_section("Doctor JSON", "arclm doctor --json", "bash"),

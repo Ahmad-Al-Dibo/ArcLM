@@ -1,8 +1,8 @@
 window.ARCLM_DOCS = {
-  "version": "1.0.0",
+  "version": "1.13.4",
   "versions": [
     {
-      "label": "Current (1.0.0)",
+      "label": "Current (1.13.4)",
       "href": "index.html",
       "current": true
     },
@@ -827,6 +827,93 @@ window.ARCLM_DOCS = {
       "status": "Experimental"
     },
     {
+      "id": "guide-distributions",
+      "title": "Distributions",
+      "group": "Learn",
+      "href": "guides/distributions.html",
+      "summary": "Generate smaller standalone ArcLM editions from the canonical source.",
+      "sections": [
+        {
+          "title": "Source of truth",
+          "body": "The maintained source remains the canonical ArcLM package source tree. Standalone editions are generated from explicit manifests and should not be hand-copied forks."
+        },
+        {
+          "title": "Editions",
+          "body": "",
+          "table": {
+            "columns": [
+              "Edition",
+              "Purpose"
+            ],
+            "rows": [
+              [
+                "core",
+                "Native datasets, tokenizers, models, checkpoints, evaluation, inference and inspection."
+              ],
+              [
+                "simple-interface",
+                "Local Flask GPT-style chat interface with model loading, prompt queue, terminal events and optional safe agents."
+              ],
+              [
+                "loading-inference",
+                "Model loading, checkpoint loading, generation, inspection and lifecycle helpers without training loops."
+              ],
+              [
+                "data-tokenizers",
+                "Dataset validation, reporting, preprocessing and tokenizer utilities."
+              ],
+              [
+                "training",
+                "Native model training, checkpoints and evaluation."
+              ],
+              [
+                "finetuning",
+                "SFT, adapter and PEFT/LoRA-oriented fine-tuning helpers."
+              ],
+              [
+                "evaluation-benchmarks",
+                "Evaluation, benchmark suites and inspection helpers."
+              ],
+              [
+                "agents-tools",
+                "Agent runtime, typed tools, safe built-ins and required security boundaries."
+              ],
+              [
+                "security",
+                "Security Core policy, redaction, hashing, signing, encryption and safe path/network helpers."
+              ]
+            ]
+          }
+        },
+        {
+          "title": "Build and verify",
+          "body": "",
+          "code": "python tools/build_arclm_distributions.py list\npython tools/build_arclm_distributions.py inspect simple-interface\npython tools/build_arclm_distributions.py build simple-interface\npython tools/build_arclm_distributions.py verify simple-interface\npython tools/build_arclm_distributions.py test-all\npython tools/build_arclm_distributions.py check-drift",
+          "language": "bash"
+        },
+        {
+          "title": "Boundary rules",
+          "body": "",
+          "items": [
+            "Required module-load imports cannot cross excluded manifest boundaries.",
+            "Function-scope and TYPE_CHECKING imports are reported as optional lazy edges.",
+            "Generated editions include pyproject metadata, docs, examples, manifests and source inventories.",
+            "Editions keep the arclm namespace and are meant to be installed independently."
+          ]
+        },
+        {
+          "title": "Limitations",
+          "body": "",
+          "items": [
+            "Manifests are curated and require review when public imports change.",
+            "Optional lazy edges are reported but not complete runtime proof for every optional dependency path.",
+            "Wheel size budgets and clean-environment publishing checks are still manual."
+          ]
+        }
+      ],
+      "status": "Beta"
+    },
+    {
       "id": "guide-cli",
       "title": "CLI",
       "group": "Learn",
@@ -912,50 +999,6 @@ window.ARCLM_DOCS = {
             "No streaming",
             "No production serving"
           ]
-        },
-        {
-          "title": "GPT-Style Simple Interface",
-          "body": "The legacy launch command now opens a GPT-style local chat application while preserving the Flask model-management endpoints. Model operation state is backend-authoritative, restored after refresh and shown through ModelPill states: no_model, queued, loading, ready, generating, unloading, error and cancelled. When available, the ModelPill also shows backend-inspected CPU/CUDA device, dtype, quantization and PyTorch memory metadata.",
-          "code": "python -m arclm --run simple-interface",
-          "language": "bash"
-        },
-        {
-          "title": "Thinking Status and Response Metrics",
-          "body": "The visible thinking indicator shows observable application stages only: preparing context, checking tools, running tools, generating, saving and completed. It does not expose hidden chain-of-thought or private model reasoning. Generation runs record real timestamps and durations for preparation, tool execution, backend generation, frontend token reveal and saving when those stages occur. Token metrics use the active tokenizer when available and are labelled estimated otherwise; tokens per second is output tokens divided by backend generation duration."
-        },
-        {
-          "title": "Agent Mode and Tool Calls",
-          "body": "Agent mode is explicit and uses arclm.agents AgentRunner, Tool, ToolPolicy, schemas, permissions, structured ToolResult values and trace events. Safe tools include arithmetic, current_datetime, text statistics, JSON formatting, Markdown/HTML to text, inspect_model, inspect_tokenizer and inspect_context. Tool cards show status, permission, side effect, duration and bounded structured results. Shell commands, arbitrary Python, eval, exec and unrestricted filesystem access are not exposed."
-        },
-        {
-          "title": "Operation Terminal",
-          "body": "The bottom terminal drawer is a read-only progress viewer for structured operation events. Server-Sent Events are preferred, with bounded polling fallback. Events include operation_id, timestamp, category, level, stage, message, optional progress and sanitized details. The terminal cannot run commands or arbitrary Python."
-        },
-        {
-          "title": "Progress and Cancellation",
-          "body": "Model loading reports validation, configuration, tokenizer, weights, device, precision, move-to-device, validation, inspection, unloading, generation startup, cancellation and recoverable error stages. Exact progress is displayed only when exact counts are available; fake timer percentages are not generated. Loading cancellation targets one operation ID and preserves the previous working model when possible."
-        },
-        {
-          "title": "Token Reveal and Streaming Status",
-          "body": "The Simple Interface supports true backend streaming for adapters that emit decoded deltas during active inference. Native ArcLM models report native_token_streaming; custom models can expose stream_generate, generate_stream or stream. Non-streaming adapters keep the complete-response path and may use the token reveal animation only as a labelled visual fallback. Streaming events include generation IDs, assistant message IDs and monotonically increasing content-delta sequence numbers."
-        },
-        {
-          "title": "Prompt Queue",
-          "body": "Prompt submission uses a persistent sequential SQLite queue. The composer remains available during generation, new prompts receive queue positions, and one local worker claims queued requests atomically in FIFO order for the shared model runtime. Conversation context is resolved when the request starts, so queued follow-ups include earlier completed responses. Failed and cancelled assistant attempts are excluded from later model context by default."
-        },
-        {
-          "title": "Simple Interface Storage",
-          "body": "Conversations, messages, custom templates, model profiles and non-secret settings are saved by the backend as versioned local JSON under workspace/simple-interface/chat-store.json by default. A unified SQLite sidecar records generation_runs, tool_calls, tool_results, training_candidates and settings for queryable runtime evidence. Browser storage is limited to appearance preferences. The store is not described as encrypted unless a separate encrypted storage layer is configured."
-        },
-        {
-          "title": "Chat Templates",
-          "body": "Templates map normalized ArcLM roles to model-specific roles, select an output mode and define the user input field. Formatted templates use restricted placeholders only; invalid templates cannot become active and no arbitrary code execution is added.",
-          "code": "{\n  \"schema_version\": 1,\n  \"id\": \"basic-chat\",\n  \"name\": \"Basic Chat\",\n  \"message_format\": {\"role_field\": \"role\", \"content_field\": \"content\"},\n  \"roles\": {\"system\": \"system\", \"user\": \"user\", \"assistant\": \"assistant\", \"tool\": \"tool\"},\n  \"input_mapping\": {\"user_role\": \"user\", \"user_input_field\": \"content\"},\n  \"system_message\": {\"enabled\": true, \"role\": \"system\"},\n  \"output\": {\"type\": \"messages\"}\n}",
-          "language": "json"
-        },
-        {
-          "title": "Context and Memory",
-          "body": "Saved history is distinct from the active context sent to the model. The context manager applies system instructions, persistent instructions, optional summaries, optional local memories, recent messages and token budgets before rendering the selected template. Summaries and cross-chat memory remain disabled by default."
         }
       ],
       "status": "Beta"
@@ -4348,7 +4391,7 @@ window.ARCLM_DOCS = {
               [
                 "device",
                 "str",
-                "'cuda'"
+                "'cpu'"
               ],
               [
                 "strict_loading",
@@ -10954,7 +10997,7 @@ window.ARCLM_DOCS = {
               [
                 "device",
                 "str",
-                "'cuda'"
+                "'cpu'"
               ],
               [
                 "strict_loading",
@@ -17442,6 +17485,11 @@ window.ARCLM_DOCS = {
               [
                 "timeout_seconds",
                 "float | None",
+                "None"
+              ],
+              [
+                "trace_handler",
+                "Any | None",
                 "None"
               ]
             ]

@@ -44,6 +44,7 @@ Readiness beleid:
 | Native public APIs | Stable candidate | Public API, smoke and full-suite tests pass for datasets, tokenizers, model, training, checkpoints, evaluation, generation and inspection. | Root exports blijven breed; post-release root API trim blijft technical debt. |
 | Web Studio workflow | Beta | Local FastAPI and Next.js tests cover project, data, tokenizer, model, run, checkpoint, evaluation, generation and inspection paths. | Single-process local app; no auth, database, streaming or production serving. |
 | GPT-style Simple Interface | Beta | `python -m arclm --run simple-interface` still launches the Flask app; focused tests cover backend model-operation state, terminal events, true streaming for streaming-capable adapters, sequential SQLite prompt queues, response lifecycle/timing records, token metrics, Agent-mode safe tool execution, load success/failure/cancellation, local chat persistence, deterministic follow-up context, template validation/preview, context trimming, memory-disabled behavior and chat search/rename/delete. | Local single-user JSON plus SQLite sidecar storage; only adapters that expose real incremental output are marked streaming; no cloud sync, vector memory, production auth or encrypted chat store by default. |
+| Standalone distributions | Beta | Explicit manifests and `tools/build_arclm_distributions.py` generate `core`, `simple-interface`, `loading-inference`, `data-tokenizers`, `training`, `finetuning`, `evaluation-benchmarks`, `agents-tools` and `security` editions with per-edition packaging metadata, docs, examples, source inventories, compile verification and drift checks. | Manifests are curated; optional lazy import edges are reported but not full runtime proof; wheel size budgets and clean-environment validation are manual before publishing. |
 | Diagnostics | Beta | `/api/system/status` and `arclm doctor` share safe runtime diagnostics. | Hardware-specific CUDA/multi-GPU paths blijven afhankelijk van lokale hardware. |
 | Optional integrations | Beta/Experimental | Availability is detected without importing heavy optional packages. | Hugging Face/PEFT/QLoRA runtime claims blijven model- and hardware-specific. |
 | Deprecated compatibility paths | Deprecated but retained | Compatibility tests cover old imports. | Retain through 1.x; removal should only be considered for 2.0 with migration notes. |
@@ -97,6 +98,37 @@ training, SFT preparation, checkpoints, evaluation, local inference, pipeline
 inspection, agents/tools, Security Core, and six complete projects. Older
 unnumbered examples are preserved for history; the numbered suite is the
 maintained release candidate examples surface.
+
+## Standalone Distributions
+
+Status: beta generation workflow, no version bump.
+
+The full repository remains the canonical source. Smaller editions are generated
+from `src/arclm` with explicit manifests in `distributions/manifests/`:
+
+```bash
+python tools/build_arclm_distributions.py list
+python tools/build_arclm_distributions.py build-all
+python tools/build_arclm_distributions.py test-all
+python tools/build_arclm_distributions.py check-drift
+```
+
+The builder follows import dependencies, separates required module-load imports
+from optional/lazy imports, fails when a required dependency crosses an excluded
+boundary, and writes a source inventory for each generated edition. The
+`simple-interface` and `loading-inference` manifests do not require the native
+training loop at import time; any training/fine-tuning references that remain in
+loading helpers are lazy optional edges.
+
+Each generated edition has its own `pyproject.toml`, `MANIFEST.in`, license,
+notice, README, installation guide, usage guide, API summary, limitations file,
+examples, manifest and source inventory. Editions keep the `arclm` namespace and
+are intended to be installed independently, not side by side.
+
+Known limitations are documented in [`docs/distributions.md`](distributions.md):
+manifest curation remains manual, optional runtime paths still need
+environment-specific validation, and wheel size budgets are not enforced by the
+tool yet.
 
 ## GPT-Style Simple Interface
 

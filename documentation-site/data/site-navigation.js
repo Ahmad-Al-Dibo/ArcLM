@@ -111,6 +111,11 @@ window.ARCLM_NAVIGATION = [
         "id": "guide-external-models",
         "title": "External Models",
         "href": "guides/external-models.html"
+      },
+      {
+        "id": "guide-distributions",
+        "title": "Distributions",
+        "href": "guides/distributions.html"
       }
     ]
   },

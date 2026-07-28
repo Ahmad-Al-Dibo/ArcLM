@@ -29,6 +29,22 @@ pip install "arclm[peft]"
 pip install "arclm[preprocess]"
 ```
 
+Standalone local editions can be generated from the canonical source when you
+want a smaller install surface for one workflow:
+
+```bash
+python tools/build_arclm_distributions.py list
+python tools/build_arclm_distributions.py build simple-interface
+python tools/build_arclm_distributions.py verify simple-interface
+```
+
+The generated editions live under `distributions/<edition>/` with their own
+`pyproject.toml`, docs, examples and source inventory. The current editions are
+`core`, `simple-interface`, `loading-inference`, `data-tokenizers`, `training`,
+`finetuning`, `evaluation-benchmarks`, `agents-tools` and `security`. See
+[`docs/distributions.md`](docs/distributions.md) for the manifest boundaries,
+verification commands and limitations.
+
 The local Studio backend is optional:
 
 ```bash

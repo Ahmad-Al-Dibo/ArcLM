@@ -23,10 +23,10 @@
       "source": "generated"
     },
     {
-      "bytes": 3077,
+      "bytes": 2619,
       "module": "arclm._distribution",
       "path": "src\\arclm\\_distribution.py",
-      "sha256": "baad495996ea4c8667f5756128c6379092fbb19c1923a148af9c39f44059a21b",
+      "sha256": "e9d5baa80295faafe9964f9718569191fa7258076711e0dcc3891264d94e7b80",
       "source": "generated"
     },
     {
@@ -569,7 +569,7 @@
       "source": "src\\arclm\\utils\\imports.py"
     }
   ],
-  "generated_at": "2026-07-27T18:08:19.677814+00:00",
+  "generated_at": "2026-07-28T07:31:01.332131+00:00",
   "notice": "This directory is generated from canonical ArcLM source. Do not edit generated source files directly.",
   "source_version": "1.13.4"
 }

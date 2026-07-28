@@ -652,6 +652,48 @@ window.ARCLM_SEARCH_INDEX = [
   },
   {
     "type": "page",
+    "title": "Distributions",
+    "description": "Generate smaller standalone ArcLM editions from the canonical source.",
+    "page": "guides/distributions.html",
+    "section": ""
+  },
+  {
+    "type": "section",
+    "title": "Source of truth",
+    "description": "The maintained source remains the canonical ArcLM package source tree. Standalone editions are generated from explicit manifests and should not be hand-copied forks.",
+    "page": "guides/distributions.html",
+    "section": "source-of-truth"
+  },
+  {
+    "type": "section",
+    "title": "Editions",
+    "description": "Editions",
+    "page": "guides/distributions.html",
+    "section": "editions"
+  },
+  {
+    "type": "section",
+    "title": "Build and verify",
+    "description": "Build and verify",
+    "page": "guides/distributions.html",
+    "section": "build-and-verify"
+  },
+  {
+    "type": "section",
+    "title": "Boundary rules",
+    "description": "Boundary rules",
+    "page": "guides/distributions.html",
+    "section": "boundary-rules"
+  },
+  {
+    "type": "section",
+    "title": "Limitations",
+    "description": "Limitations",
+    "page": "guides/distributions.html",
+    "section": "limitations"
+  },
+  {
+    "type": "page",
     "title": "CLI",
     "description": "Use ArcLM from the command line.",
     "page": "guides/cli.html",
@@ -698,69 +740,6 @@ window.ARCLM_SEARCH_INDEX = [
     "description": "Limitations",
     "page": "guides/web-studio.html",
     "section": "limitations"
-  },
-  {
-    "type": "section",
-    "title": "GPT-Style Simple Interface",
-    "description": "The legacy launch command now opens a GPT-style local chat application with backend-authoritative ModelPill states, CPU/CUDA device reporting and Flask model-management endpoints.",
-    "page": "guides/web-studio.html",
-    "section": "gpt-style-simple-interface"
-  },
-  {
-    "type": "section",
-    "title": "Thinking Status and Response Metrics",
-    "description": "Visible thinking status shows real application stages, response timer fields, token accounting and tokens per second without exposing hidden reasoning.",
-    "page": "guides/web-studio.html",
-    "section": "thinking-status-and-response-metrics"
-  },
-  {
-    "type": "section",
-    "title": "Agent Mode and Tool Calls",
-    "description": "Agent mode uses ArcLM Agent Runtime tools, permissions, tool approvals metadata and visible tool-call cards for safe inspect_model and context tools.",
-    "page": "guides/web-studio.html",
-    "section": "agent-mode-and-tool-calls"
-  },
-  {
-    "type": "section",
-    "title": "Operation Terminal",
-    "description": "The bottom drawer is a read-only structured operation event viewer using SSE with bounded polling fallback.",
-    "page": "guides/web-studio.html",
-    "section": "operation-terminal"
-  },
-  {
-    "type": "section",
-    "title": "Token Reveal and Streaming Status",
-    "description": "True backend streaming is supported for adapters that emit decoded deltas during generation; non-streaming adapters use the complete-response path with token reveal only as a visual fallback.",
-    "page": "guides/web-studio.html",
-    "section": "token-reveal-and-streaming-status"
-  },
-  {
-    "type": "section",
-    "title": "Prompt Queue",
-    "description": "Persistent sequential prompt queue with queue positions, FIFO execution, restart recovery, cancellation, and context resolution when queued prompts begin.",
-    "page": "guides/web-studio.html",
-    "section": "prompt-queue"
-  },
-  {
-    "type": "section",
-    "title": "Simple Interface Storage",
-    "description": "Conversations and messages are saved as local JSON, with a SQLite sidecar for generation runs, tool calls, tool results, training candidates and settings.",
-    "page": "guides/web-studio.html",
-    "section": "simple-interface-storage"
-  },
-  {
-    "type": "section",
-    "title": "Chat Templates",
-    "description": "Templates map normalized ArcLM roles to model-specific roles, select an output mode and define the user input field. Formatted templates use restricted placeholders only.",
-    "page": "guides/web-studio.html",
-    "section": "chat-templates"
-  },
-  {
-    "type": "section",
-    "title": "Context and Memory",
-    "description": "Saved history is distinct from the active context sent to the model. Summaries and cross-chat memory remain disabled by default.",
-    "page": "guides/web-studio.html",
-    "section": "context-and-memory"
   },
   {
     "type": "page",

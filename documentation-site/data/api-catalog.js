@@ -387,7 +387,7 @@ window.ARCLM_API_CATALOG = [
     "kind": "class",
     "category": "agents",
     "status": "Beta",
-    "signature": "AgentRunner(*, max_steps: 'int' = 8, approval_handler: 'ToolApprovalHandler | None' = None, timeout_seconds: 'float | None' = None) -> 'None'",
+    "signature": "AgentRunner(*, max_steps: 'int' = 8, approval_handler: 'ToolApprovalHandler | None' = None, timeout_seconds: 'float | None' = None, trace_handler: 'Any | None' = None) -> 'None'",
     "summary": "Execute agent behavior with bounded model/tool steps.",
     "parameters": [
       [
@@ -403,6 +403,11 @@ window.ARCLM_API_CATALOG = [
       [
         "timeout_seconds",
         "float | None",
+        "None"
+      ],
+      [
+        "trace_handler",
+        "Any | None",
         "None"
       ]
     ],
@@ -8420,15 +8425,15 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
@@ -8440,11 +8445,11 @@ window.ARCLM_API_CATALOG = [
         "Geeft eenvoudige modelmogelijkheden terug."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
@@ -8452,15 +8457,15 @@ window.ARCLM_API_CATALOG = [
         "Berekent causal-lm loss als het model zelf geen loss geeft."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ]
     ]
@@ -10082,6 +10087,10 @@ window.ARCLM_API_CATALOG = [
         "Alias for :meth:`save` for Hugging Face-style user expectations."
       ],
       [
+        "stream_generate(self, prompt: 'PromptLike', **generation_kwargs: 'Any')",
+        "Yield real native ArcLM text deltas when this loaded model supports it."
+      ],
+      [
         "to(self, device: 'Union[str, torch.device]') -> \"'ExternalLoadedModel'\"",
         "Move the underlying model to a device when the backend supports it."
       ]
@@ -10339,6 +10348,10 @@ window.ARCLM_API_CATALOG = [
       [
         "generate(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
         "Generate tokens from ``start_text`` with the native ArcLM model."
+      ],
+      [
+        "generate_stream(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None, cancel_check=None)",
+        "Yield decoded generated token text during native ArcLM inference."
       ],
       [
         "generate_string(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
@@ -10652,6 +10665,10 @@ window.ARCLM_API_CATALOG = [
       [
         "generate(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
         "Generate tokens from ``start_text`` with the native ArcLM model."
+      ],
+      [
+        "generate_stream(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None, cancel_check=None)",
+        "Yield decoded generated token text during native ArcLM inference."
       ],
       [
         "generate_string(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
@@ -11425,47 +11442,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -11542,47 +11559,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -11641,47 +11658,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -11855,47 +11872,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -12086,47 +12103,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -14076,47 +14093,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -16137,6 +16154,10 @@ window.ARCLM_API_CATALOG = [
         "Alias for :meth:`save` for Hugging Face-style user expectations."
       ],
       [
+        "stream_generate(self, prompt: 'PromptLike', **generation_kwargs: 'Any')",
+        "Yield real native ArcLM text deltas when this loaded model supports it."
+      ],
+      [
         "to(self, device: 'Union[str, torch.device]') -> \"'ExternalLoadedModel'\"",
         "Move the underlying model to a device when the backend supports it."
       ]
@@ -16550,6 +16571,10 @@ window.ARCLM_API_CATALOG = [
         "Generate tokens from ``start_text`` with the native ArcLM model."
       ],
       [
+        "generate_stream(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None, cancel_check=None)",
+        "Yield decoded generated token text during native ArcLM inference."
+      ],
+      [
         "generate_string(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
         "Generate text and return it as a string."
       ]
@@ -16862,47 +16887,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -17426,47 +17451,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -18206,7 +18231,7 @@ window.ARCLM_API_CATALOG = [
     "kind": "class",
     "category": "root",
     "status": "Stable",
-    "signature": "PreTrainedModelLoader(source: Union[str, pathlib.Path], target_vocab_size: int, target_config: arclm.configs.base.Config, device: str = 'cuda', strict_loading: bool = False) -> None",
+    "signature": "PreTrainedModelLoader(source: Union[str, pathlib.Path], target_vocab_size: int, target_config: arclm.configs.base.Config, device: str = 'cpu', strict_loading: bool = False) -> None",
     "summary": "Load pre-trained models from multiple sources: - HuggingFace transformers - Local checkpoint files - Custom model paths Handles weight alignment and architecture mismatch gracefully.",
     "parameters": [
       [
@@ -18227,7 +18252,7 @@ window.ARCLM_API_CATALOG = [
       [
         "device",
         "str",
-        "'cuda'"
+        "'cpu'"
       ],
       [
         "strict_loading",
@@ -19308,6 +19333,10 @@ window.ARCLM_API_CATALOG = [
       [
         "generate(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
         "Generate tokens from ``start_text`` with the native ArcLM model."
+      ],
+      [
+        "generate_stream(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None, cancel_check=None)",
+        "Yield decoded generated token text during native ArcLM inference."
       ],
       [
         "generate_string(self, start_text, max_new_tokens=20, temperature=1.0, repetition_penalty=1.0, top_k=None, top_p=None)",
@@ -25195,47 +25224,47 @@ window.ARCLM_API_CATALOG = [
         "Add a child module to the current module."
       ],
       [
-        "apply(self: ~T, fn: Callable[[ForwardRef('Module')], NoneType]) -> ~T",
+        "apply(self, fn: collections.abc.Callable[['Module'], None]) -> Self",
         "Apply ``fn`` recursively to every submodule (as returned by ``.children()``) as well as self."
       ],
       [
-        "bfloat16(self: ~T) -> ~T",
+        "bfloat16(self) -> Self",
         "Casts all floating point parameters and buffers to ``bfloat16`` datatype."
       ],
       [
-        "buffers(self, recurse: bool = True) -> Iterator[torch.Tensor]",
+        "buffers(self, recurse: bool = True) -> collections.abc.Iterator[torch.Tensor]",
         "Return an iterator over module buffers."
       ],
       [
-        "children(self) -> Iterator[ForwardRef('Module')]",
+        "children(self) -> collections.abc.Iterator['Module']",
         "Return an iterator over immediate children modules."
       ],
       [
-        "compile(self, *args, **kwargs)",
+        "compile(self, *args, **kwargs) -> None",
         "Compile this Module's forward using :func:`torch.compile`."
       ],
       [
-        "cpu(self: ~T) -> ~T",
+        "cpu(self) -> Self",
         "Move all model parameters and buffers to the CPU."
       ],
       [
-        "cuda(self: ~T, device: Union[int, torch.device, NoneType] = None) -> ~T",
+        "cuda(self, device: int | torch.device | None = None) -> Self",
         "Move all model parameters and buffers to the GPU."
       ],
       [
-        "double(self: ~T) -> ~T",
+        "double(self) -> Self",
         "Casts all floating point parameters and buffers to ``double`` datatype."
       ],
       [
-        "eval(self: ~T) -> ~T",
+        "eval(self) -> Self",
         "Set the module in evaluation mode."
       ],
       [
         "extra_repr(self) -> str",
-        "Set the extra representation of the module."
+        "Return the extra representation of the module."
       ],
       [
-        "float(self: ~T) -> ~T",
+        "float(self) -> Self",
         "Casts all floating point parameters and buffers to ``float`` datatype."
       ]
     ]
@@ -25364,7 +25393,7 @@ window.ARCLM_API_CATALOG = [
     "kind": "class",
     "category": "training",
     "status": "Stable",
-    "signature": "PreTrainedModelLoader(source: Union[str, pathlib.Path], target_vocab_size: int, target_config: arclm.configs.base.Config, device: str = 'cuda', strict_loading: bool = False) -> None",
+    "signature": "PreTrainedModelLoader(source: Union[str, pathlib.Path], target_vocab_size: int, target_config: arclm.configs.base.Config, device: str = 'cpu', strict_loading: bool = False) -> None",
     "summary": "Load pre-trained models from multiple sources: - HuggingFace transformers - Local checkpoint files - Custom model paths Handles weight alignment and architecture mismatch gracefully.",
     "parameters": [
       [
@@ -25385,7 +25414,7 @@ window.ARCLM_API_CATALOG = [
       [
         "device",
         "str",
-        "'cuda'"
+        "'cpu'"
       ],
       [
         "strict_loading",
