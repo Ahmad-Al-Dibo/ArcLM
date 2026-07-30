@@ -1,3 +1,0 @@
-{"id":"logic_route","prompt":"A request is safe only if it has approval and no missing data. Request A has approval but missing data. Is it safe? Give the final answer in one sentence."}
-{"id":"math_check","prompt":"A training run logs losses 2.0, 1.5, and 1.2. What is the average loss? Give the final answer only."}
-{"id":"debug_choice","prompt":"A script fails because tokenizer.pad_token is None. What is the practical fix before batching? Give one concise answer."}

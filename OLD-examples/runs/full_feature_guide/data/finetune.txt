@@ -1,6 +1,0 @@
-<|qa_start|> What is ArcLM?
-local model training
-<|res_start|> ArcLM is a compact PyTorch language-model library. <|end|>
-<|qa_start|> What does SmartLoader inspect?
-model folders and checkpoints
-<|res_start|> It inspects metadata, tokenizer files, weights, and resume state. <|end|>
