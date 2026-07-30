@@ -1,0 +1,56 @@
+embed_dim: 64
+block_size: 256
+batch_size: 8
+num_epochs: 100
+vocab_size: null
+learning_rate: 0.001
+weight_decay: 0.0
+dropout: 0.0
+grad_clip: null
+num_blocks: 2
+model_path: output/model.pth
+data_path: data/data.txt
+tokenizer_path: output/tokenizer.model
+user_defined_symbols:
+- <|qa_start|>
+- <|res_start|>
+- <|end|>
+- <|pad|>
+domain_data_path: null
+domain_data_repeats: 1
+tokenizer_type: word
+sentencepiece_model_type: bpe
+sentencepiece_character_coverage: 1.0
+tokenizer_max_line_length: 4000
+max_vocab: 50000
+max_data_size: 1000000
+device: cpu
+validation_split: 0.0
+early_stopping_patience: null
+early_stopping_min_delta: 0.0
+restore_best_model: true
+seed: 42
+diagnostic_top_k: 5
+concept_benchmark_top_k: 10
+diagnostic_prompts:
+- machine learning
+- donald trump
+diagnostic_sample_tokens: 60
+tokenizer_rare_threshold: 2
+training_log_interval: 50
+metrics_log_path: null
+run_long_context_evaluation: false
+use_checkpoint_tokenizer: false
+long_context_block_sizes:
+- 32
+- 64
+- 128
+freeze_backbone: false
+freeze_embedding: false
+use_discriminative_lr: false
+lr_multiplier: null
+use_lr_scheduler: false
+lr_scheduler_strategy: cosine
+warmup_epochs: 1
+checkpoint_interval: 0
+checkpoint_batch_interval: 0

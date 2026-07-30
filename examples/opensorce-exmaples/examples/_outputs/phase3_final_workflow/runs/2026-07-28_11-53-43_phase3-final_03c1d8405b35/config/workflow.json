@@ -1,0 +1,53 @@
+{
+  "data": {
+    "format": "jsonl",
+    "source": "examples\\_outputs\\phase3_final_workflow\\records.jsonl"
+  },
+  "deduplicate": {
+    "field": "text"
+  },
+  "evaluate": {
+    "enabled": true,
+    "max_batches": 1
+  },
+  "model": {
+    "device": "cpu",
+    "source": "hf-internal-testing/tiny-random-gpt2"
+  },
+  "quality": {
+    "checks": [
+      "empty",
+      "duplicates"
+    ],
+    "schema": "text"
+  },
+  "run": {
+    "name": "phase3-final",
+    "output_dir": "examples\\_outputs\\phase3_final_workflow\\runs",
+    "seed": 123
+  },
+  "split": {
+    "key": "text",
+    "seed": 123,
+    "strategy": "hash",
+    "test": 0.0,
+    "train": 1.0,
+    "validation": 0.0
+  },
+  "tokenization": {
+    "cache_dir": "examples\\_outputs\\phase3_final_workflow\\cache",
+    "max_length": 16,
+    "schema": "text",
+    "tokenizer": "hf-internal-testing/tiny-random-gpt2"
+  },
+  "train": {
+    "batch_size": 1,
+    "enabled": true,
+    "learning_rate": 0.0001,
+    "max_steps": 1
+  },
+  "validate": {
+    "schema": "text",
+    "strict": true
+  }
+}

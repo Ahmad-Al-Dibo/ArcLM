@@ -1,0 +1,4 @@
+{"id": "1", "prompt": "Say hello", "completion": "Hello from ArcLM.", "split": "train"}
+{"id": "2", "prompt": "Name the framework", "completion": "ArcLM.", "split": "train"}
+{"id": "3", "prompt": "Say hello", "completion": "Hello from ArcLM.", "split": "validation"}
+{"id": "4", "prompt": "Complete this", "completion": "Done.", "split": "test"}

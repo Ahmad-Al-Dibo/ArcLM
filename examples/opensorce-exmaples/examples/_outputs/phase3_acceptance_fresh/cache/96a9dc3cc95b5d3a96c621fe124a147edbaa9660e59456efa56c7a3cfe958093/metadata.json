@@ -1,0 +1,20 @@
+{
+  "arclm_version": "0.8.0.dev0",
+  "complete": true,
+  "config": {
+    "add_bos": false,
+    "add_eos": false,
+    "cache_dir": "examples\\_outputs\\phase3_acceptance_fresh\\cache",
+    "create_labels": true,
+    "max_length": 32,
+    "padding": false,
+    "prompt_masking": false,
+    "schema": "prompt_completion",
+    "text_field": "text",
+    "tokenizer": "hf-internal-testing/tiny-random-gpt2",
+    "tokenizer_revision": null,
+    "truncation": true
+  },
+  "created_at": "2026-07-28T09:38:38.215287+00:00",
+  "key": "96a9dc3cc95b5d3a96c621fe124a147edbaa9660e59456efa56c7a3cfe958093"
+}

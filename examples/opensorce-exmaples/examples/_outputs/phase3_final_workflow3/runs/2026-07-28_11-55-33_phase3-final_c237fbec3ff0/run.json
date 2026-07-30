@@ -1,0 +1,31 @@
+{
+  "arclm_version": "0.8.0.dev0",
+  "artifacts": [],
+  "dependencies": {
+    "tokenizers": "0.22.2",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.14.1"
+  },
+  "device": {
+    "cuda_available": false,
+    "cuda_device_count": 0
+  },
+  "ended_at": "2026-07-28T09:55:51.399553+00:00",
+  "errors": [],
+  "git": {
+    "commit": "280ad91d273ca3875c80d8750929e0f1b7573224",
+    "dirty": true
+  },
+  "metrics": [],
+  "name": "phase3-final",
+  "path": "examples\\_outputs\\phase3_final_workflow3\\runs\\2026-07-28_11-55-33_phase3-final_c237fbec3ff0",
+  "platform": "Windows-11-10.0.22631-SP0",
+  "python_version": "3.12.10",
+  "report_type": "run_metadata",
+  "run_id": "c237fbec3ff0",
+  "schema_version": "1.0",
+  "seeds": {},
+  "started_at": "2026-07-28T09:55:40.195616+00:00",
+  "status": "completed",
+  "warnings": []
+}

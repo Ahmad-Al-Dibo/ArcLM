@@ -5,7 +5,7 @@ Foundational provider-independent tool and agent infrastructure for ArcLM.
 
 from __future__ import annotations
 
-from .agent import Agent
+from .agent import Agent, AgentBase
 from .approvals import ApprovalDecision, AutoApprovalHandler, DenyApprovalHandler, ToolApprovalHandler, ToolApprovalRequest
 from .capabilities import AgentCapabilityReport, CapabilityStatus, get_agent_capabilities
 from .configuration import AgentConfig, AgentRunnerConfig, DocumentToolConfig, SessionConfig, TraceConfig, WebToolConfig
@@ -25,6 +25,7 @@ from .tracing import AgentTrace, AgentTraceEvent
 
 __all__ = [
     "Agent",
+    "AgentBase",
     "AgentRunner",
     "AgentRunResult",
     "AgentSession",

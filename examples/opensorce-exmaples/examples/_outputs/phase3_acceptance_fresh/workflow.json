@@ -1,0 +1,55 @@
+{
+  "run": {
+    "name": "phase3-acceptance",
+    "output_dir": "examples\\_outputs\\phase3_acceptance_fresh\\runs"
+  },
+  "data": {
+    "path": "examples\\_outputs\\phase3_acceptance_fresh\\records.jsonl",
+    "format": "jsonl",
+    "schema": "prompt_completion",
+    "streaming": true,
+    "strict": false
+  },
+  "deduplication": {
+    "fields": [
+      "prompt",
+      "completion"
+    ],
+    "normalize": true
+  },
+  "split": {
+    "train": 0.5,
+    "validation": 0.25,
+    "test": 0.25,
+    "split_field": "split",
+    "seed": 123
+  },
+  "tokenization": {
+    "tokenizer": "hf-internal-testing/tiny-random-gpt2",
+    "schema": "prompt_completion",
+    "max_length": 32,
+    "cache_dir": "examples\\_outputs\\phase3_acceptance_fresh\\cache"
+  },
+  "model": {
+    "source": "hf-internal-testing/tiny-random-gpt2",
+    "device": "cpu",
+    "trust_remote_code": false
+  },
+  "training": {
+    "enabled": true,
+    "max_steps": 1,
+    "batch_size": 1,
+    "epochs": 1
+  },
+  "stages": [
+    "load",
+    "validate",
+    "quality",
+    "deduplicate",
+    "split",
+    "tokenize",
+    "model",
+    "train",
+    "evaluate"
+  ]
+}

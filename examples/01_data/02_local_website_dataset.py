@@ -35,6 +35,7 @@ class TextExtractor(HTMLParser):
     def handle_endtag(self, tag):
         if tag in {"nav", "footer", "script", "style"}:
             self.skip = False
+        # self.handle_data("\n")  # add a newline after each tag to separate text blocks
 
     def handle_data(self, data):
         text = " ".join(data.split())

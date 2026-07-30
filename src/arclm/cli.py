@@ -86,6 +86,45 @@ def configure_cli_streams():
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(errors="replace")
+from arclm.cli_utils import create_init_workspace
+from arclm._data.init_cli import BASIC_MODULES
+
+
+def init_command(args: argparse.Namespace) -> int:
+    """Create a starter ArcLM workspace."""
+    project_dir = getattr(args, "project_dir", None) or "."
+    project_name = getattr(args, "name", None) or Path(project_dir).expanduser().resolve().name or "arcml-project"
+    try:
+        create_init_workspace(project_dir, project_name, BASIC_MODULES)
+    except Exception as exc:  # pragma: no cover - defensive path
+        print(f"Error creating workspace: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"Initialized ArcLM workspace at: {Path(project_dir).expanduser().resolve()}")
+    return 0
+
+
+    # the `init` scaffolding templates and writer live in
+    # `arclm._data.init_cli` and `arclm.cli_utils` respectively.
+
+
+def create_init_parser(subparsers: argparse._SubParsersAction) -> None:
+    parser = subparsers.add_parser(
+        "init",
+        help="Create a starter ArcLM development workspace",
+        description="Scaffold a beginner-friendly project layout for ArcLM development",
+    )
+    parser.add_argument(
+        "--project-dir",
+        default=".",
+        help="Directory to create the new ArcLM workspace in",
+    )
+    parser.add_argument(
+        "--name",
+        default=None,
+        help="Project name to use in the generated README and entry point",
+    )
+    parser.set_defaults(func=init_command)
 
 
 def create_train_parser(subparsers):
@@ -1007,6 +1046,7 @@ Examples:
     subparsers = parser.add_subparsers(title="commands", dest="command")
 
     create_version_parser(subparsers)
+    create_init_parser(subparsers)
     create_info_parser(subparsers)
     create_train_parser(subparsers)
     create_eval_parser(subparsers)

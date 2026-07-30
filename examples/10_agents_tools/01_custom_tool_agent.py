@@ -8,21 +8,22 @@ from __future__ import annotations
 
 import json
 
-from arclm.agents import Agent, AgentRunner, ModelResponse, ToolCall, tool
+from arclm.agents import Agent, AgentRunner, AgentBase, tool
+# from .messages import ModelResponse, ToolCall
 
-
-class OneToolThenDoneModel:
+class OneToolThenDoneModel(AgentBase):
     def __init__(self, tool_name: str, arguments: dict):
-        self.tool_name = tool_name
-        self.arguments = dict(arguments)
-        self.calls = 0
+        super().__init__(tool_name=tool_name, arguments=arguments)
 
-    def generate_response(self, *, messages, tools, instructions, session):
-        self.calls += 1
-        if self.calls == 1:
-            return ModelResponse(tool_calls=[ToolCall(id="call_1", name=self.tool_name, arguments=self.arguments)])
-        return ModelResponse(content="Done. The tool result was processed safely.")
 
+    # for custom processing of the tool result, you can override the generate_response method
+
+    # def generate_response(self, *, messages, tools, instructions, session):
+    #     """Return a provider-independent model response."""
+    #     self.calls += 1
+    #     if self.calls == 1:
+    #         return ModelResponse(tool_calls=[ToolCall(id="call_1", name=self.tool_name, arguments=self.arguments)])
+    #     return ModelResponse(content="Done. The tool result was processed safely.")
 
 def print_json(value) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, default=str))

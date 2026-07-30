@@ -15,6 +15,9 @@ from arclm.tokenizers import Tokenizer
 
 
 def asset_path(*parts: str) -> Path:
+    """ this function returns the path to an asset file in the examples/01_data/assets directory.
+    
+    """
     return Path(__file__).resolve().parents[1] / "assets" / Path(*parts)
 
 
@@ -41,6 +44,7 @@ def main() -> None:
     )
     report = build_dataset_report(validation.valid_records, tokenizer=tokenizer, text_fields=("text",), validation_result=validation, manifest=manifest)
     print_json({"validation": validation.to_dict(), "report": report.to_dict()})
+    report_path = asset_path("reports", "tiny_records_report.json")
 
 
 if __name__ == "__main__":

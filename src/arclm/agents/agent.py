@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .messages import ModelResponse, ToolCall
+
 from .configuration import AgentConfig
 from .permissions import ToolPolicy
 from .tool import Tool
@@ -38,3 +40,17 @@ class Agent:
             max_steps=self.max_steps,
             metadata=dict(self.metadata),
         )
+
+
+class AgentBase(Agent):
+    def __init__(self, tool_name: str, arguments: dict):
+        self.tool_name = tool_name
+        self.arguments = dict(arguments)
+        self.calls = 0
+
+    def generate_response(self, *, messages, tools, instructions, session):
+        """Return a provider-independent model response."""
+        self.calls += 1
+        if self.calls == 1:
+            return ModelResponse(tool_calls=[ToolCall(id="call_1", name=self.tool_name, arguments=self.arguments)])
+        return ModelResponse(content="Done. The tool result was processed safely.")

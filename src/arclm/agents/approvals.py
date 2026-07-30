@@ -28,9 +28,16 @@ class ToolApprovalRequest:
 
 class ToolApprovalHandler(Protocol):
     """Protocol for human or application approval handlers."""
-
+    # This is a typing Protocol: no implementation is provided here on purpose.
+    # Concrete handlers should implement this coroutine.
     async def request_approval(self, request: ToolApprovalRequest) -> ApprovalDecision:
-        """Return an approval decision for a tool request."""
+        """Return an approval decision for a tool request.
+
+        Implementations should provide the actual approval logic. The body
+        is intentionally left as an ellipsis to indicate an abstract contract.
+        """
+
+        
 
 
 class DenyApprovalHandler:

@@ -1,0 +1,15 @@
+{
+  "model_parameters": 100129,
+  "vocab_size": 33,
+  "dataset_report": {
+    "samples_after_cleaning": 5,
+    "balanced_samples": 2,
+    "language_counts": {
+      "ar": 2,
+      "other": 3
+    },
+    "avg_quality_score": 0.32
+  },
+  "tokenizer_path": "D:\\AhmadAlDibo2026-2030\\2026\\Projects\\ArcLM-LLMs-Library\\ArcLM-Special-version\\outputs\\tokenizer.json",
+  "checkpoint_dir": "D:\\AhmadAlDibo2026-2030\\2026\\Projects\\ArcLM-LLMs-Library\\ArcLM-Special-version\\outputs\\checkpoints"
+}

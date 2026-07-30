@@ -1,6 +1,7 @@
 ﻿"""Centrale configuratie voor ArcLM."""
 
 from dataclasses import dataclass, asdict, field
+from tabulate import tabulate
 from pathlib import Path
 import json
 
@@ -13,6 +14,13 @@ class Config:
     De class bewaart instellingen voor modelgrootte, training, data,
     tokenizer, evaluatie en finetuning. Waarden kunnen via keyword
     arguments worden overschreven.
+
+    het meetste gebruikte instelling zijn: 
+        - embed_dim: int
+        - block_size: int
+        - batch_size: int
+        - num_epochs: int
+        - vocab_size: None # wordt gezet nadat de tokenizer is gebouwd.
     """
 
     
@@ -171,6 +179,16 @@ class Config:
                 value = new_value
 
             setattr(self, key, value)
+
+    def view_config(self):
+        """Deze functie print een table view voormaat van de instellingen
+        
+        """
+        cfg_name, cfg_value = zip(*self.to_dict().items())
+        print("ArcLM Configuratie:")
+        print(tabulate(list(zip(cfg_name, cfg_value)), headers=["Config", "Init Value"], tablefmt="grid"))
+   
+        
 
 
 

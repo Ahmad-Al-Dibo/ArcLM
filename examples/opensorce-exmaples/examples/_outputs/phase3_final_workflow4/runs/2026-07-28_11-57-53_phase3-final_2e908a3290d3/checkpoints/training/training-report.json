@@ -1,0 +1,44 @@
+{
+  "arclm_version": "0.8.0.dev0",
+  "backend": "huggingface",
+  "checkpoints": [
+    "examples\\_outputs\\phase3_final_workflow4\\runs\\2026-07-28_11-57-53_phase3-final_2e908a3290d3\\checkpoints\\training"
+  ],
+  "config": {
+    "batch_size": 1,
+    "checkpoint_steps": null,
+    "checkpoint_strategy": "none",
+    "device": "auto",
+    "early_stopping_patience": null,
+    "epochs": 1,
+    "evaluation_steps": null,
+    "evaluation_strategy": "none",
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 0.0002,
+    "max_grad_norm": 1.0,
+    "max_steps": 1,
+    "optimizer": "adamw",
+    "output_dir": "examples\\_outputs\\phase3_final_workflow4\\runs\\2026-07-28_11-57-53_phase3-final_2e908a3290d3\\checkpoints\\training",
+    "precision": "auto",
+    "resume_from_checkpoint": null,
+    "save_tokenizer": true,
+    "scheduler": "constant",
+    "seed": 42,
+    "task": "sft",
+    "warmup_ratio": 0.0,
+    "weight_decay": 0.0
+  },
+  "created_at": "2026-07-28T09:57:58.509921+00:00",
+  "duration_seconds": 1.3424718000023859,
+  "errors": [],
+  "metrics": {
+    "loss_history": [
+      6.885097026824951
+    ]
+  },
+  "output_dir": "examples\\_outputs\\phase3_final_workflow4\\runs\\2026-07-28_11-57-53_phase3-final_2e908a3290d3\\checkpoints\\training",
+  "report_type": "training_report",
+  "schema_version": "1.0",
+  "steps": 1,
+  "warnings": []
+}

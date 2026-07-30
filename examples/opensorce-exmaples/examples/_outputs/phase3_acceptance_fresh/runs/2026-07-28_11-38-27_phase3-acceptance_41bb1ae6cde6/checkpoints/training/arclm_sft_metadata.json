@@ -1,0 +1,15 @@
+{
+  "model": "hf-internal-testing/tiny-random-gpt2",
+  "dataset": "examples\\_outputs\\phase3_acceptance_fresh\\runs\\2026-07-28_11-38-27_phase3-acceptance_41bb1ae6cde6\\checkpoints\\training\\train.jsonl",
+  "output_dir": "examples\\_outputs\\phase3_acceptance_fresh\\runs\\2026-07-28_11-38-27_phase3-acceptance_41bb1ae6cde6\\checkpoints\\training",
+  "backend": "huggingface",
+  "use_lora": false,
+  "assistant_only_loss": true,
+  "train_loss_history": [
+    6.886409282684326
+  ],
+  "steps": 1,
+  "metadata_path": "examples\\_outputs\\phase3_acceptance_fresh\\runs\\2026-07-28_11-38-27_phase3-acceptance_41bb1ae6cde6\\checkpoints\\training\\arclm_sft_metadata.json",
+  "adapter_path": null,
+  "full_model_path": "examples\\_outputs\\phase3_acceptance_fresh\\runs\\2026-07-28_11-38-27_phase3-acceptance_41bb1ae6cde6\\checkpoints\\training"
+}
