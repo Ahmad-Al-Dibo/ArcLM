@@ -337,16 +337,23 @@ def tokenizer_from_checkpoint(checkpoint_or_source):
     return tokenizer
 
 
-def checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_size, tokenizer=None):
-    """Controleert of een checkpoint past bij continued training."""
-    checkpoint_config = checkpoint.get("config", {})
-    if checkpoint_config == {}:
-        print("[WARNING] in `checkpoint_is_compatible` checkpoint config return {}! ")
+def _checkpoint_base_compatible(checkpoint, config, vocab_size, tokenizer=None):
+    """Shared shape/tokenizer checks for checkpoint compatibility.
+
+    Returns ``(compatible, checkpoint_config, same_vocab, same_shape,
+    same_tokenizer)``. An empty or missing checkpoint config is treated as
+    incompatible: without recorded settings we cannot prove the checkpoint
+    matches the current run.
+    """
+    checkpoint_config = checkpoint.get("config") or {}
+    if not checkpoint_config:
+        return False, checkpoint_config, False, False, False
+
     same_vocab = checkpoint.get("vocab_size") == vocab_size
     same_shape = (
-        checkpoint_config.get("embed_dim", config.embed_dim) == config.embed_dim
-        and checkpoint_config.get("block_size", config.block_size) == config.block_size
-        and checkpoint_config.get("num_blocks", config.num_blocks) == config.num_blocks
+        checkpoint_config.get("embed_dim") == config.embed_dim
+        and checkpoint_config.get("block_size") == config.block_size
+        and checkpoint_config.get("num_blocks") == config.num_blocks
     )
     same_tokenizer = (
         checkpoint_config.get("tokenizer_type", "word")
@@ -364,62 +371,49 @@ def checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_siz
         else:
             same_tokenizer = False
 
-    same_training_strategy = (
-        checkpoint_config.get("learning_rate", config.learning_rate) == config.learning_rate
-        and checkpoint_config.get("weight_decay", config.weight_decay) == config.weight_decay
-        and checkpoint_config.get("dropout", 0.0) == config.dropout
-        and checkpoint_config.get("validation_split", config.validation_split)
-        == config.validation_split
+    return True, checkpoint_config, same_vocab, same_shape, same_tokenizer
+
+
+def checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_size, tokenizer=None):
+    """Return True when a checkpoint is safe to resume training from.
+
+    Continued training is strict: vocab, model shape, tokenizer settings and
+    the recorded training hyperparameters must all match. A checkpoint with a
+    missing/empty config is never treated as compatible.
+    """
+    ok, checkpoint_config, same_vocab, same_shape, same_tokenizer = _checkpoint_base_compatible(
+        checkpoint, config, vocab_size, tokenizer=tokenizer
     )
-    
-    # Continued training is strict: vocab, model shape, tokenizer and training must match.
+    if not ok:
+        return False
+
+    same_training_strategy = (
+        checkpoint_config.get("learning_rate") == config.learning_rate
+        and checkpoint_config.get("weight_decay") == config.weight_decay
+        and checkpoint_config.get("dropout", 0.0) == config.dropout
+        and checkpoint_config.get("validation_split") == config.validation_split
+    )
     return same_vocab and same_shape and same_tokenizer and same_training_strategy
 
 
 def checkpoint_is_compatible_for_tuning(checkpoint, config, vocab_size, tokenizer=None):
-    """Controleert of een checkpoint past bij finetuning."""
-    checkpoint_config = checkpoint.get("config", {})
-    if checkpoint_config == {}:
-        print("[WARNING] in `checkpoint_is_compatible` checkpoint config return {}! ")
-    same_vocab = checkpoint.get("vocab_size") == vocab_size
-    same_shape = (
-        checkpoint_config.get("embed_dim", config.embed_dim) == config.embed_dim
-        and checkpoint_config.get("block_size", config.block_size) == config.block_size
-        and checkpoint_config.get("num_blocks", config.num_blocks) == config.num_blocks
-    )
-    same_tokenizer = (
-        checkpoint_config.get("tokenizer_type", "word")
-        == getattr(config, "tokenizer_type", "word")
-        and checkpoint_config.get("sentencepiece_model_type", "bpe")
-        == getattr(config, "sentencepiece_model_type", "bpe")
-    )
-    if tokenizer is not None:
-        checkpoint_stoi = checkpoint.get("stoi")
-        checkpoint_vocab = checkpoint.get("vocab")
-        if checkpoint_stoi is not None:
-            same_tokenizer = same_tokenizer and checkpoint_stoi == tokenizer.stoi
-        elif checkpoint_vocab is not None:
-            same_tokenizer = same_tokenizer and checkpoint_vocab == tokenizer.vocab
-        else:
-            same_tokenizer = False
+    """Return True when a checkpoint is safe to fine-tune from.
 
-    # Bij finetuning hoeft de learning rate niet gelijk te zijn aan het checkpoint.
-    # De oude, strengere check blijft hier als referentie staan.
-    # same_training_strategy = (
-    #     checkpoint_config.get("learning_rate", config.learning_rate) == config.learning_rate
-    #     and checkpoint_config.get("weight_decay", config.weight_decay) == config.weight_decay
-    #     and checkpoint_config.get("dropout", 0.0) == config.dropout
-    #     and checkpoint_config.get("validation_split", config.validation_split)
-    #     == config.validation_split
-    # )
-    same_training_strategy = (
-        checkpoint_config.get("weight_decay", config.weight_decay) == config.weight_decay
-        and checkpoint_config.get("dropout", 0.0) == config.dropout
-        and checkpoint_config.get("validation_split", config.validation_split)
-        == config.validation_split
+    Fine-tuning allows a different learning rate than the checkpoint, but the
+    model shape and tokenizer must still match. A checkpoint with a
+    missing/empty config is never treated as compatible.
+    """
+    ok, checkpoint_config, _same_vocab, same_shape, same_tokenizer = _checkpoint_base_compatible(
+        checkpoint, config, vocab_size, tokenizer=tokenizer
     )
-    print("same_vocab, same_shape, same_tokenizer, same_training_strategy", same_vocab, same_shape, same_tokenizer, same_training_strategy)
-    # Finetuning mag een andere vocab_size hebben, maar de basisvorm moet passen.
+    if not ok:
+        return False
+
+    same_training_strategy = (
+        checkpoint_config.get("weight_decay") == config.weight_decay
+        and checkpoint_config.get("dropout", 0.0) == config.dropout
+        and checkpoint_config.get("validation_split") == config.validation_split
+    )
     return same_shape and same_tokenizer and same_training_strategy
 
 

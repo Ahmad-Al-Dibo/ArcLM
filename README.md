@@ -1,150 +1,231 @@
 # ArcLM
 
-ArcLM is a compact native-first Python library for educational and research
-language-model workflows. Its core path is intentionally small: load local data,
-tokenize text, train a tiny causal language model, save or reload a
-checkpoint, evaluate, generate, and inspect the pipeline.
+**A compact language-model toolkit you can actually read.**
 
-ArcLM is aimed at students, early researchers, and developers who want to learn
-how an LLM library fits together without depending on a production serving stack.
-
-## Install
-
-Core install is light (~50 MB: numpy + sentencepiece). PyTorch is **optional**
-and only needed for models, training, checkpoints, and generation:
+ArcLM covers the full local LLM workflow — data → tokenize → train → checkpoint → evaluate → generate → inspect — with a light core install and optional PyTorch for model work.
 
 ```bash
-pip install arclm            # data, tokenizers, configs, agents, security, search
+pip install arclm            # ~50 MB: data, tokenizers, agents, security, search
 pip install "arclm[train]"   # + torch: models, training, inference, evaluation
 ```
 
-For CPU-only torch installs, install the CPU wheel first to avoid downloading a
-CUDA-enabled build:
+- **Light by default** — core has no PyTorch; train only when you need to
+- **Native-first** — tiny GPT-style model in pure PyTorch, no serving stack required
+- **Educational** — small modules, clear APIs, inspectable pipeline traces
+- **Safe defaults** — security helpers, bounded agent runtime, trusted checkpoint loading
 
-```bash
-python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-python -m pip install "arclm[train]"
-```
+Full documentation: **[docs/guide.md](docs/guide.md)** · Migrating from 1.x: **[docs/migration-1-to-2.md](docs/migration-1-to-2.md)**
 
-For local development in this repository:
+---
 
-```bash
-pip install -e ".[dev,train]"
-```
+## 30-second quickstart
 
-Optional integrations are installed only when requested:
-
-```bash
-pip install "arclm[web]"     # FastAPI Studio (includes torch)
-pip install "arclm[hf]"      # Hugging Face transformers stack
-pip install "arclm[peft]"    # LoRA / QLoRA
-pip install "arclm[security]"
-```
-
-The local Studio backend:
-
-```bash
-python -m arclm web-api
-```
-
-Migrating from 1.x? See [docs/migration-1-to-2.md](docs/migration-1-to-2.md).
-
-## Quick Start
+Train a tiny model on a few sentences (requires `arclm[train]`):
 
 ```python
-from arclm.datasets import load_dataset
-from arclm.models import ArcLM
-from arclm.tokenizers import Tokenizer
+from arclm.configs import create_config
+from arclm.training import train_model
 
-records = load_dataset([{"text": "ArcLM trains small native models."}])
-tokenizer = Tokenizer(max_vocab=32)
-tokenizer.build(records[0]["text"])
+config = create_config(embed_dim=32, block_size=16, num_blocks=1, num_epochs=3)
+result = train_model(
+    mode="pre_training",
+    data="data.txt",          # plain text file
+    output="models/tiny.pth",
+    config=config,
+)
+print("final loss:", result.history["train_losses"][-1])
+```
 
-model = ArcLM(
-    vocab_size=tokenizer.get_vocab_size(),
-    embed_dim=16,
-    block_size=8,
-    num_blocks=1,
+Generate from the checkpoint:
+
+```python
+from arclm.inference import load_model
+
+model = load_model("models/tiny.pth")
+print(model.predict("the future of", max_new_tokens=20))
+```
+
+## Feature tour
+
+Every area in one snippet — details in the [guide](docs/guide.md).
+
+<details>
+<summary><b>Datasets</b> — load, validate, clean, dedupe</summary>
+
+```python
+from arclm.datasets import load_dataset, validate_records, deduplicate
+
+records = load_dataset([{"text": "ArcLM loads local records."}])
+issues = validate_records(records)
+clean, report = deduplicate(records)
+```
+</details>
+
+<details>
+<summary><b>Tokenizers</b> — word-level and SentencePiece</summary>
+
+```python
+from arclm.tokenizers import Tokenizer, AutoTokenizer
+
+tok = Tokenizer(max_vocab=512)
+tok.build("arc lm trains tiny models")
+ids = tok.encode_text("arc lm")
+
+# or from a config
+tok2 = AutoTokenizer.from_config(config)  # uses config.tokenizer_type
+```
+</details>
+
+<details>
+<summary><b>Models</b> — native ArcLM GPT</summary>
+
+```python
+from arclm.models import ArcLM, AutoModel
+
+model = ArcLM(vocab_size=512, embed_dim=64, block_size=32, num_blocks=2)
+# or
+model = AutoModel.from_config(config)
+```
+</details>
+
+<details>
+<summary><b>Training</b> — Trainer + callbacks</summary>
+
+```python
+from arclm.training import Trainer, TrainingConfig
+
+trainer = Trainer(model=model, config=TrainingConfig(epochs=5, batch_size=8))
+history = trainer.train_dataset(train_loader, val_loader=val_loader)
+```
+</details>
+
+<details>
+<summary><b>Fine-tuning / SFT</b></summary>
+
+```python
+from arclm.finetuning import train_sft
+
+result = train_sft(
+    model="Qwen/Qwen3-0.6B",
+    dataset="sft.jsonl",   # {"messages": [...]} or prompt/completion
+    output_dir="out/sft",
+    backend="huggingface",
 )
 ```
+</details>
 
-The supported core workflow is:
+<details>
+<summary><b>Checkpoints</b> — safe load, smart adapt</summary>
 
-```text
-dataset -> validation/cleaning -> tokenizer -> native ArcLM model -> training
--> checkpoint -> evaluation -> generation -> pipeline inspection
+```python
+from arclm.checkpoints import SmartLoader, safe_load_training_checkpoint, atomic_save_checkpoint
+
+ckpt = safe_load_training_checkpoint("models/tiny.pth")
+plan = SmartLoader("path/to/weights").plan()
 ```
+</details>
+
+<details>
+<summary><b>Evaluation</b> — metrics + diagnostics</summary>
+
+```python
+from arclm.evaluation import Evaluator, Accuracy, Perplexity, predict_top_k
+
+report = Evaluator(model, metrics=[Accuracy(), Perplexity()]).evaluate(loader)
+top = predict_top_k(model, tokenizer, "machine learning", k=5)
+```
+</details>
+
+<details>
+<summary><b>PEFT / LoRA</b></summary>
+
+```python
+from arclm.peft import LoRAConfig, apply_lora, merge_lora
+
+apply_lora(model, LoRAConfig(r=8, alpha=16, target_modules=["attn"]))
+# ... train ...
+merge_lora(model)
+```
+</details>
+
+<details>
+<summary><b>Agents</b> — bounded tool-calling runtime</summary>
+
+```python
+from arclm.agents import Agent, tool
+
+@tool
+def add(a: int, b: int) -> int:
+    """Add two integers."""
+    return a + b
+
+agent = Agent(model=my_model_adapter, tools=[add])
+result = agent.run("What is 2 + 3?")
+```
+</details>
+
+<details>
+<summary><b>Security</b> — encrypt, sign, redact</summary>
+
+```python
+from arclm.security import encrypt_bytes, decrypt_bytes, redact_text, security_status
+
+blob = encrypt_bytes(b"secret", key=key)
+plain = decrypt_bytes(blob, key=key)
+print(security_status())
+```
+</details>
+
+<details>
+<summary><b>Search & tracking</b></summary>
+
+```python
+from arclm.tracking import create_run, set_reproducible_seed
+from arclm.search import create_search
+
+set_reproducible_seed(42)
+run = create_run(name="baseline", config={...})
+search = create_search(space={...}, objective="min_loss")
+```
+</details>
 
 ## CLI
 
 ```bash
-python -m arclm --help
-python -m arclm train --help
-python -m arclm eval --help
-python -m arclm generate --help
-python -m arclm chat --help
+arclm train --config config.yaml --data data.txt --output model.pth
+arclm eval --model model.pth --data test.txt
+arclm generate --model model.pth --prompt "hello"
+arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
+arclm doctor                  # runtime diagnostics (no torch needed)
+arclm security status
+python -m arclm web-api       # local Studio backend
 ```
 
-The installed console entry point is also `arclm`.
+## Optional extras
 
-Start an interactive console conversation with a local model or Hugging Face
-model ID:
+| Extra | Adds | Install |
+|---|---|---|
+| `train` | PyTorch (models, training, inference) | `arclm[train]` |
+| `web` | FastAPI Studio + torch | `arclm[web]` |
+| `hf` | transformers, accelerate, datasets, peft | `arclm[hf]` |
+| `peft` | torch + peft (LoRA) | `arclm[peft]` |
+| `qlora` | torch + transformers + bitsandbytes | `arclm[qlora]` |
+| `security` | cryptography | `arclm[security]` |
+| `all` | train + web + hf + peft + security | `arclm[all]` |
 
-```bash
-arclm chat --model path/to/model --device auto
-```
+CPU-only torch: `pip install torch --index-url https://download.pytorch.org/whl/cpu` first.
 
-For Hugging Face model inference, install the optional integration with
-`pip install "arclm[hf-inference]"`. The Python equivalent is shown in
-[`examples/08_inference_local_models/03_console_chat.py`](examples/08_inference_local_models/03_console_chat.py).
+## Learn more
 
-## ArcLM Agent Runtime
+| Resource | What |
+|---|---|
+| **[docs/guide.md](docs/guide.md)** | Complete framework guide — every subpackage with examples |
+| [docs/migration-1-to-2.md](docs/migration-1-to-2.md) | Upgrading from 1.x |
+| [docs/agent-runtime.md](docs/agent-runtime.md) | Agent runtime deep dive |
+| [examples/](examples/) | Runnable examples, `python examples/run_examples.py run-verified` |
+| [lab/](lab/README.md) | Hands-on curriculum: build the framework yourself |
+| [docs/project-status.md](docs/project-status.md) | Support matrix |
 
-ArcLM provides a bounded, provider-independent agent runtime with typed tools,
-permissions, and inspectable traces. See the [Agent Runtime guide](docs/agent-runtime.md)
-and [`examples/agents/`](examples/agents/) for its API and examples.
+## License
 
-## Examples
-
-The maintained examples live in [`examples/`](examples/) and are organized by
-workflow. The manifest defines their requirements and verification status:
-
-```bash
-python examples/run_examples.py list
-python examples/run_examples.py run 00-01
-python examples/run_examples.py run-verified
-```
-
-Verified examples run locally without model downloads or a GPU. Examples that
-need optional integrations or real model assets are marked `manual_optional` in
-[`examples/manifest.json`](examples/manifest.json).
-
-## Documentation
-
-- [Project status and supported feature areas](docs/project-status.md)
-- [Agent Runtime guide](docs/agent-runtime.md)
-- [Examples guide](examples/README.md)
-- [ArcLM Lab](lab/README.md)
-- [Historical repository audit (July 2026)](docs/repository-audit.md)
-
-## Security
-
-ArcLM includes `arclm.security` for policy enforcement, cryptographic helpers,
-redaction, and encrypted artifact storage. Install the optional dependency:
-
-```bash
-pip install "arclm[security]"
-```
-
-Security operations fail closed when required dependencies or keys are
-unavailable. See the [Security Core status and limits](docs/project-status.md#arclm-security-core)
-and [`examples/security/`](examples/security/).
-
-```bash
-python -m arclm security status --json
-```
-
-## Support Boundaries
-
-See [Project status](docs/project-status.md) for the supported, beta,
-experimental, deprecated, and unsupported feature areas.
+Apache-2.0 · Author: Ahmad Al Dibo
