@@ -11,6 +11,7 @@ visible summaries, and manual external-model requirements.
 Examples in order:
 - `01_generation_sampling.py`
 - `02_external_local_model_status.py`
+- `03_console_chat.py`
 
 Installation requirements: base dependencies only for verified examples.
 
@@ -19,12 +20,15 @@ Commands:
 ```powershell
 python examples/08_inference_local_models/01_generation_sampling.py
 python examples/08_inference_local_models/02_external_local_model_status.py
+python examples/08_inference_local_models/03_console_chat.py PATH_TO_MODEL
 ```
 
-Expected outputs: bounded generated text and source inspection status.
+Expected outputs: bounded generated text, source inspection status, or an
+interactive console chat when a real local model is supplied.
 
-Verification status: automated for native generation; external loading is
-manual unless a real local model is provided.
+Verification status: automated for native generation; external loading and
+console chat are manual unless a real local model is provided. For Hugging Face
+models, install the optional integration with `pip install "arclm[hf]"`.
 
 Current limitations: no streaming generation is demonstrated.
 

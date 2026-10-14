@@ -17,7 +17,7 @@ def test_qwen_thinking_directory_is_not_current_canonical_example() -> None:
 
 
 def test_qwen_thinking_is_not_documented_as_verified_runtime_behavior() -> None:
-    text = (ROOT / "docs" / "special-version.md").read_text(encoding="utf-8").lower()
+    text = (ROOT / "docs" / "project-status.md").read_text(encoding="utf-8").lower()
     assert "qwen thinking" not in text
 
     from arclm.models import get_model_capability

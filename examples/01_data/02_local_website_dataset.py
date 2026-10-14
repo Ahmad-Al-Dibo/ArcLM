@@ -44,6 +44,7 @@ class TextExtractor(HTMLParser):
 
 def main() -> None:
     html = asset_path("websites", "product_page.html").read_text(encoding="utf-8")
+    print(f"output path: {asset_path('websites', 'product_page.html')}")
     parser = TextExtractor()
     parser.feed(html)
     records = [{"id": f"web-{index}", "text": text} for index, text in enumerate(parser.parts, start=1)]

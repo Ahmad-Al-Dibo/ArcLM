@@ -1,10 +1,13 @@
-# Speciale ArcLM Versie
+# ArcLM Project Status and Release Readiness
 
-Release candidate: `0.10.0`.
+Current package version: `1.0.0`.
 
-Deze repository is een private/speciale ArcLM-editie. De baseline is native-first: eigen ArcLM/PyTorch code vormt de kern; Hugging Face, PEFT, Web en preprocessing zijn optionele integraties.
+ArcLM is a native-first PyTorch library. Hugging Face, PEFT, Web, and
+preprocessing features are optional integrations. This document summarizes
+current support levels, release readiness, and known limitations; older version
+sections are historical records rather than claims about the current package.
 
-Gebruik nieuwe code bij voorkeur via deze publieke domeinen:
+Prefer these public domain packages in new code:
 
 ```text
 arclm.datasets
@@ -22,7 +25,9 @@ arclm.agents
 arclm.security
 ```
 
-Legacy modules blijven compatibility-only zolang tests en gebruikers ze nodig hebben. `MiniGPT` blijft voorlopig een deprecated alias naar `ArcLM`; er is geen tweede implementatie. `arclm.pipeline_v2` is geen tweede pipeline meer, maar alleen een deprecated re-export pad.
+Legacy modules remain compatibility-only while tests and users depend on them.
+`MiniGPT` is a deprecated alias for `ArcLM`, and `arclm.pipeline_v2` is a
+deprecated re-export path rather than a separate pipeline implementation.
 
 ## ArcLM 1.0 Readiness Pass 1
 
@@ -66,8 +71,8 @@ Public API stability inventory:
 
 Status: maintained numbered suite, CPU/local verification, no version bump.
 
-Audit evidence for the repository-wide verification pass is recorded in
-[`docs/repository-audit.md`](repository-audit.md).
+The repository-wide audit is a dated snapshot in
+[`repository-audit.md`](repository-audit.md).
 
 The current examples live under `examples/00_quick_start` through
 `examples/12_complete_projects`. `examples/manifest.json` is the compact source
@@ -91,9 +96,8 @@ speech-to-text.
 
 The suite covers datasets, validation, manifests, tokenizers, native models,
 training, SFT preparation, checkpoints, evaluation, local inference, pipeline
-inspection, agents/tools, Security Core, and six complete projects. Older
-unnumbered examples are preserved for history; the numbered suite is the
-maintained release candidate examples surface.
+inspection, agents/tools, Security Core, and six complete projects. The
+numbered examples are the maintained examples surface in this checkout.
 
 ## ArcLM Agent Runtime
 
@@ -393,13 +397,16 @@ Known limitations:
 
 Examples live in [`examples/security/`](../examples/security/).
 
-Release recommendation after this pass should prefer `0.10.0` unless a final
+Historical release recommendation from that pass: prefer `0.10.0` unless a final
 manual release review decides Web Studio 1-3 are small enough to remain under
 the original `0.9.0` release candidate. A `1.0.0 RC` should wait until clean
 wheel workflow, Studio journey, docs and deprecation policy are manually
 reviewed together.
 
-## ArcLM 0.10.0 Release Candidate
+## ArcLM 0.10.0 Release Candidate (Historical)
+
+The following records the 0.10.0 release assessment. It predates the current
+package version and is retained as release history, not current guidance.
 
 ArcLM `0.10.0` is the honest release line for the completed native Studio
 workflow. It is not a `1.0.0` claim. The release gate uses a clean installed
@@ -426,7 +433,7 @@ Privacy and workspace behavior:
 - Checkpoint metadata and evaluation reports are exportable as safe JSON
   payloads through existing read endpoints.
 
-Release recommendation: ship this work as `0.10.0` after manual review. Keep
+Historical release recommendation: ship this work as `0.10.0` after manual review. Keep
 `1.0.0 RC` for a later pass after the full Studio journey, docs, deprecation
 policy and clean-install gates have been reviewed together.
 

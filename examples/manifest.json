@@ -250,8 +250,8 @@
     {
       "id": "08-03",
       "category": "inference_local_models",
-      "title": "Load a real external local Hugging Face model",
-      "path": null,
+      "title": "Chat with a local or Hugging Face model",
+      "path": "08_inference_local_models/03_console_chat.py",
       "status": "manual_optional",
       "requires_network": false,
       "requires_download": false,

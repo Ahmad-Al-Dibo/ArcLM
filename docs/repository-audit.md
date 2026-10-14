@@ -114,7 +114,7 @@ intentional learner exercises and are not classified as production defects.
 
 ## Documentation and Site
 
-`README.md`, `docs/special-version.md`, `examples/README.md`,
+`README.md`, `docs/project-status.md`, `examples/README.md`,
 `examples/STATUS.md`, and `documentation-site/data/examples-catalog.js` now
 reflect the verified examples suite and current feature status. The static site
 contains guides, API pages, examples pages, reference pages, static data

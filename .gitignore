@@ -49,3 +49,5 @@ web/coverage/
 web/test-results/
 web/playwright-report/
 web/tsconfig.tsbuildinfo
+
+./node_modules/*

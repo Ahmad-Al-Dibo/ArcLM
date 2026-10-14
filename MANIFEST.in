@@ -3,6 +3,7 @@ recursive-include examples *.md *.py *.json *.jsonl *.txt *.html
 recursive-include tests *.py
 recursive-include src/arclm/templates *.html
 include src/arclm/py.typed
+include src/arclm/*.pyi
 prune .venv
 prune .venv-training-core
 prune build

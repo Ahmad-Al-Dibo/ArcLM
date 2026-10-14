@@ -1,2 +1,0 @@
-ArcLM trains small native language models locally.
-Tokens become ids.

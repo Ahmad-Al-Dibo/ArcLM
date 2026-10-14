@@ -7,6 +7,7 @@ Available Commands:
   - arclm train    : Train a model from scratch or fine-tune
   - arclm eval     : Evaluate model performance
   - arclm generate : Generate text from a trained model
+    - arclm chat     : Chat with a loaded model in the console
   - arclm web-api  : Start the modern local Web API
   - arclm --run simple-interface : Start the simple web interface
 
@@ -14,6 +15,7 @@ Usage:
   arclm train --config config.yaml --data data.txt
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "Hello"
+    arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
   python -m arclm web-api
   python -m arclm --run simple-interface
 """
@@ -195,6 +197,50 @@ def create_generate_parser(subparsers):
     )
 
     parser.set_defaults(func=generate_command)
+    return parser
+
+
+def create_chat_parser(subparsers):
+    """Maakt de parser voor het interactieve chatcommando."""
+    parser = subparsers.add_parser(
+        "chat",
+        help="Chat with a local or Hugging Face model in the console",
+        description="Load a causal language model and chat with it interactively",
+    )
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="Local model/checkpoint path or Hugging Face model ID",
+    )
+    parser.add_argument(
+        "--device",
+        default="auto",
+        choices=["cpu", "cuda", "auto"],
+        help="Device to use for inference",
+    )
+    parser.add_argument(
+        "--system-prompt",
+        default=None,
+        help="Optional system instruction for the conversation",
+    )
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=256,
+        help="Maximum tokens to generate per response",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.7,
+        help="Sampling temperature",
+    )
+    parser.add_argument(
+        "--trust-remote-code",
+        action="store_true",
+        help="Allow model repositories to provide custom code",
+    )
+    parser.set_defaults(func=chat_command)
     return parser
 
 
@@ -465,6 +511,52 @@ def generate_command(args):
     return 0
 
 
+def chat_command(args):
+    """Load a model and run an interactive console conversation."""
+    from arclm.inference import load_any_model
+
+    try:
+        device = resolve_cli_device(args.device)
+        print(f"Loading model from: {args.model}")
+        model = load_any_model(
+            args.model,
+            device=device,
+            trust_remote_code=args.trust_remote_code,
+        )
+    except Exception as exc:
+        print(f"Error loading model: {exc}")
+        return 1
+
+    messages = []
+    if args.system_prompt:
+        messages.append({"role": "system", "content": args.system_prompt})
+
+    print("Model loaded. Enter /exit or /quit to end the conversation.")
+    while True:
+        try:
+            prompt = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if prompt.lower() in {"/exit", "/quit"}:
+            return 0
+        if not prompt:
+            continue
+
+        messages.append({"role": "user", "content": prompt})
+        try:
+            response = model.chat(
+                messages,
+                max_new_tokens=args.max_new_tokens,
+                temperature=args.temperature,
+            )
+        except Exception as exc:
+            print(f"Generation error: {exc}")
+            return 1
+        messages.append({"role": "assistant", "content": response})
+        print(f"ArcLM: {response}")
+
+
 def web_api_command(args):
     """Start de moderne lokale Web API."""
     try:
@@ -594,6 +686,7 @@ Examples:
   arclm train --config config.yaml --data data.txt --output models/model.pth
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "The future is"
+    arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
   arclm doctor
   python -m arclm web-api
   python -m arclm --run simple-interface
@@ -641,6 +734,7 @@ Examples:
     create_train_parser(subparsers)
     create_eval_parser(subparsers)
     create_generate_parser(subparsers)
+    create_chat_parser(subparsers)
     create_web_api_parser(subparsers)
     create_security_parser(subparsers)
     create_doctor_parser(subparsers)

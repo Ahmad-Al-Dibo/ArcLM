@@ -111,6 +111,11 @@ hf = [
   "datasets>=2.18,<4",
   "peft>=0.11,<1",
 ]
+hf-inference = [
+  "transformers>=4.51,<6",
+  "accelerate>=0.30,<2",
+  "safetensors>=0.4,<1",
+]
 examples = [
   "transformers>=4.51,<6",
   "accelerate>=0.30,<2",
@@ -201,7 +206,7 @@ where = ["src"]
 include = ["arclm*"]
 
 [tool.setuptools.package-data]
-arclm = ["templates/*.html", "py.typed"]
+arclm = ["templates/*.html", "py.typed", "*.pyi"]
 
 [tool.setuptools.dynamic]
 version = { attr = "arclm._version.__version__" }
