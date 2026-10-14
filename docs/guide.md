@@ -598,6 +598,62 @@ model = load_any_model("Qwen/Qwen3-0.6B", device="cpu", trust_remote_code=False)
 print(predict_external(model, "Hello", max_new_tokens=20))
 ```
 
+### Chat & chat templates
+
+`.chat()` takes OpenAI-style messages and renders them correctly for the backend:
+
+```python
+from arclm.inference import load_any_model
+
+model = load_any_model("Qwen/Qwen3-0.6B", device="cpu")
+
+reply = model.chat(
+    [
+        {"role": "system", "content": "Be concise."},
+        {"role": "user", "content": "What is a causal LM?"},
+    ],
+    max_new_tokens=128,
+    temperature=0.7,
+)
+```
+
+**How the prompt is rendered (HF models):**
+
+| Situation | What ArcLM does |
+|---|---|
+| Tokenizer has a `chat_template` (Qwen, Llama, Mistral, Gemma, …) | Uses `tokenizer.apply_chat_template(messages)` — **the model's own format**. This is almost always correct: the model was trained with that exact template. |
+| No template on the tokenizer | Falls back to a simple standard format: `system: …\nuser: …\nassistant:` |
+| Template exists but `apply_chat_template` fails | Falls back to the simple format unless you set `fallback_to_simple_prompt=False` |
+
+You normally **should not** type a chat template for standard HF models — the tokenizer already ships the right one. The simple fallback is only for bare/custom models without a template.
+
+**Custom system prompt** (auto-prepended if the message list has no `system` entry):
+
+```python
+model.chat(
+    [{"role": "user", "content": "hi"}],
+    default_system_prompt="You are a helpful assistant.",  # via generate kwargs where supported
+)
+```
+
+Or just include it yourself:
+
+```python
+messages = [
+    {"role": "system", "content": "You are a pirate."},
+    {"role": "user", "content": "Ahoy!"},
+]
+print(model.chat(messages))
+```
+
+**Native ArcLM models** do not have a HF chat template; messages are flattened to `role: content` lines ending with `assistant:`.
+
+**CLI chat** uses the same path:
+
+```bash
+arclm chat --model Qwen/Qwen3-0.6B --system-prompt "Be concise."
+```
+
 ### Save a loaded model
 
 ```python
@@ -902,6 +958,9 @@ Side-effect tools need an approval handler or they are denied. Check `result.tra
 
 **Can I use ArcLM without any deep-learning dependency?**  
 Yes. Core install covers data, tokenizers, agents, security, search, and tracking. Torch is only needed when you construct models or run training/inference.
+
+**Do I need to type a chat template for HF models?**  
+No. Modern HF tokenizers ship their own `chat_template`; `.chat()` uses it automatically. Only bare models without a template get the simple `user: … / assistant:` fallback. See [Chat & chat templates](#chat--chat-templates).
 
 ---
 

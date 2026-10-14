@@ -20,7 +20,15 @@ Full documentation: **[docs/guide.md](docs/guide.md)** · Migrating from 1.x: **
 
 ## 30-second quickstart
 
-Train a tiny model on a few sentences (requires `arclm[train]`):
+#### Train a tiny model on a few sentences (requires `arclm[train]`):
+
+Install the package and run the following in a Python shell:
+```md
+# run this after `pip install arclm`
+pip install "arclm[train]"
+```
+
+then run:
 
 ```python
 from arclm.configs import create_config
@@ -111,6 +119,25 @@ result = train_sft(
     output_dir="out/sft",
     backend="huggingface",
 )
+```
+</details>
+
+<details>
+<summary><b>Inference & chat</b> — native + Hugging Face</summary>
+
+```python
+from arclm.inference import load_model, load_any_model
+
+# Native ArcLM checkpoint
+model = load_model("models/tiny.pth")
+print(model.predict("the future is", max_new_tokens=20))
+
+# Any Hugging Face model — uses the model's own chat template
+hf = load_any_model("Qwen/Qwen3-0.6B", device="cpu")
+reply = hf.chat([
+    {"role": "system", "content": "Be concise."},
+    {"role": "user", "content": "What is an LLM?"},
+])
 ```
 </details>
 
