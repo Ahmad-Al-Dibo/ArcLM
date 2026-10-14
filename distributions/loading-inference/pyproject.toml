@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arclm-loading-inference"
-version = "1.13.4"
-description = "Standalone model construction, checkpoint loading, inspection and generation utilities."
+version = "2.0.0"
+description = "Load native or external models, generate text, and inspect one generation step. Requires PyTorch."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "Ahmad Al Dibo" }]
 dependencies = [
@@ -30,4 +30,4 @@ where = ["src"]
 include = ["arclm*"]
 
 [tool.setuptools.package-data]
-arclm = ["templates/*.html", "py.typed"]
+arclm = ["py.typed", "*.pyi"]

@@ -8,30 +8,32 @@
     "sessions"
   ],
   "commands": [
-    "python -c \"from arclm.agents import Agent, AgentRunner; print(Agent, AgentRunner)\""
+    "python -c \"from arclm.agents import Agent, tool, ToolRegistry; print(Agent)\""
   ],
-  "description": "Provider-independent Agent runtime, safe tools, permissions, approvals, tracing and sessions.",
+  "description": "Provider-independent agent runtime with typed tools, permissions, approvals, tracing and safe builtins. No PyTorch required.",
   "documentation": [
     "README.md",
-    "docs/agent-runtime.md",
-    "docs/distributions.md"
+    "docs/distributions.md",
+    "docs/agent-runtime.md"
   ],
   "examples": [
-    "examples/distributions/agents_tools_example.py"
+    "examples/10_agents_tools/01_custom_tool_agent.py"
   ],
   "excluded_apis": [
     "arclm.web",
-    "arclm.simple_interface",
     "arclm.training",
-    "arclm.finetuning"
+    "arclm.inference"
   ],
   "excluded_module_prefixes": [
     "arclm.web",
-    "arclm.simple_interface",
     "arclm.training",
     "arclm.finetuning",
-    "arclm.peft",
-    "arclm.search"
+    "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.security.crypto",
+    "arclm.security.keys",
+    "arclm.security.artifacts"
   ],
   "id": "agents-tools",
   "include_assets": [
@@ -45,10 +47,11 @@
     "arclm.security.paths",
     "arclm.security.network",
     "arclm.exceptions",
-    "arclm.utils"
+    "arclm.utils",
+    "arclm.registry"
   ],
   "license": "Apache-2.0",
-  "name": "ArcLM Agents and Tools",
+  "name": "ArcLM Agents & Tools Block",
   "optional_dependencies": {
     "audio": [
       "openai-whisper>=20231117"
@@ -58,12 +61,10 @@
     "arclm.agents"
   ],
   "python_dependencies": [],
-  "required_distributions": [
-    "core"
-  ],
+  "required_distributions": [],
   "schema_version": 1,
   "source_package": "src/arclm",
   "tests": [
-    "tests/agents"
+    "tests/unit"
   ]
 }

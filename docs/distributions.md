@@ -1,88 +1,127 @@
-# ArcLM Standalone Distributions
+# ArcLM Blocks — Architecture
 
-Status: distribution tooling beta, canonical source unchanged.
+How trimmed editions ("blocks") are defined, generated, and kept in sync with
+the canonical `src/arclm` source.
 
-ArcLM is maintained as one canonical package under `src/arclm`. Smaller
-standalone editions are generated from explicit manifests in
-`distributions/manifests/` by `tools/build_arclm_distributions.py`. Do not edit
-generated edition files by hand; change canonical source or a manifest, rebuild,
-and verify drift.
+For the user-facing pitch, install commands, and the block matrix, see
+[`distributions/README.md`](../distributions/README.md).
 
-## Editions
+## Design goals
 
-| Edition | Purpose |
-| --- | --- |
-| `core` | Native datasets, tokenizers, models, checkpoints, evaluation, inference and inspection without web UI or agents. |
-| `simple-interface` | Local Flask GPT-style chat interface, model loading, inference, inspection, prompt queue, terminal events and optional safe agents. |
-| `loading-inference` | Model loading, checkpoint loading, generation, inspection and lifecycle helpers without training loops or web UI. |
-| `data-tokenizers` | Dataset validation/reporting, preprocessing and tokenizer utilities. |
-| `training` | Native model training, checkpoints and evaluation. |
-| `finetuning` | SFT, adapter and PEFT/LoRA-oriented fine-tuning helpers. |
-| `evaluation-benchmarks` | Evaluation, benchmarking, benchmark suites and inspection helpers. |
-| `agents-tools` | Agent runtime, typed tools, safe built-ins and required security boundaries. |
-| `security` | Security Core policy, redaction, hashing, signing, encryption and safe path/network helpers. |
+1. **Single source of truth** — blocks are never hand-edited; they are
+   generated from `src/arclm` + JSON manifests.
+2. **Hard boundaries** — the builder refuses to emit a block whose required
+   imports cross an excluded module prefix.
+3. **Drift detection** — every generated file is inventoried with SHA-256;
+   `check-drift` compares inventories to canonical source.
+4. **Light where possible** — blocks that do not need torch must not pull it.
 
-## Commands
+## Manifest schema (v1)
+
+```json
+{
+  "schema_version": 1,
+  "id": "core",
+  "name": "ArcLM Core Block",
+  "description": "...",
+  "source_package": "src/arclm",
+  "capabilities": ["..."],
+  "include_modules": ["arclm._version", "arclm.configs", "..."],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": [],
+  "excluded_module_prefixes": ["arclm.web", "arclm.training", "..."],
+  "python_dependencies": ["numpy>=1.24,<3"],
+  "optional_dependencies": {},
+  "public_api": ["arclm.configs", "..."],
+  "excluded_apis": ["arclm.training", "..."],
+  "commands": ["python -c \"...\""],
+  "tests": ["tests/unit/..."],
+  "examples": ["examples/01_data/01_load_validate_report.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `include_modules` | Root modules to expand (packages expand recursively) |
+| `excluded_module_prefixes` | Hard boundary — required imports into these fail the build |
+| `python_dependencies` | Written into the generated `pyproject.toml` |
+| `optional_dependencies` | Extra maps for the generated package |
+| `examples` | Paths copied into the block's `examples/` folder |
+
+## Import analysis
+
+`analyze(manifest)` in `tools/build_arclm_distributions.py`:
+
+1. Expand `include_modules` / `include_module_prefixes` into a seed set.
+2. For each module, parse the AST and record import edges.
+3. Function/class-scoped imports are **optional** (lazy) edges.
+4. Module-level imports into an excluded prefix → **blocking** excluded hit.
+5. Unresolved `arclm.*` targets (no file on disk) → build failure.
+
+This catches accidental coupling early: e.g. a light agents block must not
+module-level import `arclm.security` (which pulls crypto); import the precise
+submodule instead (`arclm.security.configuration`).
+
+## Generated layout per block
+
+```text
+distributions/<id>/
+├── README.md                    # purpose, install, quick start
+├── INSTALLATION.md              # git + local install commands
+├── USAGE.md
+├── API.md
+├── LIMITATIONS.md
+├── LICENSE
+├── NOTICE.md
+├── MANIFEST.in
+├── pyproject.toml               # package name: arclm-<id>
+├── distribution-manifest.json   # copy of the manifest
+├── source-inventory.json        # SHA-256 inventory + source_version
+├── examples/                    # copied example scripts
+└── src/arclm/
+    ├── __init__.py              # generated lazy public API
+    ├── __main__.py
+    ├── cli.py                   # trimmed CLI
+    ├── _distribution.py         # embedded DISTRIBUTION_INFO
+    ├── _version.py              # copied from canonical
+    └── …                        # only reachable modules
+```
+
+## Keeping blocks honest
+
+| Check | Command |
+|---|---|
+| Hash drift vs canonical | `python tools/build_arclm_distributions.py check-drift` |
+| Compile + inventory | `python tools/build_arclm_distributions.py test-all` |
+| Unit tests in repo | `pytest tests/distributions` |
+
+Regenerate after any public import change in `src/arclm`:
 
 ```bash
-python tools/build_arclm_distributions.py list
-python tools/build_arclm_distributions.py inspect simple-interface
-python tools/build_arclm_distributions.py graph simple-interface
-python tools/build_arclm_distributions.py build simple-interface
 python tools/build_arclm_distributions.py build-all
-python tools/build_arclm_distributions.py verify simple-interface
-python tools/build_arclm_distributions.py test-all
 python tools/build_arclm_distributions.py check-drift
+python tools/build_arclm_distributions.py test-all
 ```
 
-Each generated edition includes its own `pyproject.toml`, `MANIFEST.in`,
-license, notice, README, installation notes, usage notes, API summary,
-limitations, manifest and source inventory. The inventory records source file
-hashes so `check-drift` can detect when canonical files changed after an
-edition was generated.
+## Relationship to extras
 
-## Boundaries
+| Mechanism | Purpose | Example |
+|---|---|---|
+| **Extras** (full package) | Optional heavy deps on one install | `pip install "arclm[train]"` |
+| **Blocks** (this feature) | Trimmed source editions | `pip install arclm-core` |
 
-The builder follows Python imports from manifest roots. Imports inside functions
-or `TYPE_CHECKING` blocks are treated as optional/lazy edges and reported
-separately from required module-load edges. A build fails when a required edge
-crosses into an excluded module. This prevents, for example, the
-`simple-interface` and `loading-inference` editions from requiring the native
-training loop at import time.
+Use extras when you want the full API surface with optional backends.
+Use blocks when you want only a subset of modules and a smaller footprint.
 
-Generated editions keep the `arclm` import namespace and are intended to be
-installed independently. Do not install two editions side by side in the same
-environment.
+## Known limitations
 
-## Verification
-
-For every edition, run:
-
-```bash
-python tools/build_arclm_distributions.py build <edition>
-python tools/build_arclm_distributions.py verify <edition>
-python -m build --wheel distributions/<edition>
-```
-
-For the whole repository, run:
-
-```bash
-python -m compileall -q src tests examples lab
-python -m pytest tests/distributions -q
-python -m pytest -q
-python -m build
-```
-
-Clean-environment launch tests are still required before publishing an edition.
-Use a fresh virtual environment per wheel when validating optional dependency
-sets.
-
-## Limitations
-
-- Distribution manifests are curated manually and should be reviewed whenever
-  public imports change.
-- The builder reports optional lazy edges but does not prove every optional code
-  path is runtime-compatible without its extra dependencies.
-- Wheel size and installed-size budgets are not yet enforced automatically.
-- Generated editions are local release artifacts; this workflow does not commit,
-  tag, push or publish packages.
+- Blocks all provide the `arclm` namespace — install one block **or** full
+  ArcLM, not both.
+- Manifest curation is manual; the builder enforces consistency but cannot
+  invent the right include set.
+- Wheel size budgets are not enforced yet.
+- PyPI publishing / namespace-package composition is out of scope for now;
+  install via git (`#subdirectory=distributions/<id>`) or local builds.

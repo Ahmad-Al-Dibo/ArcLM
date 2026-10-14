@@ -1,22 +1,40 @@
 {
   "schema_version": 1,
   "id": "security",
-  "name": "ArcLM Security",
-  "description": "Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers.",
+  "name": "ArcLM Security Block",
+  "description": "Policy enforcement, encryption, hashing, signing, redaction and safe path/URL helpers. No PyTorch required.",
   "source_package": "src/arclm",
-  "capabilities": ["security_policy", "redaction", "safe_paths", "safe_urls", "hashing", "signatures", "encryption", "secure_artifacts"],
-  "include_modules": ["arclm._version", "arclm.security", "arclm.exceptions", "arclm.utils"],
+  "capabilities": ["security", "crypto", "redaction", "policy", "signing"],
+  "include_modules": [
+    "arclm._version",
+    "arclm.security",
+    "arclm.exceptions",
+    "arclm.utils",
+    "arclm.registry"
+  ],
   "include_module_prefixes": [],
   "include_assets": ["arclm/py.typed"],
-  "required_distributions": ["core"],
-  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.finetuning", "arclm.agents", "arclm.peft", "arclm.search"],
+  "required_distributions": [],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.agents"
+  ],
   "python_dependencies": ["cryptography>=42,<47"],
-  "optional_dependencies": {"keyring": ["keyring>=25,<27"]},
+  "optional_dependencies": {
+    "keyring": ["keyring>=25,<27"]
+  },
   "public_api": ["arclm.security"],
-  "excluded_apis": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.agents"],
-  "commands": ["python -c \"from arclm.security import security_status; print(security_status())\""],
-  "tests": ["tests/security"],
-  "examples": ["examples/distributions/security_example.py"],
+  "excluded_apis": ["arclm.web", "arclm.training", "arclm.agents"],
+  "commands": [
+    "python -c \"from arclm.security import security_status; print(security_status())\""
+  ],
+  "tests": ["tests/unit", "tests/security"],
+  "examples": ["examples/11_security/01_security_status.py"],
   "documentation": ["README.md", "docs/distributions.md"],
   "license": "Apache-2.0"
 }

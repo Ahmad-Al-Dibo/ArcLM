@@ -13,7 +13,6 @@ import random
 import re
 import json
 import os
-import torch
 from dataclasses import dataclass, field
 from pathlib import Path
 from collections import Counter
@@ -22,8 +21,7 @@ from .streaming import StreamingDataset
 from ..tokenizers import SentencePieceTokenizer, Tokenizer
 from ..configs import Config
 from ..exceptions import DatasetLoadError, DatasetValidationError, StreamingError
-from typing import Any, Iterable, Optional
-# from .tokenizer import Tokenizer
+from typing import Any, Iterable, Optional
 
 @dataclass
 class DataBundle:

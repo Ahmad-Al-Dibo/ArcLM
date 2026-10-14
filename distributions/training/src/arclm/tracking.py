@@ -1,4 +1,4 @@
-"""Lokale experiment tracking en reproduceerbare run manifests."""
+"""Local experiment tracking and reproducible run manifests."""
 
 from __future__ import annotations
 
@@ -18,8 +18,6 @@ from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping
-
-import torch
 
 from ._version import __version__
 
@@ -853,18 +851,23 @@ def load_run_manifest(path: str | Path) -> RunManifest:
 
 
 def build_environment_summary(*, device: str | None = None, precision: str | None = None) -> dict[str, Any]:
-    """Maakt een begrensde runtime omgeving zonder secrets."""
-    cuda_available = bool(torch.cuda.is_available())
+    """Build a bounded runtime environment summary without secrets."""
+    try:
+        import torch
+    except ModuleNotFoundError:
+        torch = None
+
+    cuda_available = bool(torch is not None and torch.cuda.is_available())
     selected_device = device or ("cuda" if cuda_available else "cpu")
     summary: dict[str, Any] = {
         "arclm_version": __version__,
         "python_version": platform.python_version(),
-        "pytorch_version": str(torch.__version__),
+        "pytorch_version": str(getattr(torch, "__version__", None)) if torch is not None else None,
         "platform": platform.system(),
         "device": selected_device,
         "precision": precision,
         "cuda_available": cuda_available,
-        "cuda_runtime": torch.version.cuda,
+        "cuda_runtime": torch.version.cuda if torch is not None else None,
         "cuda_device_count": torch.cuda.device_count() if cuda_available else 0,
     }
     if cuda_available:
@@ -885,14 +888,21 @@ def build_reproducibility_metadata(
     tokenizer_fingerprint: str | None = None,
     model_config_fingerprint: str | None = None,
 ) -> dict[str, Any]:
-    """Beschrijft wat reproduceerbaar is zonder RNG state te kopiëren."""
+    """Describe what is reproducible without copying RNG state."""
+    try:
+        import torch
+    except ModuleNotFoundError:
+        torch = None
+
     return {
         "seed": seed,
         "python_rng_tracked": True,
         "numpy_rng_tracked": _module_available("numpy"),
-        "torch_cpu_rng_tracked": True,
-        "torch_cuda_rng_tracked": bool(torch.cuda.is_available()),
-        "deterministic_algorithms": bool(torch.are_deterministic_algorithms_enabled()),
+        "torch_cpu_rng_tracked": torch is not None,
+        "torch_cuda_rng_tracked": bool(torch is not None and torch.cuda.is_available()),
+        "deterministic_algorithms": bool(
+            torch is not None and torch.are_deterministic_algorithms_enabled()
+        ),
         "dataset_fingerprint": dataset_fingerprint,
         "tokenizer_fingerprint": tokenizer_fingerprint,
         "model_config_fingerprint": model_config_fingerprint,
@@ -919,20 +929,29 @@ def set_reproducible_seed(seed: int, *, deterministic: bool = False) -> dict[str
         numpy_seeded = True
     except Exception:
         numpy_seeded = False
-    torch.manual_seed(seed)
+    torch_seeded = False
     cuda_seeded = False
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-        cuda_seeded = True
-    if deterministic:
-        torch.use_deterministic_algorithms(True, warn_only=True)
+    deterministic_enabled = False
+    try:
+        import torch
+
+        torch.manual_seed(seed)
+        torch_seeded = True
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            cuda_seeded = True
+        if deterministic:
+            torch.use_deterministic_algorithms(True, warn_only=True)
+        deterministic_enabled = bool(torch.are_deterministic_algorithms_enabled())
+    except ModuleNotFoundError:
+        torch_seeded = False
     return {
         "seed": seed,
         "python_seeded": True,
         "numpy_seeded": numpy_seeded,
-        "torch_cpu_seeded": True,
+        "torch_cpu_seeded": torch_seeded,
         "torch_cuda_seeded": cuda_seeded,
-        "deterministic_algorithms": bool(torch.are_deterministic_algorithms_enabled()),
+        "deterministic_algorithms": deterministic_enabled,
         "determinism_limitations": (
             "Identical results are not guaranteed across different hardware, "
             "PyTorch builds, CUDA kernels, or optional backends."
@@ -1210,7 +1229,7 @@ def _json_safe(value: Any) -> Any:
         if not math.isfinite(value):
             raise RunTrackingError("run_metric_invalid", "Run metadata must be finite")
         return value
-    if torch.is_tensor(value):
+    if _is_torch_tensor(value):
         if value.numel() == 1:
             return _json_safe(value.detach().cpu().item())
         return {
@@ -1239,7 +1258,7 @@ def _metric_values(metrics: Mapping[str, Any]) -> dict[str, float | int]:
     for key, value in metrics.items():
         if not isinstance(key, str) or not key:
             raise RunTrackingError("run_metric_invalid", "Metric names must be strings")
-        if torch.is_tensor(value):
+        if _is_torch_tensor(value):
             if value.numel() != 1:
                 raise RunTrackingError("run_metric_invalid", "Tensor metrics must be scalar")
             value = value.detach().cpu().item()
@@ -1436,6 +1455,14 @@ def _module_available(name: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def _is_torch_tensor(value: Any) -> bool:
+    try:
+        import torch
+    except ModuleNotFoundError:
+        return False
+    return torch.is_tensor(value)
 
 
 def _import_optional_backend(module_name: str, label: str):

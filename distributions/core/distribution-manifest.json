@@ -2,39 +2,46 @@
   "capabilities": [
     "version_metadata",
     "configuration",
+    "datasets",
+    "tokenizers",
     "exceptions",
     "registry",
     "formatting"
   ],
   "commands": [
-    "python -c \"import arclm; print(arclm.get_distribution_info())\""
+    "python -c \"from arclm.configs import Config; print(Config().embed_dim)\"",
+    "python -c \"from arclm.tokenizers import Tokenizer; print(Tokenizer)\""
   ],
-  "description": "Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives.",
+  "description": "Light ArcLM building block: configuration, datasets, tokenizers, exceptions, registry and utilities. No PyTorch required.",
   "documentation": [
     "README.md",
     "docs/distributions.md"
   ],
   "examples": [
-    "examples/distributions/core_example.py"
+    "examples/01_data/01_load_validate_report.py",
+    "examples/02_tokenizers/01_word_tokenizer.py"
   ],
   "excluded_apis": [
-    "arclm.simple_interface",
-    "arclm.web",
     "arclm.training",
     "arclm.finetuning",
-    "arclm.agents"
+    "arclm.web",
+    "arclm.agents",
+    "arclm.inference"
   ],
   "excluded_module_prefixes": [
     "arclm.web",
-    "arclm.simple_interface",
-    "arclm.simple_chat",
     "arclm.training",
     "arclm.finetuning",
     "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
     "arclm.agents",
     "arclm.security",
     "arclm.peft",
-    "arclm.search"
+    "arclm.search",
+    "arclm.checkpoints",
+    "arclm.lifecycle",
+    "arclm.inspection"
   ],
   "id": "core",
   "include_assets": [
@@ -43,27 +50,33 @@
   "include_module_prefixes": [],
   "include_modules": [
     "arclm._version",
-    "arclm.exceptions",
     "arclm.configs",
+    "arclm.datasets",
+    "arclm.tokenizers",
+    "arclm.exceptions",
     "arclm.registry",
     "arclm.utils"
   ],
   "license": "Apache-2.0",
-  "name": "ArcLM Core",
+  "name": "ArcLM Core Block",
   "optional_dependencies": {},
   "public_api": [
-    "arclm.get_distribution_info",
-    "arclm._version",
     "arclm.configs",
+    "arclm.datasets",
+    "arclm.tokenizers",
     "arclm.exceptions",
     "arclm.registry",
     "arclm.utils"
   ],
-  "python_dependencies": [],
+  "python_dependencies": [
+    "numpy>=1.24,<3",
+    "sentencepiece>=0.2,<0.3"
+  ],
   "required_distributions": [],
   "schema_version": 1,
   "source_package": "src/arclm",
   "tests": [
-    "tests/distributions/test_distribution_tooling.py"
+    "tests/unit/datasets",
+    "tests/unit/test_light_imports.py"
   ]
 }

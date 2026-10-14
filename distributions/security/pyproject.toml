@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arclm-security"
-version = "1.13.4"
-description = "Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers."
+version = "2.0.0"
+description = "Policy enforcement, encryption, hashing, signing, redaction and safe path/URL helpers. No PyTorch required."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "Ahmad Al Dibo" }]
 dependencies = [
@@ -28,4 +28,4 @@ where = ["src"]
 include = ["arclm*"]
 
 [tool.setuptools.package-data]
-arclm = ["templates/*.html", "py.typed"]
+arclm = ["py.typed", "*.pyi"]

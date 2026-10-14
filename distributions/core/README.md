@@ -1,6 +1,6 @@
-# ArcLM Core
+# ArcLM Core Block
 
-Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives.
+Light ArcLM building block: configuration, datasets, tokenizers, exceptions, registry and utilities. No PyTorch required.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
@@ -8,24 +8,41 @@ This directory is generated from canonical ArcLM source. Do not edit generated s
 
 - version_metadata
 - configuration
+- datasets
+- tokenizers
 - exceptions
 - registry
 - formatting
 
 ## Excludes
 
-- arclm.simple_interface
-- arclm.web
 - arclm.training
 - arclm.finetuning
+- arclm.web
 - arclm.agents
+- arclm.inference
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/core"
+```
 
 ## Quick Start
 
 ```bash
-python -c "import arclm; print(arclm.get_distribution_info())"
+python -c "from arclm.configs import Config; print(Config().embed_dim)"
+python -c "from arclm.tokenizers import Tokenizer; print(Tokenizer)"
 ```
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

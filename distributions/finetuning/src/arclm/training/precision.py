@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 
 from ..exceptions import PrecisionError

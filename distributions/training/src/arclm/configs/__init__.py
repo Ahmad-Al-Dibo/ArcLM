@@ -11,19 +11,8 @@ from .serialization import (
     save_config_yaml,
 )
 
-TrainingConfig = Config
-ModelConfig = Config
-TokenizerConfig = Config
-DatasetConfig = Config
-InferenceConfig = Config
-
 __all__ = [
     "Config",
-    "TrainingConfig",
-    "ModelConfig",
-    "TokenizerConfig",
-    "DatasetConfig",
-    "InferenceConfig",
     "create_config",
     "get_finetuning_config",
     "get_instruction_tuning_config",

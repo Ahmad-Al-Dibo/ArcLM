@@ -1,22 +1,56 @@
 {
   "schema_version": 1,
   "id": "loading-inference",
-  "name": "ArcLM Loading and Inference",
-  "description": "Standalone model construction, checkpoint loading, inspection and generation utilities.",
+  "name": "ArcLM Loading & Inference Block",
+  "description": "Load native or external models, generate text, and inspect one generation step. Requires PyTorch.",
   "source_package": "src/arclm",
-  "capabilities": ["model_loading", "checkpoint_loading", "inference", "generation", "inspection"],
-  "include_modules": ["arclm._version", "arclm.inference", "arclm.models", "arclm.checkpoints", "arclm.tokenizers", "arclm.configs", "arclm.exceptions", "arclm.inspection", "arclm.lifecycle", "arclm.utils"],
+  "capabilities": ["inference", "generation", "models", "checkpoints", "inspection"],
+  "include_modules": [
+    "arclm._version",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.checkpoints",
+    "arclm.tokenizers",
+    "arclm.configs",
+    "arclm.exceptions",
+    "arclm.inspection",
+    "arclm.lifecycle",
+    "arclm.utils",
+    "arclm.registry"
+  ],
   "include_module_prefixes": [],
   "include_assets": ["arclm/py.typed"],
-  "required_distributions": ["core"],
-  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.training", "arclm.finetuning", "arclm.agents", "arclm.security.web", "arclm.peft", "arclm.search"],
+  "required_distributions": [],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.agents",
+    "arclm.security",
+    "arclm.peft",
+    "arclm.search"
+  ],
   "python_dependencies": ["torch>=2.1,<3", "numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
-  "optional_dependencies": {"hf": ["transformers>=4.51,<6", "accelerate>=0.30,<2", "safetensors>=0.4,<1"]},
-  "public_api": ["arclm.inference", "arclm.models", "arclm.checkpoints", "arclm.inspection"],
-  "excluded_apis": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.finetuning", "arclm.agents"],
-  "commands": ["python -c \"from arclm.inference import GenerationConfig; print(GenerationConfig())\""],
-  "tests": ["tests/distributions/test_distribution_tooling.py", "tests/public_api/test_root_import.py"],
-  "examples": ["examples/distributions/loading_inference_example.py"],
+  "optional_dependencies": {
+    "hf": [
+      "transformers>=4.51,<6",
+      "accelerate>=0.30,<2",
+      "safetensors>=0.4,<1"
+    ]
+  },
+  "public_api": [
+    "arclm.inference",
+    "arclm.models",
+    "arclm.checkpoints",
+    "arclm.inspection"
+  ],
+  "excluded_apis": ["arclm.training", "arclm.finetuning", "arclm.web", "arclm.evaluation"],
+  "commands": [
+    "python -c \"from arclm.inference import load_model, Generator; print(Generator)\""
+  ],
+  "tests": ["tests/unit"],
+  "examples": ["examples/08_inference_local_models/01_generation_sampling.py"],
   "documentation": ["README.md", "docs/distributions.md"],
   "license": "Apache-2.0"
 }

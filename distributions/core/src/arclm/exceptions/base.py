@@ -29,6 +29,10 @@ class DatasetValidationError(DatasetError):
     """Raised when dataset rows do not match the expected shape."""
 
 
+class DatasetFormatError(DatasetError, ValueError):
+    """Raised when dataset input cannot be parsed into records."""
+
+
 class PipelineError(DatasetError):
     """Raised when a data pipeline step fails."""
 
@@ -67,6 +71,18 @@ class PrecisionError(TrainingError):
 
 class CheckpointError(ArcLMError):
     """Raised for checkpoint errors."""
+
+
+class ModelError(ArcLMError):
+    """Base class for model errors."""
+
+
+class UnsupportedModelError(ModelError, ValueError):
+    """Raised when a model is outside ArcLM's supported workflow."""
+
+
+class ModelCompatibilityError(ModelError, ValueError):
+    """Raised when a model is not compatible with a requested task."""
 
 
 class EvaluationError(ArcLMError):

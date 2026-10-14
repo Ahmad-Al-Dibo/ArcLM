@@ -1,22 +1,45 @@
 {
   "schema_version": 1,
   "id": "agents-tools",
-  "name": "ArcLM Agents and Tools",
-  "description": "Provider-independent Agent runtime, safe tools, permissions, approvals, tracing and sessions.",
+  "name": "ArcLM Agents & Tools Block",
+  "description": "Provider-independent agent runtime with typed tools, permissions, approvals, tracing and safe builtins. No PyTorch required.",
   "source_package": "src/arclm",
   "capabilities": ["agents", "tools", "permissions", "approvals", "tracing", "sessions"],
-  "include_modules": ["arclm._version", "arclm.agents", "arclm.security.redaction", "arclm.security.paths", "arclm.security.network", "arclm.exceptions", "arclm.utils"],
+  "include_modules": [
+    "arclm._version",
+    "arclm.agents",
+    "arclm.security.redaction",
+    "arclm.security.paths",
+    "arclm.security.network",
+    "arclm.exceptions",
+    "arclm.utils",
+    "arclm.registry"
+  ],
   "include_module_prefixes": [],
   "include_assets": ["arclm/py.typed"],
-  "required_distributions": ["core"],
-  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.finetuning", "arclm.peft", "arclm.search"],
+  "required_distributions": [],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.security.crypto",
+    "arclm.security.keys",
+    "arclm.security.artifacts"
+  ],
   "python_dependencies": [],
-  "optional_dependencies": {"audio": ["openai-whisper>=20231117"]},
+  "optional_dependencies": {
+    "audio": ["openai-whisper>=20231117"]
+  },
   "public_api": ["arclm.agents"],
-  "excluded_apis": ["arclm.web", "arclm.simple_interface", "arclm.training", "arclm.finetuning"],
-  "commands": ["python -c \"from arclm.agents import Agent, AgentRunner; print(Agent, AgentRunner)\""],
-  "tests": ["tests/agents"],
-  "examples": ["examples/distributions/agents_tools_example.py"],
-  "documentation": ["README.md", "docs/agent-runtime.md", "docs/distributions.md"],
+  "excluded_apis": ["arclm.web", "arclm.training", "arclm.inference"],
+  "commands": [
+    "python -c \"from arclm.agents import Agent, tool, ToolRegistry; print(Agent)\""
+  ],
+  "tests": ["tests/unit"],
+  "examples": ["examples/10_agents_tools/01_custom_tool_agent.py"],
+  "documentation": ["README.md", "docs/distributions.md", "docs/agent-runtime.md"],
   "license": "Apache-2.0"
 }

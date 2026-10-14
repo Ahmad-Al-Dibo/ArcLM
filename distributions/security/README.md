@@ -1,26 +1,36 @@
-# ArcLM Security
+# ArcLM Security Block
 
-Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers.
+Policy enforcement, encryption, hashing, signing, redaction and safe path/URL helpers. No PyTorch required.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
 ## Contains
 
-- security_policy
+- security
+- crypto
 - redaction
-- safe_paths
-- safe_urls
-- hashing
-- signatures
-- encryption
-- secure_artifacts
+- policy
+- signing
 
 ## Excludes
 
 - arclm.web
-- arclm.simple_interface
 - arclm.training
 - arclm.agents
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/security"
+```
 
 ## Quick Start
 
@@ -30,4 +40,4 @@ python -c "from arclm.security import security_status; print(security_status())"
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

@@ -97,6 +97,19 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install "arclm[train]"
 ```
 
+### ArcLM Blocks (trimmed editions)
+
+Need only a subset of the framework? Install a **block** — a self-contained
+edition generated from the same source (core, training, agents, security, …):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/core"
+```
+
+See [distributions/README.md](../distributions/README.md) for the full block
+matrix and builder commands. Blocks are alternatives to full ArcLM; extras
+(`arclm[train]`) are the way to add optional backends to the full package.
+
 ### All extras
 
 ```bash

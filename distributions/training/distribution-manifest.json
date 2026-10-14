@@ -2,33 +2,37 @@
   "capabilities": [
     "training",
     "models",
-    "datasets",
-    "tokenizers",
     "checkpoints",
-    "evaluation_hooks"
+    "tracking",
+    "distributed_contracts"
   ],
   "commands": [
-    "python -c \"from arclm.training import TrainingConfig; print(TrainingConfig)\""
+    "python -c \"from arclm.models import ArcLM; print(ArcLM)\"",
+    "python -c \"from arclm.training import Trainer, TrainingConfig; print(Trainer)\""
   ],
-  "description": "Native model construction, training configuration, training loop, callbacks, metrics and checkpoints.",
+  "description": "Native training loop, ArcLM models, checkpoints, evaluation metrics and experiment tracking. Requires PyTorch.",
   "documentation": [
     "README.md",
     "docs/distributions.md"
   ],
   "examples": [
-    "examples/distributions/training_example.py"
+    "examples/04_training/01_tiny_pretraining_step.py"
   ],
   "excluded_apis": [
-    "arclm.simple_interface",
+    "arclm.finetuning",
     "arclm.web",
-    "arclm.agents"
+    "arclm.inference",
+    "arclm.evaluation"
   ],
   "excluded_module_prefixes": [
     "arclm.web",
-    "arclm.simple_interface",
-    "arclm.simple_chat",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.inference",
     "arclm.agents",
-    "arclm.security.web"
+    "arclm.security",
+    "arclm.peft",
+    "arclm.search"
   ],
   "id": "training",
   "include_assets": [
@@ -43,35 +47,32 @@
     "arclm.tokenizers",
     "arclm.checkpoints",
     "arclm.configs",
-    "arclm.evaluation",
     "arclm.lifecycle",
     "arclm.exceptions",
     "arclm.utils",
+    "arclm.registry",
     "arclm.distributed",
     "arclm.tracking"
   ],
   "license": "Apache-2.0",
-  "name": "ArcLM Training",
+  "name": "ArcLM Training Block",
   "optional_dependencies": {},
   "public_api": [
     "arclm.training",
     "arclm.models",
-    "arclm.checkpoints"
+    "arclm.checkpoints",
+    "arclm.tracking"
   ],
   "python_dependencies": [
     "torch>=2.1,<3",
     "numpy>=1.24,<3",
     "sentencepiece>=0.2,<0.3"
   ],
-  "required_distributions": [
-    "core",
-    "data-tokenizers",
-    "loading-inference"
-  ],
+  "required_distributions": [],
   "schema_version": 1,
   "source_package": "src/arclm",
   "tests": [
     "tests/unit/training",
-    "tests/checkpoints"
+    "tests/unit/test_light_imports.py"
   ]
 }

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arclm-finetuning"
-version = "1.13.4"
-description = "SFT record preparation, formatting, collators, full fine-tuning and checkpoint metadata."
+version = "2.0.0"
+description = "Supervised fine-tuning (SFT) workflows, full fine-tuners, adapters and native training support. Requires PyTorch."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "Ahmad Al Dibo" }]
 dependencies = [
@@ -30,4 +30,4 @@ where = ["src"]
 include = ["arclm*"]
 
 [tool.setuptools.package-data]
-arclm = ["templates/*.html", "py.typed"]
+arclm = ["py.typed", "*.pyi"]

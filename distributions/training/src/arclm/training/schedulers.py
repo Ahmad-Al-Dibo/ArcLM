@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import math
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 
 from ..exceptions import TrainingConfigError

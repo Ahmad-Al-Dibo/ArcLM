@@ -3,5 +3,5 @@
 Commands:
 
 ```bash
-python -c "from arclm.evaluation import EvaluationResult; print(EvaluationResult)"
+python -c "from arclm.evaluation import Evaluator, Accuracy, Perplexity; print(Evaluator)"
 ```

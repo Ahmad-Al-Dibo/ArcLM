@@ -1,6 +1,6 @@
-# ArcLM Training
+# ArcLM Training Block
 
-Native model construction, training configuration, training loop, callbacks, metrics and checkpoints.
+Native training loop, ArcLM models, checkpoints, evaluation metrics and experiment tracking. Requires PyTorch.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
@@ -8,23 +8,38 @@ This directory is generated from canonical ArcLM source. Do not edit generated s
 
 - training
 - models
-- datasets
-- tokenizers
 - checkpoints
-- evaluation_hooks
+- tracking
+- distributed_contracts
 
 ## Excludes
 
-- arclm.simple_interface
+- arclm.finetuning
 - arclm.web
-- arclm.agents
+- arclm.inference
+- arclm.evaluation
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/training"
+```
 
 ## Quick Start
 
 ```bash
-python -c "from arclm.training import TrainingConfig; print(TrainingConfig)"
+python -c "from arclm.models import ArcLM; print(ArcLM)"
+python -c "from arclm.training import Trainer, TrainingConfig; print(Trainer)"
 ```
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

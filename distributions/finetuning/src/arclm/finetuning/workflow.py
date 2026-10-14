@@ -10,6 +10,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM fine-tuning")
 import torch
 from torch.utils.data import Dataset
 

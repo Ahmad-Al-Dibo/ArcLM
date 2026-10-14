@@ -8,6 +8,10 @@ shaped ``(batch, time, vocab_size)``.
 """
 
 import math
+
+from ...utils.imports import require_torch
+
+require_torch("ArcLM models")
 import torch
 import torch.nn as nn
 
@@ -148,9 +152,4 @@ class ArcLM(nn.Module):
     def get_num_parameters(self):
         """Geeft het totale aantal modelparameters terug."""
         return sum(p.numel() for p in self.parameters())
-
-
-# Deze alias houdt oudere code en checkpoints bruikbaar.
-MiniGPT = ArcLM
-
 

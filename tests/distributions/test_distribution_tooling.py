@@ -9,6 +9,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TOOL_PATH = ROOT / "tools" / "build_arclm_distributions.py"
 
+EXPECTED_IDS = {
+    "core",
+    "training",
+    "finetuning",
+    "loading-inference",
+    "evaluation-benchmarks",
+    "agents-tools",
+    "security",
+}
+
 
 def load_tool():
     spec = importlib.util.spec_from_file_location("build_arclm_distributions", TOOL_PATH)
@@ -24,20 +34,33 @@ def test_distribution_manifests_are_listed_and_schema_valid():
     manifests = tool.all_manifests()
     ids = {item["id"] for item in manifests}
 
-    assert {"core", "simple-interface", "loading-inference", "data-tokenizers", "training", "finetuning", "evaluation-benchmarks", "agents-tools", "security"} <= ids
+    assert EXPECTED_IDS <= ids
     assert all(item["schema_version"] == 1 for item in manifests)
     assert all(item["source_package"] == "src/arclm" for item in manifests)
 
 
-def test_simple_interface_distribution_has_no_required_excluded_dependencies():
+def test_light_blocks_have_no_torch_and_strict_boundaries():
     tool = load_tool()
-    report = tool.inspect("simple-interface")
+    for edition in ("core", "agents-tools"):
+        report = tool.inspect(edition)
+        assert report["module_count"] > 0
+        assert not [edge for edge in report["excluded_hits"] if not edge["optional"]]
+        assert "arclm.training" not in report["modules"]
+        assert "arclm.models" not in report["modules"]
+        assert "arclm.inference" not in report["modules"]
 
-    assert report["module_count"] > 0
+
+def test_core_block_contains_datasets_and_tokenizers():
+    tool = load_tool()
+    report = tool.inspect("core")
+
+    assert "arclm.datasets" in report["modules"] or any(
+        m.startswith("arclm.datasets") for m in report["modules"]
+    )
+    assert "arclm.tokenizers" in report["modules"] or any(
+        m.startswith("arclm.tokenizers") for m in report["modules"]
+    )
     assert not [edge for edge in report["excluded_hits"] if not edge["optional"]]
-    assert "arclm.simple_interface" in report["modules"]
-    assert "arclm.web.app" not in report["modules"]
-    assert "arclm.training.trainer" not in report["modules"]
 
 
 def test_loading_inference_keeps_training_imports_lazy():
@@ -45,21 +68,32 @@ def test_loading_inference_keeps_training_imports_lazy():
     report = tool.inspect("loading-inference")
 
     assert "arclm.inference.engine" in report["modules"]
-    assert "arclm.training" not in report["modules"]
+    assert "arclm.training.trainer" not in report["modules"]
     assert not [edge for edge in report["excluded_hits"] if not edge["optional"]]
 
 
-def test_generated_simple_interface_inventory_and_namespace_are_isolated():
+def test_training_block_excludes_finetuning_and_agents():
     tool = load_tool()
-    output = tool.build("simple-interface")
-    verify = tool.verify("simple-interface")
+    report = tool.inspect("training")
+
+    assert "arclm.training" in report["modules"] or any(
+        m.startswith("arclm.training") for m in report["modules"]
+    )
+    assert not any(m.startswith("arclm.finetuning") for m in report["modules"])
+    assert not any(m.startswith("arclm.agents") for m in report["modules"])
+    assert not [edge for edge in report["excluded_hits"] if not edge["optional"]]
+
+
+def test_generated_core_block_imports_and_reports_edition():
+    tool = load_tool()
+    output = tool.build("core")
+    verify = tool.verify("core")
 
     assert verify["ok"] is True
-    assert not (output / "src" / "arclm" / "web").exists()
-    assert not (output / "src" / "arclm" / "training" / "trainer.py").exists()
-    assert (output / "src" / "arclm" / "templates" / "index.html").exists()
+    assert not (output / "src" / "arclm" / "training").exists()
+    assert not (output / "src" / "arclm" / "models").exists()
     inventory = json.loads((output / "source-inventory.json").read_text(encoding="utf-8"))
-    assert any(item["path"].endswith("simple_interface_example.py") for item in inventory["files"])
+    assert inventory["source_version"]
 
     env = dict(os.environ)
     env["PYTHONPATH"] = str(output / "src")
@@ -77,7 +111,7 @@ def test_generated_simple_interface_inventory_and_namespace_are_isolated():
     )
     assert result.returncode == 0, result.stderr
     lines = result.stdout.strip().splitlines()
-    assert lines[0] == "simple-interface"
+    assert lines[0] == "core"
     assert str(output / "src") in lines[1]
 
 

@@ -2,5 +2,6 @@ include LICENSE
 include NOTICE.md
 include distribution-manifest.json
 include source-inventory.json
-recursive-include src/arclm/templates *.html
+include src/arclm/py.typed
+include src/arclm/*.pyi
 global-exclude __pycache__ *.py[cod]

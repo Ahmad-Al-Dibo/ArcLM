@@ -1,29 +1,44 @@
-# ArcLM Fine-Tuning
+# ArcLM Fine-tuning Block
 
-SFT record preparation, formatting, collators, full fine-tuning and checkpoint metadata.
+Supervised fine-tuning (SFT) workflows, full fine-tuners, adapters and native training support. Requires PyTorch.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
 ## Contains
 
-- sft
 - finetuning
-- formatting
-- response_labels
-- checkpoint_metadata
+- sft
+- adapters
+- training
+- models
+- checkpoints
 
 ## Excludes
 
-- arclm.simple_interface
 - arclm.web
-- arclm.agents
+- arclm.evaluation
+- arclm.inference
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/finetuning"
+```
 
 ## Quick Start
 
 ```bash
-python -c "from arclm.finetuning import SFTConfig; print(SFTConfig)"
+python -c "from arclm.finetuning import FineTuningConfig, train_sft; print(FineTuningConfig)"
 ```
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

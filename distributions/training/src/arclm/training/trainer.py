@@ -14,6 +14,10 @@ import shutil
 import tempfile
 import time
 import warnings
+
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 import torch.nn.functional as F
 from pathlib import Path

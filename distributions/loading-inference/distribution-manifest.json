@@ -1,37 +1,35 @@
 {
   "capabilities": [
-    "model_loading",
-    "checkpoint_loading",
     "inference",
     "generation",
+    "models",
+    "checkpoints",
     "inspection"
   ],
   "commands": [
-    "python -c \"from arclm.inference import GenerationConfig; print(GenerationConfig())\""
+    "python -c \"from arclm.inference import load_model, Generator; print(Generator)\""
   ],
-  "description": "Standalone model construction, checkpoint loading, inspection and generation utilities.",
+  "description": "Load native or external models, generate text, and inspect one generation step. Requires PyTorch.",
   "documentation": [
     "README.md",
     "docs/distributions.md"
   ],
   "examples": [
-    "examples/distributions/loading_inference_example.py"
+    "examples/08_inference_local_models/01_generation_sampling.py"
   ],
   "excluded_apis": [
-    "arclm.web",
-    "arclm.simple_interface",
     "arclm.training",
     "arclm.finetuning",
-    "arclm.agents"
+    "arclm.web",
+    "arclm.evaluation"
   ],
   "excluded_module_prefixes": [
     "arclm.web",
-    "arclm.simple_interface",
-    "arclm.simple_chat",
     "arclm.training",
     "arclm.finetuning",
+    "arclm.evaluation",
     "arclm.agents",
-    "arclm.security.web",
+    "arclm.security",
     "arclm.peft",
     "arclm.search"
   ],
@@ -50,10 +48,11 @@
     "arclm.exceptions",
     "arclm.inspection",
     "arclm.lifecycle",
-    "arclm.utils"
+    "arclm.utils",
+    "arclm.registry"
   ],
   "license": "Apache-2.0",
-  "name": "ArcLM Loading and Inference",
+  "name": "ArcLM Loading & Inference Block",
   "optional_dependencies": {
     "hf": [
       "transformers>=4.51,<6",
@@ -72,13 +71,10 @@
     "numpy>=1.24,<3",
     "sentencepiece>=0.2,<0.3"
   ],
-  "required_distributions": [
-    "core"
-  ],
+  "required_distributions": [],
   "schema_version": 1,
   "source_package": "src/arclm",
   "tests": [
-    "tests/distributions/test_distribution_tooling.py",
-    "tests/public_api/test_root_import.py"
+    "tests/unit"
   ]
 }

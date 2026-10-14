@@ -1,67 +1,58 @@
-"""Fine-tuning public API."""
+"""Fine-tuning public API.
 
-from .adapters import ModelAdapter, TokenizerAdapter
-from .base import BaseFineTuner, BaseModelAdapter, BaseTokenizerAdapter
-from .collator import SFTDataCollator
-from .config import FineTuningConfig, FineTuningMode, SFTConfig
-from .formatting import (
-    format_chat_example,
-    format_example,
-    format_instruction_example,
-    format_prompt_response_example,
-    format_text_example,
-)
-from .full import FullFineTuner, SFTTrainer
-from .labels import create_labels, mask_labels
-from .packing import pack_sequences
-from .sft import SFTTrainingResult, train_sft
-from .workflow import (
-    FineTuningDatasetReport,
-    PreparedFineTuningRecord,
-    FineTuningResult,
-    PreparedFineTuningDataset,
-    SFTRecordContract,
-    fine_tuning_format_fingerprint,
-    fine_tune,
-    get_sft_record_contract,
-    normalize_fine_tuning_example,
-    prepare_fine_tuning_dataset,
-    prepare_fine_tuning_record,
-    validate_sft_records,
-)
+Loads heavy torch-backed modules only when accessed so config-only imports
+stay light.
+"""
 
-__all__ = [
-    "BaseFineTuner",
-    "BaseModelAdapter",
-    "BaseTokenizerAdapter",
-    "FullFineTuner",
-    "FineTuningConfig",
-    "FineTuningDatasetReport",
-    "FineTuningMode",
-    "FineTuningResult",
-    "ModelAdapter",
-    "PreparedFineTuningDataset",
-    "PreparedFineTuningRecord",
-    "SFTConfig",
-    "SFTDataCollator",
-    "SFTRecordContract",
-    "SFTTrainer",
-    "SFTTrainingResult",
-    "TokenizerAdapter",
-    "create_labels",
-    "format_chat_example",
-    "format_example",
-    "format_instruction_example",
-    "format_prompt_response_example",
-    "format_text_example",
-    "mask_labels",
-    "fine_tune",
-    "fine_tuning_format_fingerprint",
-    "get_sft_record_contract",
-    "normalize_fine_tuning_example",
-    "pack_sequences",
-    "prepare_fine_tuning_dataset",
-    "prepare_fine_tuning_record",
-    "train_sft",
-    "validate_sft_records",
-]
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+_EXPORTS = {
+    "BaseFineTuner": "arclm.finetuning.base",
+    "BaseModelAdapter": "arclm.finetuning.base",
+    "BaseTokenizerAdapter": "arclm.finetuning.base",
+    "FineTuningConfig": "arclm.finetuning.config",
+    "FineTuningMode": "arclm.finetuning.config",
+    "SFTConfig": "arclm.finetuning.config",
+    "FineTuningDatasetReport": "arclm.finetuning.workflow",
+    "PreparedFineTuningRecord": "arclm.finetuning.workflow",
+    "FineTuningResult": "arclm.finetuning.workflow",
+    "PreparedFineTuningDataset": "arclm.finetuning.workflow",
+    "SFTRecordContract": "arclm.finetuning.workflow",
+    "fine_tuning_format_fingerprint": "arclm.finetuning.workflow",
+    "fine_tune": "arclm.finetuning.workflow",
+    "get_sft_record_contract": "arclm.finetuning.workflow",
+    "normalize_fine_tuning_example": "arclm.finetuning.workflow",
+    "prepare_fine_tuning_dataset": "arclm.finetuning.workflow",
+    "prepare_fine_tuning_record": "arclm.finetuning.workflow",
+    "validate_sft_records": "arclm.finetuning.workflow",
+    "ModelAdapter": "arclm.finetuning.adapters",
+    "TokenizerAdapter": "arclm.finetuning.adapters",
+    "SFTDataCollator": "arclm.finetuning.collator",
+    "FullFineTuner": "arclm.finetuning.full",
+    "SFTTrainer": "arclm.finetuning.full",
+    "create_labels": "arclm.finetuning.labels",
+    "mask_labels": "arclm.finetuning.labels",
+    "format_chat_example": "arclm.finetuning.formatting",
+    "format_example": "arclm.finetuning.formatting",
+    "format_instruction_example": "arclm.finetuning.formatting",
+    "format_prompt_response_example": "arclm.finetuning.formatting",
+    "format_text_example": "arclm.finetuning.formatting",
+    "pack_sequences": "arclm.finetuning.packing",
+    "SFTTrainingResult": "arclm.finetuning.sft",
+    "train_sft": "arclm.finetuning.sft",
+}
+
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name: str) -> Any:
+    """Load a fine-tuning attribute only when it is requested."""
+    if name in _EXPORTS:
+        module = import_module(_EXPORTS[name])
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module 'arclm.finetuning' has no attribute {name!r}")

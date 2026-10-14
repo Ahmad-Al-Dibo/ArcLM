@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arclm-training"
-version = "1.13.4"
-description = "Native model construction, training configuration, training loop, callbacks, metrics and checkpoints."
+version = "2.0.0"
+description = "Native training loop, ArcLM models, checkpoints, evaluation metrics and experiment tracking. Requires PyTorch."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "Ahmad Al Dibo" }]
 dependencies = [
@@ -27,4 +27,4 @@ where = ["src"]
 include = ["arclm*"]
 
 [tool.setuptools.package-data]
-arclm = ["templates/*.html", "py.typed"]
+arclm = ["py.typed", "*.pyi"]

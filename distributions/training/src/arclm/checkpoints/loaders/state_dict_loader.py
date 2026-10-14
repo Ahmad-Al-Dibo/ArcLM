@@ -3,6 +3,9 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ...utils.imports import require_torch
+
+require_torch("ArcLM checkpoints")
 import torch
 
 from .base import (

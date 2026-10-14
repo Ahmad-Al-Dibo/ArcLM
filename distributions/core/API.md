@@ -1,8 +1,8 @@
 # API
 
-- `arclm.get_distribution_info`
-- `arclm._version`
 - `arclm.configs`
+- `arclm.datasets`
+- `arclm.tokenizers`
 - `arclm.exceptions`
 - `arclm.registry`
 - `arclm.utils`

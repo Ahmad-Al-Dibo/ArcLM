@@ -15,6 +15,9 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .utils.imports import require_torch
+
+require_torch("arclm.inspection")
 import torch
 
 from .inference.generation import Generator

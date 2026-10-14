@@ -416,7 +416,7 @@ def write_project_files(output: Path, manifest: dict[str, Any], inventory: list[
         f'version = "{source_version}"\n'
         f'description = "{manifest["description"]}"\n'
         'readme = "README.md"\n'
-        'requires-python = ">=3.9,<3.13"\n'
+        f'requires-python = ">=3.9"\n'
         'license = "Apache-2.0"\n'
         'authors = [{ name = "Ahmad Al Dibo" }]\n'
         f"dependencies = {json.dumps(deps, indent=2)}\n\n"
@@ -429,11 +429,11 @@ def write_project_files(output: Path, manifest: dict[str, Any], inventory: list[
         'where = ["src"]\n'
         'include = ["arclm*"]\n\n'
         "[tool.setuptools.package-data]\n"
-        'arclm = ["templates/*.html", "py.typed"]\n',
+        'arclm = ["py.typed", "*.pyi"]\n',
         encoding="utf-8",
     )
     (output / "MANIFEST.in").write_text(
-        "include LICENSE\ninclude NOTICE.md\ninclude distribution-manifest.json\ninclude source-inventory.json\nrecursive-include src/arclm/templates *.html\nglobal-exclude __pycache__ *.py[cod]\n",
+        "include LICENSE\ninclude NOTICE.md\ninclude distribution-manifest.json\ninclude source-inventory.json\ninclude src/arclm/py.typed\ninclude src/arclm/*.pyi\nglobal-exclude __pycache__ *.py[cod]\n",
         encoding="utf-8",
     )
     license_source = ROOT / "LICENSE"
@@ -461,6 +461,20 @@ def write_project_files(output: Path, manifest: dict[str, Any], inventory: list[
             "",
             *[f"- {item}" for item in manifest.get("excluded_apis", [])],
             "",
+            "## Install",
+            "",
+            "From a built wheel in this directory:",
+            "",
+            "```bash",
+            "pip install .",
+            "```",
+            "",
+            "Or directly from the canonical repository (once published):",
+            "",
+            "```bash",
+            'pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/' + manifest["id"] + '"',
+            "```",
+            "",
             "## Quick Start",
             "",
             "```bash",
@@ -469,9 +483,31 @@ def write_project_files(output: Path, manifest: dict[str, Any], inventory: list[
             "",
             "## Relationship To Full ArcLM",
             "",
-            "This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.",
+            "This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.",
         ],
-        "INSTALLATION.md": ["# Installation", "", f"Build from the canonical repository with `python tools/build_arclm_distributions.py build {manifest['id']}` and install the produced wheel from this directory."],
+        "INSTALLATION.md": [
+            "# Installation",
+            "",
+            "## From this directory (after build)",
+            "",
+            "```bash",
+            "pip install .",
+            "```",
+            "",
+            "## From the canonical repository (git)",
+            "",
+            "```bash",
+            f'pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/{manifest["id"]}"',
+            "```",
+            "",
+            "## Rebuild from canonical source",
+            "",
+            "```bash",
+            f"python tools/build_arclm_distributions.py build {manifest['id']}",
+            "```",
+            "",
+            "Do not install multiple ArcLM blocks together unless composition is explicitly supported.",
+        ],
         "USAGE.md": ["# Usage", "", "Commands:", "", "```bash", *(manifest.get("commands") or []), "```"],
         "API.md": ["# API", "", *[f"- `{item}`" for item in manifest.get("public_api", [])]],
         "LIMITATIONS.md": ["# Limitations", "", "This is a smaller source edition, not a smaller model-weight package.", "", *[f"- Excludes `{item}`." for item in manifest.get("excluded_apis", [])]],

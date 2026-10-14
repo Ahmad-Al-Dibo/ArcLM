@@ -1,4 +1,5 @@
 # API
 
 - `arclm.finetuning`
-- `arclm.sft`
+- `arclm.training`
+- `arclm.models`

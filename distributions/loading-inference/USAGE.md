@@ -3,5 +3,5 @@
 Commands:
 
 ```bash
-python -c "from arclm.inference import GenerationConfig; print(GenerationConfig())"
+python -c "from arclm.inference import load_model, Generator; print(Generator)"
 ```

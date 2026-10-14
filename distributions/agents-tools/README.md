@@ -1,6 +1,6 @@
-# ArcLM Agents and Tools
+# ArcLM Agents & Tools Block
 
-Provider-independent Agent runtime, safe tools, permissions, approvals, tracing and sessions.
+Provider-independent agent runtime with typed tools, permissions, approvals, tracing and safe builtins. No PyTorch required.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
@@ -16,16 +16,29 @@ This directory is generated from canonical ArcLM source. Do not edit generated s
 ## Excludes
 
 - arclm.web
-- arclm.simple_interface
 - arclm.training
-- arclm.finetuning
+- arclm.inference
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/agents-tools"
+```
 
 ## Quick Start
 
 ```bash
-python -c "from arclm.agents import Agent, AgentRunner; print(Agent, AgentRunner)"
+python -c "from arclm.agents import Agent, tool, ToolRegistry; print(Agent)"
 ```
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

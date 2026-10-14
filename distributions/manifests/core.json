@@ -1,22 +1,57 @@
 {
   "schema_version": 1,
   "id": "core",
-  "name": "ArcLM Core",
-  "description": "Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives.",
+  "name": "ArcLM Core Block",
+  "description": "Light ArcLM building block: configuration, datasets, tokenizers, exceptions, registry and utilities. No PyTorch required.",
   "source_package": "src/arclm",
-  "capabilities": ["version_metadata", "configuration", "exceptions", "registry", "formatting"],
-  "include_modules": ["arclm._version", "arclm.exceptions", "arclm.configs", "arclm.registry", "arclm.utils"],
+  "capabilities": ["version_metadata", "configuration", "datasets", "tokenizers", "exceptions", "registry", "formatting"],
+  "include_modules": [
+    "arclm._version",
+    "arclm.configs",
+    "arclm.datasets",
+    "arclm.tokenizers",
+    "arclm.exceptions",
+    "arclm.registry",
+    "arclm.utils"
+  ],
   "include_module_prefixes": [],
   "include_assets": ["arclm/py.typed"],
   "required_distributions": [],
-  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.training", "arclm.finetuning", "arclm.evaluation", "arclm.agents", "arclm.security", "arclm.peft", "arclm.search"],
-  "python_dependencies": [],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.agents",
+    "arclm.security",
+    "arclm.peft",
+    "arclm.search",
+    "arclm.checkpoints",
+    "arclm.lifecycle",
+    "arclm.inspection"
+  ],
+  "python_dependencies": ["numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
   "optional_dependencies": {},
-  "public_api": ["arclm.get_distribution_info", "arclm._version", "arclm.configs", "arclm.exceptions", "arclm.registry", "arclm.utils"],
-  "excluded_apis": ["arclm.simple_interface", "arclm.web", "arclm.training", "arclm.finetuning", "arclm.agents"],
-  "commands": ["python -c \"import arclm; print(arclm.get_distribution_info())\""],
-  "tests": ["tests/distributions/test_distribution_tooling.py"],
-  "examples": ["examples/distributions/core_example.py"],
+  "public_api": [
+    "arclm.configs",
+    "arclm.datasets",
+    "arclm.tokenizers",
+    "arclm.exceptions",
+    "arclm.registry",
+    "arclm.utils"
+  ],
+  "excluded_apis": ["arclm.training", "arclm.finetuning", "arclm.web", "arclm.agents", "arclm.inference"],
+  "commands": [
+    "python -c \"from arclm.configs import Config; print(Config().embed_dim)\"",
+    "python -c \"from arclm.tokenizers import Tokenizer; print(Tokenizer)\""
+  ],
+  "tests": ["tests/unit/datasets", "tests/unit/test_light_imports.py"],
+  "examples": [
+    "examples/01_data/01_load_validate_report.py",
+    "examples/02_tokenizers/01_word_tokenizer.py"
+  ],
   "documentation": ["README.md", "docs/distributions.md"],
   "license": "Apache-2.0"
 }

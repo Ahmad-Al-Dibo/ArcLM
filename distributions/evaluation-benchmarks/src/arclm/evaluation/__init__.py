@@ -1,5 +1,8 @@
 """Evaluation and diagnostics public API."""
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM evaluation")
 from .base import BaseEvaluator, BaseMetric
 from .callbacks import BaseEvaluationCallback
 from .config import EvaluationConfig

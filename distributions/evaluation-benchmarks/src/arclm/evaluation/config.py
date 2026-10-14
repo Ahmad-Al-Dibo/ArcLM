@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM evaluation")
 import torch
 
 from ..exceptions import EvaluationConfigError

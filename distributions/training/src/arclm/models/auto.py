@@ -26,6 +26,6 @@ class AutoModel:
     def from_name(cls, name: str, **kwargs):
         """Build a supported model by name."""
         normalized = name.lower().replace("-", "_")
-        if normalized in {"arclm", "minigpt", "causal_lm"}:
+        if normalized in {"arclm", "causal_lm"}:
             return ArcLM(**kwargs)
         raise ValueError(f"Unknown model name: {name!r}. Supported: 'arclm'.")

@@ -1,31 +1,44 @@
-# ArcLM Loading and Inference
+# ArcLM Loading & Inference Block
 
-Standalone model construction, checkpoint loading, inspection and generation utilities.
+Load native or external models, generate text, and inspect one generation step. Requires PyTorch.
 
 This directory is generated from canonical ArcLM source. Do not edit generated source files directly.
 
 ## Contains
 
-- model_loading
-- checkpoint_loading
 - inference
 - generation
+- models
+- checkpoints
 - inspection
 
 ## Excludes
 
-- arclm.web
-- arclm.simple_interface
 - arclm.training
 - arclm.finetuning
-- arclm.agents
+- arclm.web
+- arclm.evaluation
+
+## Install
+
+From a built wheel in this directory:
+
+```bash
+pip install .
+```
+
+Or directly from the canonical repository (once published):
+
+```bash
+pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/loading-inference"
+```
 
 ## Quick Start
 
 ```bash
-python -c "from arclm.inference import GenerationConfig; print(GenerationConfig())"
+python -c "from arclm.inference import load_model, Generator; print(Generator)"
 ```
 
 ## Relationship To Full ArcLM
 
-This edition preserves the `arclm` namespace for independent installation. Do not install multiple partial ArcLM editions together unless composition is explicitly supported.
+This block is a trimmed, self-contained edition of ArcLM. Install it **instead of** the full package, not alongside it.

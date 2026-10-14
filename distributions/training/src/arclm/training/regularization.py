@@ -3,6 +3,9 @@ Regularization & Generalization Utilities
 Technieken om model generalisatie te verbeteren
 """
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 import torch.nn as nn
 

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM fine-tuning")
 import torch
 
 from ..exceptions import DataCollatorError

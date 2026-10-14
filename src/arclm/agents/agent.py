@@ -8,7 +8,7 @@ from typing import Any
 from .configuration import AgentConfig
 from .permissions import ToolPolicy
 from .tool import Tool
-from arclm.security import SecurityPolicy
+from arclm.security.configuration import SecurityPolicy
 
 
 @dataclass

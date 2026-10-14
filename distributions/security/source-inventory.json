@@ -2,11 +2,11 @@
   "edition": "security",
   "files": [
     {
-      "bytes": 115,
-      "example": "examples/distributions/security_example.py",
-      "path": "examples\\security_example.py",
-      "sha256": "56661e3967c0894800eb38a99c6e80925c7187d1cb1ffbc5cc490d712527480d",
-      "source": "examples\\distributions\\security_example.py"
+      "bytes": 1024,
+      "example": "examples/11_security/01_security_status.py",
+      "path": "examples\\01_security_status.py",
+      "sha256": "5dda6fd6a3f2fe5fb21b7fed3c6e71da46887a799a48e76455ed4fa4758d127d",
+      "source": "examples\\11_security\\01_security_status.py"
     },
     {
       "bytes": 801,
@@ -23,17 +23,17 @@
       "source": "generated"
     },
     {
-      "bytes": 1734,
+      "bytes": 1692,
       "module": "arclm._distribution",
       "path": "src\\arclm\\_distribution.py",
-      "sha256": "ad73aceb0d762763604bf763dec700c00c5ac998a03d8ae67b4bbe958119443c",
+      "sha256": "b8c2fb66f96d083c723eb26484067a1ec9f5c340fee4e214e19b8b61c47afebc",
       "source": "generated"
     },
     {
-      "bytes": 133,
+      "bytes": 135,
       "module": "arclm._version",
       "path": "src\\arclm\\_version.py",
-      "sha256": "971adf94657f0c731112d19e22f4eb93e0a8b8cd07a23fb7ce0e483a8e26903f",
+      "sha256": "1fedc4be8708a02ef8c008035f8bd356fc45ff66d2d5d71d2e4003d7e9a0bf15",
       "source": "src\\arclm\\_version.py"
     },
     {
@@ -44,17 +44,17 @@
       "source": "generated"
     },
     {
-      "bytes": 1416,
+      "bytes": 1624,
       "module": "arclm.exceptions",
       "path": "src\\arclm\\exceptions\\__init__.py",
-      "sha256": "0156ec446810df5907c77be5c69e16357f0689d09659129d0085d01d2e870929",
+      "sha256": "47e8438ebbf718db57faeb2b6e5ddbe72bb403bde3a743033db58bf3a701f8c9",
       "source": "src\\arclm\\exceptions\\__init__.py"
     },
     {
-      "bytes": 2701,
+      "bytes": 3161,
       "module": "arclm.exceptions.base",
       "path": "src\\arclm\\exceptions\\base.py",
-      "sha256": "f019dd252a2cf2026fa9126671e92eb0854e21aebc7839bff5901e62575dd704",
+      "sha256": "66a7d61625cd18bd3833204bc7a7c7facaa1de3108604fdd4eeb697fe7585833",
       "source": "src\\arclm\\exceptions\\base.py"
     },
     {
@@ -63,6 +63,20 @@
       "path": "src\\arclm\\py.typed",
       "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
       "source": "src\\arclm\\py.typed"
+    },
+    {
+      "bytes": 84,
+      "module": "arclm.registry",
+      "path": "src\\arclm\\registry\\__init__.py",
+      "sha256": "6bba3177ae7190194da3de02df0b10f77895f00c6bbe816b8a7594740fa215b9",
+      "source": "src\\arclm\\registry\\__init__.py"
+    },
+    {
+      "bytes": 1926,
+      "module": "arclm.registry.base",
+      "path": "src\\arclm\\registry\\base.py",
+      "sha256": "1cc554a98128eb78cf84cce296b37c6bee9065b19e0230301e35b1bc12f93fc0",
+      "source": "src\\arclm\\registry\\base.py"
     },
     {
       "bytes": 2170,
@@ -317,21 +331,21 @@
       "source": "src\\arclm\\utils\\__init__.py"
     },
     {
-      "bytes": 10472,
+      "bytes": 10702,
       "module": "arclm.utils.formatting",
       "path": "src\\arclm\\utils\\formatting.py",
-      "sha256": "504451fda979e51a97a022d8706c9e97487df1726db44070d2b7e207c901e291",
+      "sha256": "2a17abeef9c9998365b40c6a5a5347b2e15d5f1e4652c8b3ec1bcd220dc93fbe",
       "source": "src\\arclm\\utils\\formatting.py"
     },
     {
-      "bytes": 629,
+      "bytes": 967,
       "module": "arclm.utils.imports",
       "path": "src\\arclm\\utils\\imports.py",
-      "sha256": "c2adcae41c8f43fe6bbae7384eaabad8ab6fcdd41e2e2976dbf02b96dbbafdf5",
+      "sha256": "59aefdd2a59eb591079ad9824d103db7f7b1d8f038fdd59246df4c7693c7c41f",
       "source": "src\\arclm\\utils\\imports.py"
     }
   ],
-  "generated_at": "2026-07-28T07:30:58.020599+00:00",
+  "generated_at": "2026-10-14T21:58:09.670718+00:00",
   "notice": "This directory is generated from canonical ArcLM source. Do not edit generated source files directly.",
-  "source_version": "1.13.4"
+  "source_version": "2.0.0"
 }

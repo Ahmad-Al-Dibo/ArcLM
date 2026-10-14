@@ -1,39 +1,35 @@
 {
   "capabilities": [
-    "security_policy",
+    "security",
+    "crypto",
     "redaction",
-    "safe_paths",
-    "safe_urls",
-    "hashing",
-    "signatures",
-    "encryption",
-    "secure_artifacts"
+    "policy",
+    "signing"
   ],
   "commands": [
     "python -c \"from arclm.security import security_status; print(security_status())\""
   ],
-  "description": "Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers.",
+  "description": "Policy enforcement, encryption, hashing, signing, redaction and safe path/URL helpers. No PyTorch required.",
   "documentation": [
     "README.md",
     "docs/distributions.md"
   ],
   "examples": [
-    "examples/distributions/security_example.py"
+    "examples/11_security/01_security_status.py"
   ],
   "excluded_apis": [
     "arclm.web",
-    "arclm.simple_interface",
     "arclm.training",
     "arclm.agents"
   ],
   "excluded_module_prefixes": [
     "arclm.web",
-    "arclm.simple_interface",
     "arclm.training",
     "arclm.finetuning",
-    "arclm.agents",
-    "arclm.peft",
-    "arclm.search"
+    "arclm.evaluation",
+    "arclm.inference",
+    "arclm.models",
+    "arclm.agents"
   ],
   "id": "security",
   "include_assets": [
@@ -44,10 +40,11 @@
     "arclm._version",
     "arclm.security",
     "arclm.exceptions",
-    "arclm.utils"
+    "arclm.utils",
+    "arclm.registry"
   ],
   "license": "Apache-2.0",
-  "name": "ArcLM Security",
+  "name": "ArcLM Security Block",
   "optional_dependencies": {
     "keyring": [
       "keyring>=25,<27"
@@ -59,12 +56,11 @@
   "python_dependencies": [
     "cryptography>=42,<47"
   ],
-  "required_distributions": [
-    "core"
-  ],
+  "required_distributions": [],
   "schema_version": 1,
   "source_package": "src/arclm",
   "tests": [
+    "tests/unit",
     "tests/security"
   ]
 }

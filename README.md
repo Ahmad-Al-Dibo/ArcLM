@@ -242,6 +242,10 @@ python -m arclm web-api       # local Studio backend
 
 CPU-only torch: `pip install torch --index-url https://download.pytorch.org/whl/cpu` first.
 
+**Need only a subset?** Install an [ArcLM Block](distributions/README.md) —
+trimmed editions (core, training, agents, security, …) generated from the same
+source. `pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirectory=distributions/core"`
+
 ## Learn more
 
 | Resource | What |

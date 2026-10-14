@@ -15,6 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM model artifacts")
 import torch
 
 from .._version import __version__
