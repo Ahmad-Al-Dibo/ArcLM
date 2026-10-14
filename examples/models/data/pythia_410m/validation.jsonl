@@ -1,3 +1,0 @@
-{"prompt":"The default for trust_remote_code should be","completion":" false."}
-{"prompt":"A path from the browser must be","completion":" validated against an allowed root."}
-{"prompt":"Generated output should be","completion":" bounded by max_new_tokens."}

@@ -1,4 +1,0 @@
-{"id":"remote_code","prompt":"The default for trust_remote_code should be","expected_keywords":["false"]}
-{"id":"support_claim","prompt":"A model is not fully supported after","expected_keywords":["tokenizer"]}
-{"id":"tiny_sft","prompt":"A tiny SFT run uses","expected_keywords":["small"]}
-

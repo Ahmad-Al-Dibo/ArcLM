@@ -1,3 +1,0 @@
-{"messages":[{"role":"user","content":"What is a manual model status?"},{"role":"assistant","content":"The code exists but requires access or hardware outside the current run."}]}
-{"messages":[{"role":"user","content":"What does security inspection check?"},{"role":"assistant","content":"It checks remote code, serialization format, revision, and warnings."}]}
-{"messages":[{"role":"user","content":"What is a safe root?"},{"role":"assistant","content":"A configured directory within which local paths must resolve."}]}

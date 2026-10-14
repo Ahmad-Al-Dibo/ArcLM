@@ -1,4 +1,0 @@
-{"id":"preflight","prompt":"What happens before model downloads?","expected_keywords":["preflight"]}
-{"id":"peft_missing","prompt":"How report missing PEFT?","expected_keywords":["dependency_missing"]}
-{"id":"revision","prompt":"Why pin a revision?","expected_keywords":["reproducible"]}
-

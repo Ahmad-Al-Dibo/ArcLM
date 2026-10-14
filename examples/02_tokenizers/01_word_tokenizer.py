@@ -1,8 +1,36 @@
 """
 ArcLM Example: Word Tokenizer
 
-This example builds, saves, reloads, and measures coverage for the native word
-tokenizer.
+What you'll learn
+-----------------
+- Build the native word tokenizer, encode text, and measure unknown-word rate
+- Save a tokenizer to JSON and reload it losslessly
+
+When to use this
+----------------
+- Baseline tokenization for small corpora where whole words should map
+  to ids and unknown words should be visible in coverage stats
+
+Requirements
+------------
+    pip install arclm
+
+Run
+---
+    python examples/02_tokenizers/01_word_tokenizer.py
+
+Expected output
+---------------
+    {
+      "decoded": "ArcLM local <UNK>",
+      "ids": [2, 9, 0],
+      "unknown_rate": 0.33,
+      "vocab_size": 18
+    }
+
+Runtime
+-------
+    Under 5 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -24,9 +52,12 @@ def print_json(value) -> None:
 
 
 def main() -> None:
+    # --- 1. Build tokenizer and encode text containing an unknown word ---
     tokenizer = Tokenizer(max_vocab=32, user_defined_symbols=["<task>"])
     tokenizer.build(CORPUS)
     ids = tokenizer.encode_text("ArcLM local unknown-token")
+
+    # --- 2. Save, reload, and compare results ---
     with tempfile.TemporaryDirectory(prefix="arclm-tokenizer-") as tmpdir:
         from pathlib import Path
 

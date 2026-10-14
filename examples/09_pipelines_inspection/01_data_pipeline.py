@@ -1,8 +1,37 @@
 """
 ArcLM Example: Data Pipeline
 
-This example composes loading, validation, deduplication, tokenization, and a
-dataset report with real ArcLM utilities.
+What you'll learn
+-----------------
+- Validate raw records against required fields
+- Deduplicate records by text field and count removals
+- Tokenize the cleaned data and produce a dataset report summary
+
+When to use this
+----------------
+- As a minimal template for the canonical load -> validate -> dedupe ->
+  tokenize -> report path before training or evaluation.
+
+Requirements
+------------
+    pip install "arclm[train]"
+
+Run
+---
+    python examples/09_pipelines_inspection/01_data_pipeline.py
+
+Expected output
+---------------
+    {
+      "deduped_records": 3,
+      "duplicates_removed": 1,
+      "input_records": 4,
+      "tokens": 20
+    }
+
+Runtime
+-------
+    Under 5 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -25,13 +54,20 @@ def print_json(value) -> None:
 
 
 def main() -> None:
+    # --- 1. Validate records (including one intentional duplicate) ---
     rows = DATA_RECORDS + [dict(DATA_RECORDS[0])]
     validation = validate_records(rows, required_fields=("id", "text"), strict=False)
+
+    # --- 2. Deduplicate by text field ---
     dedupe_result = deduplicate(validation.valid_records, field="text", return_result=True)
     deduped = dedupe_result.dataset
+
+    # --- 3. Tokenize and build the dataset report ---
     tokenizer = Tokenizer(max_vocab=64)
     tokenizer.build(" ".join(row["text"] for row in deduped))
     report = build_dataset_report(deduped, tokenizer=tokenizer, text_fields=("text",), validation_result=validation, duplicates_removed=len(rows) - len(deduped))
+
+    # --- 4. Print the pipeline summary ---
     print_json(
         {
             "input_records": len(rows),

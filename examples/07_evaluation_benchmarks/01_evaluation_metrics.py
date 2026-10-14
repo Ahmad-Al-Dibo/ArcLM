@@ -1,8 +1,36 @@
 """
 ArcLM Example: Evaluation Metrics
 
-This example calculates loss-derived perplexity, token accuracy, and top-k
-predictions from a tiny native model.
+What you'll learn
+-----------------
+- Compute token accuracy with the streaming Accuracy metric
+- Convert a loss value to perplexity
+- Get ranked top-k token predictions from a tiny native model
+
+When to use this
+----------------
+- When building an evaluation loop for a native ArcLM model, or sanity-checking
+  metric helpers before wiring them into a full benchmark run.
+
+Requirements
+------------
+    pip install "arclm[train]"
+
+Run
+---
+    python examples/07_evaluation_benchmarks/01_evaluation_metrics.py
+
+Expected output
+---------------
+    {
+      "accuracy": 0.0,
+      "perplexity_from_loss_2": 7.3891,
+      "top_k": [{"rank": 1, "token": "tiny", "probability": 0.1728}, ...]
+    }
+
+Runtime
+-------
+    Under 10 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -23,15 +51,20 @@ def print_json(value) -> None:
 
 
 def main() -> None:
+    # --- 1. Build tokenizer and a tiny untrained model ---
     tokenizer = Tokenizer(max_vocab=48)
     tokenizer.build(CORPUS)
     ids = tokenizer.encode_text("ArcLM trains tiny")
     model = ArcLM(vocab_size=tokenizer.get_vocab_size(), embed_dim=16, block_size=8, num_blocks=1)
+
+    # --- 2. Compute token accuracy over a forward pass ---
     logits = model(torch.tensor([ids], dtype=torch.long))
     labels = torch.tensor([ids], dtype=torch.long)
     metric = Accuracy()
     metric.update(predictions=logits, targets=labels)
     accuracy = metric.compute()
+
+    # --- 3. Get top-k predictions and report metrics ---
     predictions = predict_top_k(model, tokenizer.stoi, tokenizer.itos, block_size=8, device="cpu", prompt="ArcLM", k=3, tokenizer=tokenizer)
     print_json(
         {

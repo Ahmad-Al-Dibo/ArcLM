@@ -1,7 +1,32 @@
 """
 ArcLM Example: Custom Tool Agent
 
-This example verifies a deterministic tool loop with a fake Agent model.
+What you'll learn
+-----------------
+- Define a typed tool with the @tool decorator
+- Drive a deterministic agent loop with a fake model backend
+- Inspect the session tool-call trace after a run
+
+When to use this
+----------------
+- Prototyping agent tool logic without calling a real LLM API
+
+Requirements
+------------
+    pip install arclm
+
+Run
+---
+    python examples/10_agents_tools/01_custom_tool_agent.py
+
+Expected output
+---------------
+    "output": "Done. The tool result was processed safely."
+    "tool_calls": ["add_numbers"]
+
+Runtime
+-------
+    Under 5 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -11,6 +36,7 @@ import json
 from arclm.agents import Agent, AgentRunner, ModelResponse, ToolCall, tool
 
 
+# --- 1. Fake model: one tool call, then a final response ---
 class OneToolThenDoneModel:
     def __init__(self, tool_name: str, arguments: dict):
         self.tool_name = tool_name
@@ -24,16 +50,19 @@ class OneToolThenDoneModel:
         return ModelResponse(content="Done. The tool result was processed safely.")
 
 
+# --- 2. Pretty-print helper ---
 def print_json(value) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, default=str))
 
 
+# --- 3. Custom tool ---
 @tool
 def add_numbers(a: int, b: int) -> int:
     """Add two integers."""
     return a + b
 
 
+# --- 4. Build the agent and run the loop ---
 def main() -> None:
     agent = Agent(name="calculator", instructions="Use tools when useful.", model=OneToolThenDoneModel("add_numbers", {"a": 2, "b": 5}), tools=[add_numbers])
     result = AgentRunner(max_steps=2).run(agent, "Add 2 and 5.")

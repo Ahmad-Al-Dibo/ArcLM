@@ -1,8 +1,32 @@
 """
 ArcLM Complete Project: Domain SFT Assistant
 
-Base tiny model -> instruction dataset -> canonical SFT preparation ->
-one response-label update -> bounded generation report.
+What you'll learn
+-----------------
+- Prepare instruction/response records with prepare_fine_tuning_dataset
+- Train one SFT step on response tokens only (train_on_prompt=False)
+- Report a format fingerprint and a bounded sample generation
+
+When to use this
+----------------
+- Shape-checking a supervised fine-tuning pipeline before real training
+
+Requirements
+------------
+    pip install "arclm[train]"
+
+Run
+---
+    python examples/12_complete_projects/02_domain_sft_assistant/main.py
+
+Expected output
+---------------
+    "fingerprint": "fmt_c3b01428485527280faaffd7"
+    "loss": 3.2615, "records": 2, "trainable_tokens": 14
+
+Runtime
+-------
+    Under 10 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -17,6 +41,7 @@ from arclm.models import ArcLM
 from arclm.tokenizers import Tokenizer
 
 
+# --- 1. Corpus and SFT records ---
 CORPUS = "ArcLM is a compact local toolkit. Tiny examples are fast and safe."
 SFT_RECORDS = [
     {"instruction": "What is ArcLM?", "response": "ArcLM is a compact local language-model toolkit."},
@@ -28,6 +53,7 @@ def print_json(value) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, default=str))
 
 
+# --- 2. Prepare the SFT dataset ---
 def main() -> None:
     torch.manual_seed(23)
     tokenizer = Tokenizer(max_vocab=80)
@@ -35,6 +61,7 @@ def main() -> None:
     config = FineTuningConfig(max_sequence_length=40, train_on_prompt=False)
     prepared = prepare_fine_tuning_dataset(SFT_RECORDS, tokenizer, config)
     feature = prepared[0]
+    # --- 3. One response-only training step ---
     model = ArcLM(vocab_size=tokenizer.get_vocab_size(), embed_dim=16, block_size=len(feature["input_ids"]), num_blocks=1)
     x = torch.tensor([feature["input_ids"]], dtype=torch.long)
     labels = torch.tensor([feature["labels"]], dtype=torch.long)
@@ -43,6 +70,7 @@ def main() -> None:
     loss = torch.nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)), labels.reshape(-1), ignore_index=config.ignore_index)
     loss.backward()
     optimizer.step()
+    # --- 4. Bounded generation report ---
     generator = Generator(model, tokenizer.stoi, tokenizer.itos, block_size=len(feature["input_ids"]), device="cpu", tokenizer=tokenizer)
     print_json(
         {

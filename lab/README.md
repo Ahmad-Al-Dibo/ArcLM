@@ -1,64 +1,56 @@
 # ArcLM Lab
 
-## Learn The Architecture By Building It
+**Learn the architecture by building it.**
 
-ArcLM Lab is a progressive collection of practical challenges designed to teach
-developers how the ArcLM framework works.
+ArcLM Lab is a progressive curriculum of hands-on challenges that teach you how
+the ArcLM framework works — from raw text records to training loops, checkpoints,
+fine-tuning, evaluation, agents, and architecture decisions.
 
-The Lab is not only a test suite. It is a complete learning path covering:
-
-```text
-Data
--> Preprocessing
--> Tokenization
--> Model architecture
--> Training
--> Checkpoints
--> Fine-tuning
--> Evaluation
--> Generation
--> Inspection
--> Plugins and registries
--> Distributed runtime
--> Architecture decisions
-```
-
-The Lab has four levels:
+It is not a test suite. It is a **learning path** with 32 challenges across four
+levels, automated tests, and a capstone per level.
 
 ```text
-Beginner
-Intermediate
-Advanced
-Expert
+Data → Tokenization → Model → Training → Checkpoints
+→ Fine-tuning → Evaluation → Generation → Inspection
+→ Agents → Security → Distributed runtime → Architecture
 ```
 
-Each level contains learning objectives, prerequisite knowledge, recommended
-articles and courses, practical challenges, input and output examples,
-automated tests, and a final capstone project.
+## Levels at a glance
 
-## Who Should Use This Lab?
+| Level | Focus | Challenges | You build |
+|-------|-------|------------|-----------|
+| **Beginner** | Data, tokenizers, training counters | 8 | Tiny Dataset Inspector |
+| **Intermediate** | Pipelines, models, training loops, checkpoints | 8 | Tiny Training Workbench |
+| **Advanced** | Artifacts, SFT, PEFT, evaluation, inference | 8 | Domain Adaptation Toolkit |
+| **Expert** | Registries, events, DDP/FSDP planning, ADRs | 8 | Runtime Architecture Simulator |
 
-This Lab is intended for:
+## Who is this for?
 
-- new ArcLM contributors;
-- Python developers entering AI engineering;
-- machine-learning students;
-- AI engineers learning framework architecture;
-- developers preparing to modify ArcLM production code;
-- technical collaborators;
-- AI systems being evaluated before changing ArcLM.
+- New ArcLM contributors
+- Python developers entering AI engineering
+- ML students and early researchers
+- Anyone preparing to modify ArcLM production code
 
-You do not need to complete every external course before starting. Use the
-resources to fill gaps in your knowledge.
+You do **not** need every external course before starting. Use resources to fill
+gaps as you go.
 
-## How To Use The Lab
+## Prerequisites
+
+```bash
+pip install -e ".[dev,train,security]"
+```
+
+You should be comfortable with Python functions, classes, exceptions, and basic
+file/JSON handling. Deep-learning math is introduced gradually in Beginner.
+
+## How to use the Lab
 
 For every level, follow this cycle:
 
 ```text
 1. Read the level overview
-2. Check the prerequisite list
-3. Study the required learning resources
+2. Check prerequisites
+3. Study the required resources
 4. Implement the small exercises
 5. Run the challenge tests
 6. Fix edge cases
@@ -67,7 +59,7 @@ For every level, follow this cycle:
 9. Continue to the next level
 ```
 
-Recommended workflow for one challenge:
+Workflow for one challenge:
 
 ```bash
 python -m lab.runner show <challenge-id>
@@ -80,38 +72,42 @@ After finishing a level:
 python -m lab.runner test-level beginner
 ```
 
-Replace `beginner` with the relevant level. To run the complete Lab:
+Run the complete Lab:
 
 ```bash
 python -m lab.runner test-all
 ```
 
-## Learning Rule
+List all challenges:
+
+```bash
+python -m lab.runner list
+```
+
+## Learning rule
 
 Do not copy complete solutions from tutorials. The purpose of the resources is
-to understand the concepts. The challenge implementation must still be your own
-work.
+to understand the concepts. **Your challenge implementation must be your own
+work.**
 
-A good learning process is:
+A good learning process:
 
 ```text
 Learn the concept
--> close the tutorial
--> implement from memory
--> run tests
--> debug
--> compare your reasoning
+→ close the tutorial
+→ implement from memory
+→ run tests
+→ debug
+→ compare your reasoning
 ```
 
-## Required Versus Optional Resources
-
-Resources are divided into three types.
+## Resource types
 
 | Type | Meaning |
 | ---- | ------- |
-| Required | The minimum knowledge needed to complete the level |
-| Recommended | Helpful for understanding the architecture more deeply |
-| Deep dive | Advanced material for developers who want research or production context |
+| Required | Minimum knowledge needed to complete the level |
+| Recommended | Helps you understand the architecture more deeply |
+| Deep dive | Advanced material for research or production context |
 
 You are not expected to finish every deep-dive resource.
 

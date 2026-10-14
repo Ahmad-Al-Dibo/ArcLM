@@ -1,6 +1,0 @@
-{"messages":[{"role":"system","content":"You are a local model studio helper."},{"role":"user","content":"List two safe tools for an agent."},{"role":"assistant","content":"A calculator and a dataset report reader are safe bounded tools."}]}
-{"messages":[{"role":"user","content":"How many models should be loaded at once in the benchmark?"},{"role":"assistant","content":"Load one model at a time and release it before the next model."}]}
-{"messages":[{"role":"user","content":"What does tiny-run SFT mean?"},{"role":"assistant","content":"It means a very small bounded run, often one or two optimizer steps."}]}
-{"messages":[{"role":"user","content":"How should errors be reported?"},{"role":"assistant","content":"Report the exact stage and a concise safe error message."}]}
-{"messages":[{"role":"user","content":"What should a chat template do?"},{"role":"assistant","content":"It should format role-based messages in the tokenizer's expected format."}]}
-{"messages":[{"role":"user","content":"What is a cache reload?"},{"role":"assistant","content":"It loads files already present in the local cache without downloading again."}]}

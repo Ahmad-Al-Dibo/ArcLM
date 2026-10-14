@@ -1,8 +1,0 @@
-{
-  "model_id": "pythia_410m",
-  "schema": "prompt_completion",
-  "languages": ["en"],
-  "records_are_synthetic": true,
-  "contains_personal_information": false,
-  "contains_hidden_chain_of_thought": false
-}

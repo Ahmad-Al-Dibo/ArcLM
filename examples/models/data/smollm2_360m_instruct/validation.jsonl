@@ -1,3 +1,0 @@
-{"messages":[{"role":"user","content":"What is a safe default for trust_remote_code?"},{"role":"assistant","content":"False is the safe default."}]}
-{"messages":[{"role":"user","content":"What does a manifest operation status describe?"},{"role":"assistant","content":"It describes one operation separately, such as download or generation."}]}
-{"messages":[{"role":"user","content":"Why avoid arbitrary browser paths?"},{"role":"assistant","content":"They can lead to path traversal or unintended file access."}]}

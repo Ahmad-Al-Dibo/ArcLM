@@ -1,4 +1,0 @@
-{"id":"nl_checkpoint","prompt":"Een checkpoint bevat","expected_keywords":["gewichten"]}
-{"id":"ar_tokenizer","prompt":"يقسم tokenizer","expected_keywords":["رموز"]}
-{"id":"en_security","prompt":"A safe loader rejects","expected_keywords":["remote","code"]}
-

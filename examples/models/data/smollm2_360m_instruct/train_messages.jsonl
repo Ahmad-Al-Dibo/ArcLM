@@ -1,6 +1,0 @@
-{"messages":[{"role":"system","content":"You are a concise local ArcLM assistant."},{"role":"user","content":"What is SFT?"},{"role":"assistant","content":"SFT trains a model on examples of desired user-visible responses."}]}
-{"messages":[{"role":"user","content":"How should a model download be started?"},{"role":"assistant","content":"Only after an explicit allow-download flag and a resource preflight."}]}
-{"messages":[{"role":"user","content":"Why pin a model revision?"},{"role":"assistant","content":"A pinned revision makes the example reproducible and auditable."}]}
-{"messages":[{"role":"user","content":"What should not be stored in memory?"},{"role":"assistant","content":"Secrets, credentials, and hidden reasoning should not be stored."}]}
-{"messages":[{"role":"user","content":"Name one benchmark input."},{"role":"assistant","content":"A short prompt with fixed generation settings is a valid bounded input."}]}
-{"messages":[{"role":"user","content":"What does local reload verify?"},{"role":"assistant","content":"It verifies that saved weights, tokenizer files, and configuration can be loaded offline."}]}

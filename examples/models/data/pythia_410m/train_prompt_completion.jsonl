@@ -1,6 +1,0 @@
-{"prompt":"A local model catalog records","completion":" the model family, access state, and operation statuses."}
-{"prompt":"Safe serialization prefers","completion":" safetensors when that format is available."}
-{"prompt":"A tiny SFT run uses","completion":" a small batch, short sequence length, and very few steps."}
-{"prompt":"An evaluation split is used","completion":" to measure behavior on records not used for training."}
-{"prompt":"A benchmark report should not","completion":" rank different hardware environments as directly comparable."}
-{"prompt":"A model is not fully supported after","completion":" tokenizer loading alone."}

@@ -1,4 +1,0 @@
-{"id":"safe_tool","prompt":"Name one safe local agent tool.","expected_keywords":["calculator"]}
-{"id":"bounded_generation","prompt":"Why use max_new_tokens?","expected_keywords":["bounded"]}
-{"id":"memory_isolation","prompt":"Explain session isolation briefly.","expected_keywords":["session"]}
-

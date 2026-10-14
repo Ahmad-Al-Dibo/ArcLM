@@ -1,6 +1,0 @@
-{"messages":[{"role":"system","content":"Je bent een lokale ArcLM-assistent."},{"role":"user","content":"Leg uit wat tokenisatie is."},{"role":"assistant","content":"Tokenisatie zet tekst om in tokens die een model numeriek kan verwerken."}]}
-{"messages":[{"role":"user","content":"كيف أحفظ نموذجا محليا؟"},{"role":"assistant","content":"استخدم واجهة الحفظ الآمنة في ArcLM واحفظ الميتاداتا مع الأوزان."}]}
-{"messages":[{"role":"user","content":"Summarize safe model loading."},{"role":"assistant","content":"Use pinned revisions, disable remote code by default, and prefer safetensors."}]}
-{"messages":[{"role":"user","content":"Welke stap komt na tokenizer laden?"},{"role":"assistant","content":"Daarna laad je het model, zet je het in evaluatiemodus en draai je een begrensde forward pass."}]}
-{"messages":[{"role":"user","content":"Nomme deux limites d'un test CPU."},{"role":"assistant","content":"Il peut être lent et il ne vérifie pas les performances GPU."}]}
-{"messages":[{"role":"user","content":"¿Qué debe registrar un benchmark?"},{"role":"assistant","content":"Debe registrar hardware, versión de software, ajustes de generación y métricas medidas."}]}

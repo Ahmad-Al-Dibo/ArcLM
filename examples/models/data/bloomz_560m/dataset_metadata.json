@@ -1,8 +1,0 @@
-{
-  "model_id": "bloomz_560m",
-  "schema": "instruction_response",
-  "languages": ["nl", "ar", "en"],
-  "records_are_synthetic": true,
-  "contains_personal_information": false,
-  "contains_hidden_chain_of_thought": false
-}

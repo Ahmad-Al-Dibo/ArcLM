@@ -1,4 +1,0 @@
-{"id":"sft_definition","prompt":"Define supervised fine-tuning in one sentence.","expected_keywords":["examples","responses"]}
-{"id":"download_guard","prompt":"When may a model be downloaded?","expected_keywords":["explicit","preflight"]}
-{"id":"security_default","prompt":"What is the default remote-code setting?","expected_keywords":["false","default"]}
-

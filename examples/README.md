@@ -1,31 +1,19 @@
 # ArcLM Examples
 
-This directory contains the maintained numbered ArcLM examples suite. It is
-designed for local, CPU-first verification: no example in the verified runner
-requires network access, automatic model downloads, a GPU, or remote services.
+Runnable examples for every part of the ArcLM workflow — from a first forward
+pass to complete local AI projects. The numbered folders are the **maintained
+suite**: CPU-first, no GPU, no automatic downloads, verified by
+`run_examples.py`.
 
-The older unnumbered folders remain in place as preserved historical examples.
-Use the numbered folders and `manifest.json` as the source of truth for the
-current suite.
-
-## Run
-
-Install ArcLM for local development first:
+## Quick start
 
 ```bash
-pip install -e ".[dev,security]"
-```
+pip install -e ".[dev,train,security]"
 
-Then run examples directly:
-
-```bash
+# Run one example
 python examples/00_quick_start/01_first_arclm_workflow.py
-python examples/12_complete_projects/01_local_language_model/main.py
-```
 
-Or use the suite runner:
-
-```bash
+# Or use the suite runner
 python examples/run_examples.py list
 python examples/run_examples.py run 00-01
 python examples/run_examples.py run-category data
@@ -33,31 +21,68 @@ python examples/run_examples.py run-verified
 python examples/run_examples.py status
 ```
 
-## Categories
+## Learning path
 
-| Folder | Purpose |
-| --- | --- |
-| `00_quick_start` | First native dataset-tokenizer-model-inspection workflows. |
-| `01_data` | Local JSONL and HTML fixtures, validation, manifests, reports. |
-| `02_tokenizers` | Word tokenizer and SentencePiece BPE examples. |
-| `03_models` | Tiny native model construction and state-dict loading. |
-| `04_training` | CPU-friendly one-step pretraining. |
-| `05_finetuning` | SFT validation and one tiny supervised step. |
-| `06_checkpoints` | Native checkpoint lifecycle. |
-| `07_evaluation_benchmarks` | Perplexity, accuracy, and top-k diagnostics. |
-| `08_inference_local_models` | Local generation and external-model loading policy. |
-| `09_pipelines_inspection` | Composed data pipeline and tensor inspection. |
-| `10_agents_tools` | Deterministic local agents, tools, documents, fake audio. |
-| `11_security` | Security Core status, encryption, hashing, signing, redaction. |
-| `12_complete_projects` | Six small end-to-end projects. |
+Follow the folders in order — each builds on the previous:
 
-## Status Rules
+| # | Folder | What you learn | Install |
+|---|--------|----------------|---------|
+| 00 | [`00_quick_start`](00_quick_start/) | First dataset → tokenizer → model → forward pass; pipeline inspection | `[train]` |
+| 01 | [`01_data`](01_data/) | Load JSONL/HTML, validate, build manifests and reports | core |
+| 02 | [`02_tokenizers`](02_tokenizers/) | Word-level and SentencePiece BPE tokenizers | core |
+| 03 | [`03_models`](03_models/) | Build a tiny ArcLM GPT; save and reload state dicts | `[train]` |
+| 04 | [`04_training`](04_training/) | One CPU-friendly pretraining step with the Trainer | `[train]` |
+| 05 | [`05_finetuning`](05_finetuning/) | Preview SFT data contracts; run a tiny supervised step | `[train]` |
+| 06 | [`06_checkpoints`](06_checkpoints/) | Full checkpoint lifecycle: save, inspect, safe-load | `[train]` |
+| 07 | [`07_evaluation_benchmarks`](07_evaluation_benchmarks/) | Perplexity, accuracy, loss metrics and reports | `[train]` |
+| 08 | [`08_inference_local_models`](08_inference_local_models/) | Local generation, sampling controls, HF loading policy | `[train]` / `[hf]` |
+| 09 | [`09_pipelines_inspection`](09_pipelines_inspection/) | Compose data pipelines; inspect one native generation step | `[train]` |
+| 10 | [`10_agents_tools`](10_agents_tools/) | Custom tools, document agents, fake voice backend | core |
+| 11 | [`11_security`](11_security/) | Security status, encrypt/hash/sign/redact | `[security]` |
+| 12 | [`12_complete_projects`](12_complete_projects/) | Six end-to-end local projects | mixed |
 
-`verified` examples are run by `run-verified`. `verified_with_fake_backend`
-examples are also run, but they intentionally use deterministic fake providers
-instead of real external services. `manual_optional` entries document supported
-boundaries that require a local model, GPU, or optional dependency and are not
-part of the default run.
+Each example file starts with a standard header:
 
-All runnable examples keep generated artifacts in temporary directories unless
-their README states otherwise.
+```text
+What you'll learn   — learning objectives
+When to use this    — practical situation
+Requirements        — pip install line
+Run                 — exact command
+Expected output     — what you should see
+Runtime             — seconds on CPU
+```
+
+## Complete projects (`12_complete_projects`)
+
+| Project | Description |
+|---------|-------------|
+| `01_local_language_model` | Train a tiny native LM end-to-end on local text |
+| `02_domain_sft_assistant` | Supervised fine-tuning on a domain JSONL dataset |
+| `03_website_knowledge_pipeline` | HTML → records → tokenizer → model |
+| `04_local_document_agent` | Agent with local document tools |
+| `05_model_benchmark_lab` | Benchmark generation quality on CPU |
+| `06_secure_local_ai_workspace` | Encrypted artifacts + signed manifests + agent |
+
+Run any project:
+
+```bash
+python examples/12_complete_projects/01_local_language_model/main.py
+```
+
+## Status rules
+
+| Status | Meaning |
+|--------|---------|
+| `verified` | Runs locally via `run-verified` — no network, no GPU |
+| `verified_with_fake_backend` | Runs with a deterministic fake provider |
+| `manual_optional` | Needs a local model, GPU, or optional dependency — not in default run |
+
+Machine-readable status lives in [`manifest.json`](manifest.json).
+Current counts are in [`STATUS.md`](STATUS.md).
+
+## Conventions
+
+- Examples keep generated artifacts in temporary directories.
+- Verified examples never download models or call remote services.
+- Optional boundaries (real HF models, Whisper, QLoRA) are marked
+  `manual_optional` and documented in their headers.

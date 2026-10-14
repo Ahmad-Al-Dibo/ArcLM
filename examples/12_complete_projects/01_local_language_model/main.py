@@ -1,8 +1,32 @@
 """
 ArcLM Complete Project: Local Language Model
 
-Raw text -> tokenizer -> tiny native model -> one pre-training step ->
-local state persistence -> evaluation summary -> generation.
+What you'll learn
+-----------------
+- Build a tokenizer from raw text and train a tiny native ArcLM for one step
+- Save a model checkpoint and compute perplexity
+- Generate a short continuation on CPU
+
+When to use this
+----------------
+- A minimal end-to-end local pre-training loop to study or extend
+
+Requirements
+------------
+    pip install "arclm[train]"
+
+Run
+---
+    python examples/12_complete_projects/01_local_language_model/main.py
+
+Expected output
+---------------
+    "final_loss": 3.3558, "perplexity": 28.6688, "tokens": 25
+    "checkpoint": "model_state.pt", "training_steps": 1
+
+Runtime
+-------
+    Under 10 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -19,6 +43,7 @@ from arclm.models import ArcLM
 from arclm.tokenizers import Tokenizer
 
 
+# --- 1. Local corpus ---
 CORPUS = (
     "ArcLM trains tiny native language models on local data. "
     "Local examples stay small bounded and inspectable. "
@@ -30,6 +55,7 @@ def print_json(value) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, default=str))
 
 
+# --- 2. Train: tokenizer, model, one pre-training step ---
 def main() -> None:
     torch.manual_seed(17)
     tokenizer = Tokenizer(max_vocab=64)
@@ -44,6 +70,7 @@ def main() -> None:
     loss = torch.nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)), y.reshape(-1))
     loss.backward()
     optimizer.step()
+    # --- 3. Persist the checkpoint, evaluate, and generate ---
     generator = Generator(model, tokenizer.stoi, tokenizer.itos, block_size=block_size, device="cpu", tokenizer=tokenizer)
     with tempfile.TemporaryDirectory(prefix="arclm-project-local-lm-") as tmpdir:
         tmp = Path(tmpdir)

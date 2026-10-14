@@ -1,4 +1,0 @@
-{"id":"nl_save","prompt":"Hoe sla ik een lokaal model veilig op?","expected_keywords":["lokaal","metadata","safetensors"]}
-{"id":"ar_tokenizer","prompt":"ما معنى tokenizer؟","expected_keywords":["tokens","نص"]}
-{"id":"en_offline","prompt":"Explain offline reload in one sentence.","expected_keywords":["local","network"]}
-

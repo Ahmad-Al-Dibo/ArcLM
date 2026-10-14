@@ -1,8 +1,36 @@
 """
-ArcLM Example: Local Website Content Dataset
+ArcLM Example: Local Website Dataset
 
-This example extracts text from a local HTML fixture and turns it into dataset
-records without using network access.
+What you'll learn
+-----------------
+- Extract readable text from a local HTML file with a stdlib HTML parser
+- Turn the extracted chunks into validated dataset records and a report
+
+When to use this
+----------------
+- Building text corpora from saved web pages offline; no network access
+  or `[web]` extra is required
+
+Requirements
+------------
+    pip install arclm
+
+Run
+---
+    python examples/01_data/02_local_website_dataset.py
+
+Expected output
+---------------
+    output path: .../examples/assets/websites/product_page.html
+    {
+      "records": 4,
+      "texts": ["ArcLM Local Studio", "..."],
+      "tokens": 27
+    }
+
+Runtime
+-------
+    Under 5 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -43,14 +71,19 @@ class TextExtractor(HTMLParser):
 
 
 def main() -> None:
+    # --- 1. Parse local HTML into text chunks ---
     html = asset_path("websites", "product_page.html").read_text(encoding="utf-8")
     print(f"output path: {asset_path('websites', 'product_page.html')}")
     parser = TextExtractor()
     parser.feed(html)
     records = [{"id": f"web-{index}", "text": text} for index, text in enumerate(parser.parts, start=1)]
+
+    # --- 2. Validate records and build tokenizer ---
     validation = validate_records(records, required_fields=("id", "text"), strict=False)
     tokenizer = Tokenizer(max_vocab=64)
     tokenizer.build(" ".join(row["text"] for row in validation.valid_records))
+
+    # --- 3. Print the dataset report ---
     report = build_dataset_report(validation.valid_records, tokenizer=tokenizer, text_fields=("text",), validation_result=validation)
     print_json({"records": validation.valid_count, "tokens": report.token_count, "texts": [row["text"] for row in validation.valid_records]})
 

@@ -1,6 +1,0 @@
-{"prompt":"ArcLM modelvoorbeelden tonen","completion":" veilige download, laden, generatie en lokale herlaadcontrole."}
-{"prompt":"Een meertalige benchmark bevat","completion":" korte taken per taal en onderscheidt automatische metrics van menselijke review."}
-{"prompt":"A model manifest separates","completion":" download, loading, generation, SFT, save, reload, and agent statuses."}
-{"prompt":"ينبغي أن تكون البيانات","completion":" صغيرة، أصلية، وخالية من الأسرار."}
-{"prompt":"Een browser mag alleen modellen laden","completion":" die in het gecontroleerde manifest staan."}
-{"prompt":"A fake adapter test proves","completion":" orchestration behavior but not real model tool-calling reliability."}

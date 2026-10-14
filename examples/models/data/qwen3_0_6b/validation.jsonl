@@ -1,3 +1,0 @@
-{"messages":[{"role":"user","content":"Wat betekent offline reload?"},{"role":"assistant","content":"Het model wordt opnieuw geladen vanaf lokale bestanden zonder netwerkverzoek."}]}
-{"messages":[{"role":"user","content":"ما فائدة safetensors؟"},{"role":"assistant","content":"يساعد على تحميل الأوزان بدون pickle غير موثوق."}]}
-{"messages":[{"role":"user","content":"Name one required security check."},{"role":"assistant","content":"Reject unreviewed remote code by default."}]}

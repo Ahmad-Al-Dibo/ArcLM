@@ -1,7 +1,34 @@
 """
 ArcLM Complete Project: Website Knowledge Pipeline
 
-Local HTML fixture -> text extraction -> validation -> tokenizer report.
+What you'll learn
+-----------------
+- Extract visible text from local HTML with the stdlib HTMLParser
+- Validate extracted records and build a tokenizer over cleaned text
+- Summarize the dataset with build_dataset_report
+
+When to use this
+----------------
+- Turning saved web pages into validated local text corpora
+
+Requirements
+------------
+    pip install arclm
+
+Run
+---
+    python examples/12_complete_projects/03_website_knowledge_pipeline/main.py
+
+Expected output
+---------------
+    {
+      "records": 4,
+      "tokens": 27
+    }
+
+Runtime
+-------
+    Under 5 seconds on CPU.
 """
 
 from __future__ import annotations
@@ -14,6 +41,7 @@ from arclm.datasets import build_dataset_report, validate_records
 from arclm.tokenizers import Tokenizer
 
 
+# --- 1. Extract visible text, skipping nav, footer, script, and style ---
 class TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -37,6 +65,7 @@ def print_json(value) -> None:
     print(json.dumps(value, indent=2, sort_keys=True, default=str))
 
 
+# --- 2. Validate records and build a tokenizer ---
 def main() -> None:
     fixture = Path(__file__).resolve().parents[2] / "assets" / "websites" / "product_page.html"
     parser = TextExtractor()
@@ -45,6 +74,7 @@ def main() -> None:
     validation = validate_records(records, required_fields=("id", "text"), strict=False)
     tokenizer = Tokenizer(max_vocab=64)
     tokenizer.build(" ".join(row["text"] for row in validation.valid_records))
+    # --- 3. Print the dataset summary ---
     report = build_dataset_report(validation.valid_records, tokenizer=tokenizer, text_fields=("text",), validation_result=validation)
     print_json({"records": validation.valid_count, "tokens": report.token_count})
 

@@ -1,3 +1,0 @@
-{"id":"nl_manifest","prompt":"Een status not_tested betekent","expected_keywords":["niet"]}
-{"id":"ar_remote","prompt":"لا يجب استخدام trust_remote_code","expected_keywords":["تلقائي"]}
-{"id":"en_fake","prompt":"A fake adapter test proves","expected_keywords":["orchestration"]}

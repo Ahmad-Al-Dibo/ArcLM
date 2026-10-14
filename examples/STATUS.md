@@ -1,27 +1,42 @@
 # ArcLM Examples Status
 
-Last verified: 2026-07-26 on CPU with the local repository environment.
+Last verified: 2026-10-14 on CPU (Python 3.12, ArcLM 2.0.0).
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | `verified` | 27 | Runnable locally by `examples/run_examples.py run-verified`. |
 | `verified_with_fake_backend` | 1 | Runnable locally with a deterministic fake backend. |
-| `manual_optional` | 3 | Documented boundary requiring a local model, GPU, or optional provider. |
+| `manual_optional` | 3 | Documented boundary requiring a local model, GPU, or optional dependency. |
 
-## Verified Coverage
+## Verified coverage
 
-The verified set covers local data loading, dataset validation, dataset
-manifests, tokenizers, native model creation, a training step, SFT preparation,
-checkpoint save/load, evaluation metrics, local generation, pipeline
-inspection, agent tools, Security Core primitives, and six complete projects.
+The verified set covers:
 
-## Optional Boundaries
+- data loading, validation, manifests, reports
+- word and SentencePiece tokenizers
+- native model creation and state-dict save/load
+- one-step pretraining and SFT preparation
+- checkpoint save / inspect / safe-load
+- evaluation metrics (perplexity, accuracy, loss)
+- local generation and sampling
+- data pipelines and generation-step inspection
+- agent tools, document agents, fake voice backend
+- Security Core (encrypt, hash, sign, redact, status)
+- six complete end-to-end projects
 
-Manual optional entries intentionally avoid automatic downloads and remote
-network calls:
+## Optional boundaries
 
-- `05-03`: PEFT/QLoRA adapter training with local model assets and suitable hardware.
-- `08-03`: real external Hugging Face local-model loading.
-- `10-04`: real Whisper speech-to-text backend with a local model.
+Manual optional entries avoid automatic downloads and remote calls:
 
-Use `examples/manifest.json` for machine-readable status and requirements.
+| ID | Needs |
+|----|-------|
+| `05-03` | PEFT/QLoRA with local model assets and suitable hardware |
+| `08-03` | Real external Hugging Face model loading |
+| `10-04` | Real Whisper speech-to-text backend |
+
+Use [`manifest.json`](manifest.json) for machine-readable status and requirements.
+
+## Historical folders
+
+Unnumbered model-specific scripts were removed in ArcLM 2.0. The numbered
+suite plus `12_complete_projects` is the source of truth.

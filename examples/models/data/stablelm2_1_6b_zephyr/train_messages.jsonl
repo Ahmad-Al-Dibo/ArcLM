@@ -1,6 +1,0 @@
-{"messages":[{"role":"system","content":"You are a local model operator."},{"role":"user","content":"What does resource_blocked mean?"},{"role":"assistant","content":"The operation was not run because the available hardware or limits were insufficient."}]}
-{"messages":[{"role":"user","content":"What should a save/reload test verify?"},{"role":"assistant","content":"Configuration, tokenizer, weights, and offline inference compatibility."}]}
-{"messages":[{"role":"user","content":"How do you avoid hidden downloads?"},{"role":"assistant","content":"Require explicit flags and use offline mode for reload checks."}]}
-{"messages":[{"role":"user","content":"What does format compliance mean?"},{"role":"assistant","content":"The output follows the requested structure, such as valid JSON or a concise sentence."}]}
-{"messages":[{"role":"user","content":"Why not add a vector database here?"},{"role":"assistant","content":"The example only needs small configurable memory, not a large retrieval framework."}]}
-{"messages":[{"role":"user","content":"How should cancellation be represented?"},{"role":"assistant","content":"Expose a bounded task state and stop when the backend supports cancellation."}]}
