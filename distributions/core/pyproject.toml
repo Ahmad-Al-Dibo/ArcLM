@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arclm-core"
+version = "1.13.4"
+description = "Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Ahmad Al Dibo" }]
+dependencies = []
+
+[project.scripts]
+arclm = "arclm.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arclm*"]
+
+[tool.setuptools.package-data]
+arclm = ["templates/*.html", "py.typed"]

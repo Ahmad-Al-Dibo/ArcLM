@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "core",
+  "name": "ArcLM Core",
+  "description": "Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives.",
+  "source_package": "src/arclm",
+  "capabilities": ["version_metadata", "configuration", "exceptions", "registry", "formatting"],
+  "include_modules": ["arclm._version", "arclm.exceptions", "arclm.configs", "arclm.registry", "arclm.utils"],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": [],
+  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.training", "arclm.finetuning", "arclm.evaluation", "arclm.agents", "arclm.security", "arclm.peft", "arclm.search"],
+  "python_dependencies": [],
+  "optional_dependencies": {},
+  "public_api": ["arclm.get_distribution_info", "arclm._version", "arclm.configs", "arclm.exceptions", "arclm.registry", "arclm.utils"],
+  "excluded_apis": ["arclm.simple_interface", "arclm.web", "arclm.training", "arclm.finetuning", "arclm.agents"],
+  "commands": ["python -c \"import arclm; print(arclm.get_distribution_info())\""],
+  "tests": ["tests/distributions/test_distribution_tooling.py"],
+  "examples": ["examples/distributions/core_example.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,4 @@
+{"id":"en_safe","prompt":"Explain safe loading briefly.","expected_keywords":["revision","remote"]}
+{"id":"fr_offline","prompt":"Explique le rechargement hors ligne.","expected_keywords":["local","réseau"]}
+{"id":"es_limit","prompt":"Explica max_new_tokens.","expected_keywords":["tokens"]}
+

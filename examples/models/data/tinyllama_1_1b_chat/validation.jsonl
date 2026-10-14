@@ -1,0 +1,3 @@
+{"messages":[{"role":"user","content":"Why cap max_new_tokens?"},{"role":"assistant","content":"It keeps generation bounded and resource use predictable."}]}
+{"messages":[{"role":"user","content":"What is session isolation?"},{"role":"assistant","content":"One agent session cannot read another session's memory."}]}
+{"messages":[{"role":"user","content":"What must be redacted?"},{"role":"assistant","content":"Access tokens and sensitive paths should be redacted from user-facing reports."}]}

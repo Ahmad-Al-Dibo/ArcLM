@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "training",
+  "name": "ArcLM Training",
+  "description": "Native model construction, training configuration, training loop, callbacks, metrics and checkpoints.",
+  "source_package": "src/arclm",
+  "capabilities": ["training", "models", "datasets", "tokenizers", "checkpoints", "evaluation_hooks"],
+  "include_modules": ["arclm._version", "arclm.training", "arclm.models", "arclm.datasets", "arclm.tokenizers", "arclm.checkpoints", "arclm.configs", "arclm.evaluation", "arclm.lifecycle", "arclm.exceptions", "arclm.utils", "arclm.distributed", "arclm.tracking"],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": ["core", "data-tokenizers", "loading-inference"],
+  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.agents", "arclm.security.web"],
+  "python_dependencies": ["torch>=2.1,<3", "numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
+  "optional_dependencies": {},
+  "public_api": ["arclm.training", "arclm.models", "arclm.checkpoints"],
+  "excluded_apis": ["arclm.simple_interface", "arclm.web", "arclm.agents"],
+  "commands": ["python -c \"from arclm.training import TrainingConfig; print(TrainingConfig)\""],
+  "tests": ["tests/unit/training", "tests/checkpoints"],
+  "examples": ["examples/distributions/training_example.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "finetuning",
+  "name": "ArcLM Fine-Tuning",
+  "description": "SFT record preparation, formatting, collators, full fine-tuning and checkpoint metadata.",
+  "source_package": "src/arclm",
+  "capabilities": ["sft", "finetuning", "formatting", "response_labels", "checkpoint_metadata"],
+  "include_modules": ["arclm._version", "arclm.finetuning", "arclm.sft", "arclm.training", "arclm.models", "arclm.datasets", "arclm.tokenizers", "arclm.checkpoints", "arclm.configs", "arclm.lifecycle", "arclm.exceptions", "arclm.utils"],
+  "include_module_prefixes": [],
+  "include_assets": ["arclm/py.typed"],
+  "required_distributions": ["core", "training", "data-tokenizers"],
+  "excluded_module_prefixes": ["arclm.web", "arclm.simple_interface", "arclm.simple_chat", "arclm.agents", "arclm.security.web"],
+  "python_dependencies": ["torch>=2.1,<3", "numpy>=1.24,<3", "sentencepiece>=0.2,<0.3"],
+  "optional_dependencies": {"peft": ["peft>=0.11,<1"]},
+  "public_api": ["arclm.finetuning", "arclm.sft"],
+  "excluded_apis": ["arclm.simple_interface", "arclm.web", "arclm.agents"],
+  "commands": ["python -c \"from arclm.finetuning import SFTConfig; print(SFTConfig)\""],
+  "tests": ["tests/unit/finetuning", "tests/unit/test_sft_api.py"],
+  "examples": ["examples/distributions/finetuning_example.py"],
+  "documentation": ["README.md", "docs/distributions.md"],
+  "license": "Apache-2.0"
+}

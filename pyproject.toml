@@ -142,6 +142,16 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 pythonpath = ["src"]
 markers = [
+  "unit: fast unit tests",
+  "integration: integration tests",
+  "cli: command-line interface tests",
+  "docs: documentation tests",
+  "security: security-focused tests",
+  "config: configuration validation and migration tests",
+  "compatibility: compatibility-contract tests",
+  "scale: data-scale and large-dataset behavior tests",
+  "benchmark: benchmark and performance characterization tests",
+  "transformers: tests that require or exercise the Transformers integration boundary",
   "gpu: tests that require GPU-related behavior",
   "cuda: tests that require a CUDA-capable PyTorch runtime",
   "fp16: tests that validate FP16 behavior",

@@ -1,0 +1,6 @@
+{"messages":[{"role":"system","content":"You answer with concise implementation guidance."},{"role":"user","content":"What is the first step before downloads?"},{"role":"assistant","content":"Run a resource preflight and inspect the manifest entry."}]}
+{"messages":[{"role":"user","content":"What makes a model gated?"},{"role":"assistant","content":"A gated model requires accepted license terms or credentials before access."}]}
+{"messages":[{"role":"user","content":"How should PEFT status be reported when PEFT is missing?"},{"role":"assistant","content":"Report dependency_missing, not verified."}]}
+{"messages":[{"role":"user","content":"What is a safe dataset preview?"},{"role":"assistant","content":"It prints bounded formatted text metadata, token counts, shapes, and truncation status."}]}
+{"messages":[{"role":"user","content":"Why unload models between runs?"},{"role":"assistant","content":"It releases RAM or accelerator memory before the next model is loaded."}]}
+{"messages":[{"role":"user","content":"How should tool calls be validated?"},{"role":"assistant","content":"Validate JSON strictly and reject malformed calls."}]}

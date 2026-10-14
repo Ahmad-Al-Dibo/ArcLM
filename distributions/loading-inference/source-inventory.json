@@ -1,0 +1,309 @@
+{
+  "edition": "loading-inference",
+  "files": [
+    {
+      "bytes": 120,
+      "example": "examples/distributions/loading_inference_example.py",
+      "path": "examples\\loading_inference_example.py",
+      "sha256": "5a0a31a15c40d75cde770fd5bdff927bd66f8d1d5102ae1bbea5c5a47fc925ce",
+      "source": "examples\\distributions\\loading_inference_example.py"
+    },
+    {
+      "bytes": 801,
+      "module": "arclm.__init__",
+      "path": "src\\arclm\\__init__.py",
+      "sha256": "9c2af2e7780c8c1bbc017a45200ace6748cada6fce42829ab51da96b38da251f",
+      "source": "generated"
+    },
+    {
+      "bytes": 148,
+      "module": "arclm.__main__",
+      "path": "src\\arclm\\__main__.py",
+      "sha256": "c32e4612d04067ab61dcccdb7114c18b14c9ebb4223982ee5cb2cb021cc33fb5",
+      "source": "generated"
+    },
+    {
+      "bytes": 1694,
+      "module": "arclm._distribution",
+      "path": "src\\arclm\\_distribution.py",
+      "sha256": "6cc6ea933893873424dfe249ef86e664f66ce1ddb58d6d715d4ec0a9fc44290b",
+      "source": "generated"
+    },
+    {
+      "bytes": 133,
+      "module": "arclm._version",
+      "path": "src\\arclm\\_version.py",
+      "sha256": "971adf94657f0c731112d19e22f4eb93e0a8b8cd07a23fb7ce0e483a8e26903f",
+      "source": "src\\arclm\\_version.py"
+    },
+    {
+      "bytes": 1054,
+      "module": "arclm.checkpoints",
+      "path": "src\\arclm\\checkpoints\\__init__.py",
+      "sha256": "748fe185cfc27b284becaeb58e29355e63fca4bfeb0711957778365bba85b536",
+      "source": "src\\arclm\\checkpoints\\__init__.py"
+    },
+    {
+      "bytes": 933,
+      "module": "arclm.checkpoints.loaders",
+      "path": "src\\arclm\\checkpoints\\loaders\\__init__.py",
+      "sha256": "e87af59226f90f7f94a5af88d5fc789c24a8c520d965ff7602a321704ee04005",
+      "source": "src\\arclm\\checkpoints\\loaders\\__init__.py"
+    },
+    {
+      "bytes": 6706,
+      "module": "arclm.checkpoints.loaders.adapters",
+      "path": "src\\arclm\\checkpoints\\loaders\\adapters.py",
+      "sha256": "eb9a4dbe1e40cf7157899e5a9bd39810cbfc834a982d362bf534109584e08cb4",
+      "source": "src\\arclm\\checkpoints\\loaders\\adapters.py"
+    },
+    {
+      "bytes": 2692,
+      "module": "arclm.checkpoints.loaders.arclm_checkpoint",
+      "path": "src\\arclm\\checkpoints\\loaders\\arclm_checkpoint.py",
+      "sha256": "253b087ef053422d7f0635c2691a212036931ec504926472ad13c609d8d3978d",
+      "source": "src\\arclm\\checkpoints\\loaders\\arclm_checkpoint.py"
+    },
+    {
+      "bytes": 3232,
+      "module": "arclm.checkpoints.loaders.base",
+      "path": "src\\arclm\\checkpoints\\loaders\\base.py",
+      "sha256": "051c71098af7e63869db4a4f07e648c28e908fd0d986e4fc07573baed8a53922",
+      "source": "src\\arclm\\checkpoints\\loaders\\base.py"
+    },
+    {
+      "bytes": 2774,
+      "module": "arclm.checkpoints.loaders.hf_loader",
+      "path": "src\\arclm\\checkpoints\\loaders\\hf_loader.py",
+      "sha256": "80052308a9135400288c427f5e71568978ef31a5218f77e7823c7869413d8bdf",
+      "source": "src\\arclm\\checkpoints\\loaders\\hf_loader.py"
+    },
+    {
+      "bytes": 2104,
+      "module": "arclm.checkpoints.loaders.registry",
+      "path": "src\\arclm\\checkpoints\\loaders\\registry.py",
+      "sha256": "d8bb68db92608c6642486d4fdeb06a1de0ee66929ebc6c2311b8b39f468bbaac",
+      "source": "src\\arclm\\checkpoints\\loaders\\registry.py"
+    },
+    {
+      "bytes": 1633,
+      "module": "arclm.checkpoints.loaders.safetensors_loader",
+      "path": "src\\arclm\\checkpoints\\loaders\\safetensors_loader.py",
+      "sha256": "8ee9e40863303409bb4491706ed57317d1b31f9a98ec9a16e61db296fbe7b09a",
+      "source": "src\\arclm\\checkpoints\\loaders\\safetensors_loader.py"
+    },
+    {
+      "bytes": 14295,
+      "module": "arclm.checkpoints.loaders.smart_loader",
+      "path": "src\\arclm\\checkpoints\\loaders\\smart_loader.py",
+      "sha256": "f2b71d8c58bef1d8577b302a6dfb18f693d284b9111ae74118915f4ab0256f0b",
+      "source": "src\\arclm\\checkpoints\\loaders\\smart_loader.py"
+    },
+    {
+      "bytes": 3881,
+      "module": "arclm.checkpoints.loaders.state_dict_loader",
+      "path": "src\\arclm\\checkpoints\\loaders\\state_dict_loader.py",
+      "sha256": "c217c7561cb6fd38486ad4215ca1f09225f818de1c0c37bf7da2a420b238e040",
+      "source": "src\\arclm\\checkpoints\\loaders\\state_dict_loader.py"
+    },
+    {
+      "bytes": 15933,
+      "module": "arclm.checkpoints.training",
+      "path": "src\\arclm\\checkpoints\\training.py",
+      "sha256": "541cacab62a7f196f80974f8c723a554860dea8e401f859df0bd7e8438234a44",
+      "source": "src\\arclm\\checkpoints\\training.py"
+    },
+    {
+      "bytes": 1335,
+      "module": "arclm.cli",
+      "path": "src\\arclm\\cli.py",
+      "sha256": "6774447f0bd4e561aac577001aa3140ffe7e5a84fb2764e4024dc84d7e026f4c",
+      "source": "generated"
+    },
+    {
+      "bytes": 852,
+      "module": "arclm.configs",
+      "path": "src\\arclm\\configs\\__init__.py",
+      "sha256": "018405a2a16d74f61602c68ba3acc4de5744f9dfb4f3d2a3a7c69a7c9b8da17c",
+      "source": "src\\arclm\\configs\\__init__.py"
+    },
+    {
+      "bytes": 13813,
+      "module": "arclm.configs.base",
+      "path": "src\\arclm\\configs\\base.py",
+      "sha256": "1e20daa1de197196ee3965a430aa7b6e465c8ddf922e2cca6fd137ef79b31d75",
+      "source": "src\\arclm\\configs\\base.py"
+    },
+    {
+      "bytes": 7068,
+      "module": "arclm.configs.serialization",
+      "path": "src\\arclm\\configs\\serialization.py",
+      "sha256": "a970f738ab5375bc52370d99f045a876890be915856c0707c11084508a9559de",
+      "source": "src\\arclm\\configs\\serialization.py"
+    },
+    {
+      "bytes": 1416,
+      "module": "arclm.exceptions",
+      "path": "src\\arclm\\exceptions\\__init__.py",
+      "sha256": "0156ec446810df5907c77be5c69e16357f0689d09659129d0085d01d2e870929",
+      "source": "src\\arclm\\exceptions\\__init__.py"
+    },
+    {
+      "bytes": 2701,
+      "module": "arclm.exceptions.base",
+      "path": "src\\arclm\\exceptions\\base.py",
+      "sha256": "f019dd252a2cf2026fa9126671e92eb0854e21aebc7839bff5901e62575dd704",
+      "source": "src\\arclm\\exceptions\\base.py"
+    },
+    {
+      "bytes": 1157,
+      "module": "arclm.inference",
+      "path": "src\\arclm\\inference\\__init__.py",
+      "sha256": "af0e96cdf17ddc8be10841ce2c2ca1f3666d6098fbb686658ecc780a39e23010",
+      "source": "src\\arclm\\inference\\__init__.py"
+    },
+    {
+      "bytes": 71103,
+      "module": "arclm.inference._external_loading",
+      "path": "src\\arclm\\inference\\_external_loading.py",
+      "sha256": "4088d5885765aed6b0551dfc0f6e75b81c6124f1102d35a4b9c6786490e06838",
+      "source": "src\\arclm\\inference\\_external_loading.py"
+    },
+    {
+      "bytes": 8128,
+      "module": "arclm.inference.engine",
+      "path": "src\\arclm\\inference\\engine.py",
+      "sha256": "d2d68bdb03571df44e0483e5dd90a9b744450cf5bb49a94ed9193e9b3892c085",
+      "source": "src\\arclm\\inference\\engine.py"
+    },
+    {
+      "bytes": 1244,
+      "module": "arclm.inference.external",
+      "path": "src\\arclm\\inference\\external.py",
+      "sha256": "a748d5f2318fcf2ac7962d1809a24d42b01f5b027001dd16c1e5cdaad5c6b8ce",
+      "source": "src\\arclm\\inference\\external.py"
+    },
+    {
+      "bytes": 8974,
+      "module": "arclm.inference.generation",
+      "path": "src\\arclm\\inference\\generation.py",
+      "sha256": "0d6ad68d6cde1874e6187b507fd0e24c6b528d390b910d4c9cce9a4e707d26c4",
+      "source": "src\\arclm\\inference\\generation.py"
+    },
+    {
+      "bytes": 9966,
+      "module": "arclm.inspection",
+      "path": "src\\arclm\\inspection.py",
+      "sha256": "1f44c51a97480850f360eaebb817f1733c78f01ce57335b42bbbbb0ec7f749a6",
+      "source": "src\\arclm\\inspection.py"
+    },
+    {
+      "bytes": 1160,
+      "module": "arclm.lifecycle",
+      "path": "src\\arclm\\lifecycle\\__init__.py",
+      "sha256": "6df772675093809534b1f41ab753cb2ee7a5c67a677ef7cee5dbe98bcf5e43cb",
+      "source": "src\\arclm\\lifecycle\\__init__.py"
+    },
+    {
+      "bytes": 32142,
+      "module": "arclm.lifecycle.artifacts",
+      "path": "src\\arclm\\lifecycle\\artifacts.py",
+      "sha256": "487d3f20be1a5c9421c28b14eb8542900f9f1681aaa74e2a908415f6705a4964",
+      "source": "src\\arclm\\lifecycle\\artifacts.py"
+    },
+    {
+      "bytes": 16468,
+      "module": "arclm.lifecycle.metadata",
+      "path": "src\\arclm\\lifecycle\\metadata.py",
+      "sha256": "400d6e980bcaf53cef2a4eaab5e09105ceb9aa437f297c22ded6a279935da883",
+      "source": "src\\arclm\\lifecycle\\metadata.py"
+    },
+    {
+      "bytes": 411,
+      "module": "arclm.models",
+      "path": "src\\arclm\\models\\__init__.py",
+      "sha256": "e8b634227064380e99779cb82a3cdda96120b827713805430c55773a13ca8ffe",
+      "source": "src\\arclm\\models\\__init__.py"
+    },
+    {
+      "bytes": 1174,
+      "module": "arclm.models.auto",
+      "path": "src\\arclm\\models\\auto.py",
+      "sha256": "ed4e3d38bfac4fa8de9bcf9e622dc730ffd281ae2c25dc84f690b4a59aca5f14",
+      "source": "src\\arclm\\models\\auto.py"
+    },
+    {
+      "bytes": 6929,
+      "module": "arclm.models.capabilities",
+      "path": "src\\arclm\\models\\capabilities.py",
+      "sha256": "9a1bec94e0308a04bcb73c47349c4ebe80288f88811fe462a52f080240ce71c5",
+      "source": "src\\arclm\\models\\capabilities.py"
+    },
+    {
+      "bytes": 164,
+      "module": "arclm.models.text",
+      "path": "src\\arclm\\models\\text\\__init__.py",
+      "sha256": "5b2987f38175eb255adc4cc6796ad9d01c305043afeb426faf83d4cb514ddde6",
+      "source": "src\\arclm\\models\\text\\__init__.py"
+    },
+    {
+      "bytes": 5892,
+      "module": "arclm.models.text.causal_lm",
+      "path": "src\\arclm\\models\\text\\causal_lm.py",
+      "sha256": "4983c3f2536359a3d35ff8275d4b55843877b98483e9032eaf2212fe5b462edc",
+      "source": "src\\arclm\\models\\text\\causal_lm.py"
+    },
+    {
+      "asset": "arclm/py.typed",
+      "bytes": 2,
+      "path": "src\\arclm\\py.typed",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "source": "src\\arclm\\py.typed"
+    },
+    {
+      "bytes": 589,
+      "module": "arclm.tokenizers",
+      "path": "src\\arclm\\tokenizers\\__init__.py",
+      "sha256": "24809e25cd73298e6fa243367aafe8007442ecaaaa7ee42ba31dac9a6a02cf88",
+      "source": "src\\arclm\\tokenizers\\__init__.py"
+    },
+    {
+      "bytes": 633,
+      "module": "arclm.tokenizers.auto",
+      "path": "src\\arclm\\tokenizers\\auto.py",
+      "sha256": "5fa18abb368414ab487010ff67089e0aabea8aceef99057963df0ca0128dd714",
+      "source": "src\\arclm\\tokenizers\\auto.py"
+    },
+    {
+      "bytes": 21574,
+      "module": "arclm.tokenizers.base",
+      "path": "src\\arclm\\tokenizers\\base.py",
+      "sha256": "155d55c128d906aba303740a438af12dd247fa68724478e136d7c05d36dde7bc",
+      "source": "src\\arclm\\tokenizers\\base.py"
+    },
+    {
+      "bytes": 861,
+      "module": "arclm.utils",
+      "path": "src\\arclm\\utils\\__init__.py",
+      "sha256": "950ab57d8aaa2eb4b1e08f491808c52345e6a146620e249689cdd41239598300",
+      "source": "src\\arclm\\utils\\__init__.py"
+    },
+    {
+      "bytes": 10472,
+      "module": "arclm.utils.formatting",
+      "path": "src\\arclm\\utils\\formatting.py",
+      "sha256": "504451fda979e51a97a022d8706c9e97487df1726db44070d2b7e207c901e291",
+      "source": "src\\arclm\\utils\\formatting.py"
+    },
+    {
+      "bytes": 629,
+      "module": "arclm.utils.imports",
+      "path": "src\\arclm\\utils\\imports.py",
+      "sha256": "c2adcae41c8f43fe6bbae7384eaabad8ab6fcdd41e2e2976dbf02b96dbbafdf5",
+      "source": "src\\arclm\\utils\\imports.py"
+    }
+  ],
+  "generated_at": "2026-07-28T07:30:57.036697+00:00",
+  "notice": "This directory is generated from canonical ArcLM source. Do not edit generated source files directly.",
+  "source_version": "1.13.4"
+}

@@ -1,0 +1,70 @@
+{
+  "capabilities": [
+    "security_policy",
+    "redaction",
+    "safe_paths",
+    "safe_urls",
+    "hashing",
+    "signatures",
+    "encryption",
+    "secure_artifacts"
+  ],
+  "commands": [
+    "python -c \"from arclm.security import security_status; print(security_status())\""
+  ],
+  "description": "Security policy, safe paths/URLs, redaction, hashing, signatures, encryption and secure artifact helpers.",
+  "documentation": [
+    "README.md",
+    "docs/distributions.md"
+  ],
+  "examples": [
+    "examples/distributions/security_example.py"
+  ],
+  "excluded_apis": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.agents"
+  ],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.agents",
+    "arclm.peft",
+    "arclm.search"
+  ],
+  "id": "security",
+  "include_assets": [
+    "arclm/py.typed"
+  ],
+  "include_module_prefixes": [],
+  "include_modules": [
+    "arclm._version",
+    "arclm.security",
+    "arclm.exceptions",
+    "arclm.utils"
+  ],
+  "license": "Apache-2.0",
+  "name": "ArcLM Security",
+  "optional_dependencies": {
+    "keyring": [
+      "keyring>=25,<27"
+    ]
+  },
+  "public_api": [
+    "arclm.security"
+  ],
+  "python_dependencies": [
+    "cryptography>=42,<47"
+  ],
+  "required_distributions": [
+    "core"
+  ],
+  "schema_version": 1,
+  "source_package": "src/arclm",
+  "tests": [
+    "tests/security"
+  ]
+}

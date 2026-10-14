@@ -9,7 +9,7 @@ a security certification. The package version was not changed.
 | Item | Result |
 | --- | --- |
 | Branch | `sp-version` |
-| Package version | `1.0.0` from installed package metadata |
+| Package version | `2.12.3` from installed package metadata |
 | Python environment | Project virtual environment on Windows |
 | PyTorch | `2.5.1+cu121`; CUDA reported available in the local environment |
 | Optional deps observed | `cryptography`, `transformers`, `accelerate`, `datasets`, `peft`, `safetensors`, `fastapi`, `uvicorn`, `flask`, `sentencepiece`, `build`, `twine` |
@@ -140,7 +140,7 @@ are not presented as automatically verified.
 | `python -m lab.runner list` | 32 challenges listed |
 | `python -m lab.runner test-all` | 64 passed |
 | `python -m build` | Passed |
-| `python -m twine check dist/*` | Passed for 0.9.0, 0.10.0, and 1.0.0 artifacts |
+| `python -m twine check dist/*` | Passed for 0.9.0, 0.10.0, and 2.12.3 artifacts |
 | `npm test` in `web/` | 108 tests passed |
 | `npm run typecheck` in `web/` | Passed |
 | `npm run lint` in `web/` | Passed |

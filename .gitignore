@@ -3,6 +3,8 @@ __pycache__/
 *.egg-info/
 
 .venv/
+.clean-wheel-smoke*/
+.clean-wheel-phase2-*/
 examples/.venv/
 .pytest_cache/
 .mypy_cache/
@@ -42,6 +44,9 @@ workspace/
 .env
 /.venv-training-core
 /.venv-gpu-validation
+/.clean-wheel-*/
+/.real-stream-smoke-chat-store*
+/.compile-cache-check/
 
 web/node_modules/
 web/.next/

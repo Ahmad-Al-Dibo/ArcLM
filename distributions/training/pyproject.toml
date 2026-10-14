@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arclm-training"
+version = "1.13.4"
+description = "Native model construction, training configuration, training loop, callbacks, metrics and checkpoints."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Ahmad Al Dibo" }]
+dependencies = [
+  "torch>=2.1,<3",
+  "numpy>=1.24,<3",
+  "sentencepiece>=0.2,<0.3"
+]
+
+[project.scripts]
+arclm = "arclm.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arclm*"]
+
+[tool.setuptools.package-data]
+arclm = ["templates/*.html", "py.typed"]

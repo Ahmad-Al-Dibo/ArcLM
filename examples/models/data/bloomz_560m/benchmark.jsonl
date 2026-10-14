@@ -1,0 +1,4 @@
+{"id":"nl_manifest","prompt":"Wat is een operationele status?","expected_keywords":["operatie","status"]}
+{"id":"ar_offline","prompt":"اشرح التحميل المحلي دون اتصال.","expected_keywords":["محلي","الشبكة"]}
+{"id":"en_vocab","prompt":"Why must vocabularies match?","expected_keywords":["token","embedding"]}
+

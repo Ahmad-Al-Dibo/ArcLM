@@ -1,0 +1,69 @@
+{
+  "capabilities": [
+    "version_metadata",
+    "configuration",
+    "exceptions",
+    "registry",
+    "formatting"
+  ],
+  "commands": [
+    "python -c \"import arclm; print(arclm.get_distribution_info())\""
+  ],
+  "description": "Minimal shared ArcLM configuration, version, exceptions, registry and utility primitives.",
+  "documentation": [
+    "README.md",
+    "docs/distributions.md"
+  ],
+  "examples": [
+    "examples/distributions/core_example.py"
+  ],
+  "excluded_apis": [
+    "arclm.simple_interface",
+    "arclm.web",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.agents"
+  ],
+  "excluded_module_prefixes": [
+    "arclm.web",
+    "arclm.simple_interface",
+    "arclm.simple_chat",
+    "arclm.training",
+    "arclm.finetuning",
+    "arclm.evaluation",
+    "arclm.agents",
+    "arclm.security",
+    "arclm.peft",
+    "arclm.search"
+  ],
+  "id": "core",
+  "include_assets": [
+    "arclm/py.typed"
+  ],
+  "include_module_prefixes": [],
+  "include_modules": [
+    "arclm._version",
+    "arclm.exceptions",
+    "arclm.configs",
+    "arclm.registry",
+    "arclm.utils"
+  ],
+  "license": "Apache-2.0",
+  "name": "ArcLM Core",
+  "optional_dependencies": {},
+  "public_api": [
+    "arclm.get_distribution_info",
+    "arclm._version",
+    "arclm.configs",
+    "arclm.exceptions",
+    "arclm.registry",
+    "arclm.utils"
+  ],
+  "python_dependencies": [],
+  "required_distributions": [],
+  "schema_version": 1,
+  "source_package": "src/arclm",
+  "tests": [
+    "tests/distributions/test_distribution_tooling.py"
+  ]
+}

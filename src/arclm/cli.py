@@ -39,6 +39,18 @@ def _require_torch():
         ) from exc
 
 
+def _json_default(value):
+    """Return a simple JSON fallback for CLI payloads."""
+
+    return str(value)
+
+
+def _print_json(payload):
+    """Print deterministic JSON for CLI commands."""
+
+    print(json.dumps(payload, indent=2, sort_keys=True, default=_json_default))
+
+
 def resolve_cli_device(device):
     """Zet `auto` om naar een echt torch device voor CLI commands."""
     import torch
@@ -666,6 +678,362 @@ def doctor_command(args):
     return 0
 
 
+def version_command(_args):
+    """Print the installed ArcLM version."""
+
+    import arclm
+
+    print(arclm.__version__)
+    return 0
+
+
+def info_command(args):
+    """Print safe package and runtime information."""
+
+    report = build_runtime_diagnostics(include_paths=True)
+    payload = report.to_dict()
+    if args.json:
+        _print_json(payload)
+    else:
+        print(format_runtime_diagnostics(report))
+    return 0
+
+
+def config_validate_command(args):
+    """Validate a typed ArcLM JSON/TOML config."""
+
+    from arclm.config_schema import validate_arclm_config
+
+    config = validate_arclm_config(
+        args.config,
+        permissive=args.permissive,
+        allow_env=args.allow_env,
+    )
+    payload = {
+        "valid": True,
+        "schema_version": config.schema_version,
+        "config": config.to_dict(redact=True),
+    }
+    _print_json(payload) if args.json else print(f"valid schema_version={config.schema_version}")
+    return 0
+
+
+def config_show_command(args):
+    """Show the effective typed ArcLM config."""
+
+    from arclm.config_schema import load_arclm_config
+
+    config = load_arclm_config(
+        args.config,
+        permissive=args.permissive,
+        allow_env=args.allow_env,
+    )
+    _print_json(config.to_dict(redact=not args.show_secrets))
+    return 0
+
+
+def config_migrate_command(args):
+    """Migrate an older ArcLM config to the current schema."""
+
+    from arclm.config_schema import migrate_config
+
+    report = migrate_config(
+        args.config,
+        target_version=args.target_version,
+        output=args.output,
+        permissive=args.permissive,
+    )
+    _print_json(report.to_dict()) if args.json else print(
+        f"{report.source_schema_version} -> {report.target_schema_version}"
+    )
+    return 0
+
+
+def _load_records(path, format_name):
+    from arclm.data_sources import open_dataset
+
+    return list(open_dataset(path, format=format_name, streaming=True, malformed="raise"))
+
+
+def data_validate_command(args):
+    """Validate records with the schema-backed Phase 3 validator."""
+
+    from arclm.schemas import validate_records
+
+    records = _load_records(args.input, args.format)
+    report = validate_records(
+        records,
+        schema=args.schema,
+        strict=args.strict,
+        allow_empty=args.allow_empty,
+        check_duplicates=args.check_duplicates,
+        duplicate_field=args.duplicate_field,
+    )
+    if args.json:
+        _print_json(report.to_dict())
+    else:
+        print(report.summary())
+        for issue in report.errors[:10]:
+            print(f"error record={issue.index} field={issue.field} category={issue.category}: {issue.message}")
+        for issue in report.warnings[:10]:
+            print(f"warning record={issue.index} field={issue.field} category={issue.category}: {issue.message}")
+    return 0 if report.is_valid else 1
+
+
+def data_analyze_command(args):
+    """Analyze dataset quality without exposing raw samples by default."""
+
+    from arclm.data_quality import analyze_dataset
+    from arclm.data_sources import open_dataset
+
+    dataset = open_dataset(args.input, format=args.format, streaming=True, malformed=args.malformed)
+    report = analyze_dataset(
+        dataset,
+        schema=args.schema,
+        checks=args.checks,
+        include_samples=args.include_samples,
+        redact_samples=not args.no_redact_samples,
+        max_sample_chars=args.max_sample_chars,
+    )
+    _print_json(report.to_dict()) if args.json else print(report.summary())
+    return 0 if not report.errors else 1
+
+
+def data_split_command(args):
+    """Split records deterministically."""
+
+    from arclm.data_quality import split_dataset
+    from arclm.data_sources import open_dataset
+
+    dataset = open_dataset(args.input, format=args.format, streaming=True, malformed=args.malformed)
+    result = split_dataset(
+        dataset,
+        train=args.train,
+        validation=args.validation,
+        test=args.test,
+        seed=args.seed,
+        strategy=args.strategy,
+        key=args.key,
+        group_key=args.group_key,
+        split_field=args.split_field,
+    )
+    _print_json(result.to_dict()) if args.json else print(result.report.to_dict())
+    return 0
+
+
+def data_shard_command(args):
+    """Shard records deterministically."""
+
+    from arclm.data_quality import shard_dataset
+    from arclm.data_sources import open_dataset
+
+    dataset = open_dataset(args.input, format=args.format, streaming=True, malformed=args.malformed)
+    result = shard_dataset(
+        dataset,
+        num_shards=args.num_shards,
+        strategy=args.strategy,
+        key=args.key,
+        seed=args.seed,
+    )
+    _print_json(result.to_dict()) if args.json else print(result.report.to_dict())
+    return 0
+
+
+def data_fingerprint_command(args):
+    """Fingerprint a dataset file or directory."""
+
+    from arclm.reproducibility import fingerprint
+
+    report = fingerprint(Path(args.input), mode=args.mode)
+    _print_json(report.to_dict()) if args.json else print(report.value)
+    return 0
+
+
+def workflow_run_command(args):
+    """Run a configuration-driven workflow."""
+
+    from arclm.workflow import run_workflow
+
+    result = run_workflow(args.config, dry_run=args.dry_run, stages=args.stage)
+    _print_json(result.to_dict()) if args.json else print(f"{result.status}: {result.run_dir}")
+    return 0 if result.status in {"completed", "dry_run"} else 1
+
+
+def runs_list_command(args):
+    """List local run directories."""
+
+    from arclm.runs import list_runs
+
+    rows = list_runs(args.output_dir)
+    _print_json(rows) if args.json else print("\n".join(row.get("path", "") for row in rows))
+    return 0
+
+
+def runs_inspect_command(args):
+    """Inspect one run directory."""
+
+    from arclm.runs import inspect_run
+
+    _print_json(inspect_run(args.path))
+    return 0
+
+
+def cache_inspect_command(args):
+    """Inspect the JSON tokenization cache."""
+
+    from arclm.cache import inspect_cache
+
+    _print_json(inspect_cache(args.cache_dir).to_dict())
+    return 0
+
+
+def cache_clear_command(args):
+    """Clear the JSON tokenization cache."""
+
+    from arclm.cache import clear_cache
+
+    _print_json(clear_cache(args.cache_dir, key=args.key).to_dict())
+    return 0
+
+
+def _add_data_common(parser):
+    parser.add_argument("input")
+    parser.add_argument("--format", default=None, choices=["json", "jsonl", "csv", "txt"])
+    parser.add_argument("--json", action="store_true")
+    return parser
+
+
+def _add_validation_options(parser):
+    parser.add_argument("--schema", required=True, choices=["text", "prompt_completion", "instruction", "conversation"])
+    parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--allow-empty", action="store_true")
+    parser.add_argument("--check-duplicates", action="store_true")
+    parser.add_argument("--duplicate-field")
+    return parser
+
+
+def create_version_parser(subparsers):
+    parser = subparsers.add_parser("version", help="Print ArcLM version")
+    parser.set_defaults(func=version_command)
+    return parser
+
+
+def create_info_parser(subparsers):
+    parser = subparsers.add_parser("info", help="Print safe runtime information")
+    parser.add_argument("--json", action="store_true")
+    parser.set_defaults(func=info_command)
+    return parser
+
+
+def create_config_schema_parser(subparsers):
+    parser = subparsers.add_parser("config", help="Validate, show, and migrate typed ArcLM configs")
+    config_sub = parser.add_subparsers(dest="config_command", required=True)
+
+    validate = config_sub.add_parser("validate", help="Validate an ArcLM JSON/TOML config")
+    validate.add_argument("config")
+    validate.add_argument("--json", action="store_true")
+    validate.add_argument("--permissive", action="store_true")
+    validate.add_argument("--allow-env", action="store_true")
+    validate.set_defaults(func=config_validate_command)
+
+    show = config_sub.add_parser("show", help="Show effective typed configuration")
+    show.add_argument("config")
+    show.add_argument("--permissive", action="store_true")
+    show.add_argument("--allow-env", action="store_true")
+    show.add_argument("--show-secrets", action="store_true")
+    show.set_defaults(func=config_show_command)
+
+    migrate = config_sub.add_parser("migrate", help="Migrate an older ArcLM config")
+    migrate.add_argument("config")
+    migrate.add_argument("--output")
+    migrate.add_argument("--target-version", default="1")
+    migrate.add_argument("--json", action="store_true")
+    migrate.add_argument("--permissive", action="store_true")
+    migrate.set_defaults(func=config_migrate_command)
+    return parser
+
+
+def create_data_tools_parser(subparsers):
+    parser = subparsers.add_parser("data", help="Dataset validation, analysis, split, shard, and fingerprint tools")
+    data_sub = parser.add_subparsers(dest="data_command", required=True)
+
+    validate = _add_data_common(data_sub.add_parser("validate", help="Validate records"))
+    _add_validation_options(validate)
+    validate.set_defaults(func=data_validate_command)
+
+    analyze = _add_data_common(data_sub.add_parser("analyze", help="Analyze dataset quality"))
+    analyze.add_argument("--schema", choices=["text", "prompt_completion", "instruction", "conversation"])
+    analyze.add_argument("--checks", nargs="*")
+    analyze.add_argument("--malformed", default="raise", choices=["raise", "report"])
+    analyze.add_argument("--include-samples", action="store_true")
+    analyze.add_argument("--no-redact-samples", action="store_true")
+    analyze.add_argument("--max-sample-chars", type=int, default=120)
+    analyze.set_defaults(func=data_analyze_command)
+
+    split = _add_data_common(data_sub.add_parser("split", help="Deterministically split records"))
+    split.add_argument("--malformed", default="raise", choices=["raise", "report"])
+    split.add_argument("--train", type=float, default=0.8)
+    split.add_argument("--validation", type=float, default=0.1)
+    split.add_argument("--test", type=float, default=0.1)
+    split.add_argument("--strategy", default="hash", choices=["hash", "random", "chronological"])
+    split.add_argument("--key")
+    split.add_argument("--group-key")
+    split.add_argument("--split-field")
+    split.add_argument("--seed", type=int, default=42)
+    split.set_defaults(func=data_split_command)
+
+    shard = _add_data_common(data_sub.add_parser("shard", help="Deterministically shard records"))
+    shard.add_argument("--malformed", default="raise", choices=["raise", "report"])
+    shard.add_argument("--num-shards", type=int, required=True)
+    shard.add_argument("--strategy", default="contiguous", choices=["contiguous", "round_robin", "hash"])
+    shard.add_argument("--key")
+    shard.add_argument("--seed", type=int, default=0)
+    shard.set_defaults(func=data_shard_command)
+
+    fingerprint_parser = data_sub.add_parser("fingerprint", help="Fingerprint a dataset file or directory")
+    fingerprint_parser.add_argument("input")
+    fingerprint_parser.add_argument("--mode", default="content", choices=["content", "metadata", "sampled"])
+    fingerprint_parser.add_argument("--json", action="store_true")
+    fingerprint_parser.set_defaults(func=data_fingerprint_command)
+    return parser
+
+
+def create_workflow_parser(subparsers):
+    parser = subparsers.add_parser("run", help="Run a configuration-driven ArcLM workflow")
+    parser.add_argument("config")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--stage", action="append")
+    parser.add_argument("--json", action="store_true")
+    parser.set_defaults(func=workflow_run_command)
+    return parser
+
+
+def create_runs_parser(subparsers):
+    parser = subparsers.add_parser("runs", help="Inspect local ArcLM runs")
+    runs_sub = parser.add_subparsers(dest="runs_command", required=True)
+    runs_list = runs_sub.add_parser("list")
+    runs_list.add_argument("--output-dir", default="runs")
+    runs_list.add_argument("--json", action="store_true")
+    runs_list.set_defaults(func=runs_list_command)
+    runs_inspect = runs_sub.add_parser("inspect")
+    runs_inspect.add_argument("path")
+    runs_inspect.set_defaults(func=runs_inspect_command)
+    return parser
+
+
+def create_cache_parser(subparsers):
+    parser = subparsers.add_parser("cache", help="Inspect and clear ArcLM caches")
+    cache_sub = parser.add_subparsers(dest="cache_command", required=True)
+    inspect_parser = cache_sub.add_parser("inspect")
+    inspect_parser.add_argument("cache_dir")
+    inspect_parser.set_defaults(func=cache_inspect_command)
+    clear_parser = cache_sub.add_parser("clear")
+    clear_parser.add_argument("cache_dir")
+    clear_parser.add_argument("--key")
+    clear_parser.set_defaults(func=cache_clear_command)
+    return parser
+
+
 def run_command(args):
     """Voert package runtime helpers uit."""
     print(f"Unknown runtime target: {args.run}")
@@ -699,6 +1067,8 @@ Examples:
 
     subparsers = parser.add_subparsers(title="commands", dest="command")
 
+    create_version_parser(subparsers)
+    create_info_parser(subparsers)
     create_train_parser(subparsers)
     create_eval_parser(subparsers)
     create_generate_parser(subparsers)
@@ -706,6 +1076,11 @@ Examples:
     create_web_api_parser(subparsers)
     create_security_parser(subparsers)
     create_doctor_parser(subparsers)
+    create_config_schema_parser(subparsers)
+    create_data_tools_parser(subparsers)
+    create_workflow_parser(subparsers)
+    create_runs_parser(subparsers)
+    create_cache_parser(subparsers)
 
     args = parser.parse_args()
 

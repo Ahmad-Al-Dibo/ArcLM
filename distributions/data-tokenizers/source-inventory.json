@@ -1,0 +1,358 @@
+{
+  "edition": "data-tokenizers",
+  "files": [
+    {
+      "bytes": 213,
+      "example": "examples/distributions/data_tokenizers_example.py",
+      "path": "examples\\data_tokenizers_example.py",
+      "sha256": "5d7b5c8c1c210d6d7312c48a8461b700c111f36ed2b3e136b764d8ea4175abf1",
+      "source": "examples\\distributions\\data_tokenizers_example.py"
+    },
+    {
+      "bytes": 801,
+      "module": "arclm.__init__",
+      "path": "src\\arclm\\__init__.py",
+      "sha256": "9c2af2e7780c8c1bbc017a45200ace6748cada6fce42829ab51da96b38da251f",
+      "source": "generated"
+    },
+    {
+      "bytes": 148,
+      "module": "arclm.__main__",
+      "path": "src\\arclm\\__main__.py",
+      "sha256": "c32e4612d04067ab61dcccdb7114c18b14c9ebb4223982ee5cb2cb021cc33fb5",
+      "source": "generated"
+    },
+    {
+      "bytes": 1803,
+      "module": "arclm._distribution",
+      "path": "src\\arclm\\_distribution.py",
+      "sha256": "805d70767bb79c76caa08c419c5fcccb448aedf815da6e7954abfa95ef07784d",
+      "source": "generated"
+    },
+    {
+      "bytes": 133,
+      "module": "arclm._version",
+      "path": "src\\arclm\\_version.py",
+      "sha256": "971adf94657f0c731112d19e22f4eb93e0a8b8cd07a23fb7ce0e483a8e26903f",
+      "source": "src\\arclm\\_version.py"
+    },
+    {
+      "bytes": 1335,
+      "module": "arclm.cli",
+      "path": "src\\arclm\\cli.py",
+      "sha256": "6774447f0bd4e561aac577001aa3140ffe7e5a84fb2764e4024dc84d7e026f4c",
+      "source": "generated"
+    },
+    {
+      "bytes": 852,
+      "module": "arclm.configs",
+      "path": "src\\arclm\\configs\\__init__.py",
+      "sha256": "018405a2a16d74f61602c68ba3acc4de5744f9dfb4f3d2a3a7c69a7c9b8da17c",
+      "source": "src\\arclm\\configs\\__init__.py"
+    },
+    {
+      "bytes": 13813,
+      "module": "arclm.configs.base",
+      "path": "src\\arclm\\configs\\base.py",
+      "sha256": "1e20daa1de197196ee3965a430aa7b6e465c8ddf922e2cca6fd137ef79b31d75",
+      "source": "src\\arclm\\configs\\base.py"
+    },
+    {
+      "bytes": 7068,
+      "module": "arclm.configs.serialization",
+      "path": "src\\arclm\\configs\\serialization.py",
+      "sha256": "a970f738ab5375bc52370d99f045a876890be915856c0707c11084508a9559de",
+      "source": "src\\arclm\\configs\\serialization.py"
+    },
+    {
+      "bytes": 407,
+      "module": "arclm.data_processor",
+      "path": "src\\arclm\\data_processor.py",
+      "sha256": "207df385d91e0daa9a76651e291f7dde0645f453bce5a11f99427ccbf06ad886",
+      "source": "src\\arclm\\data_processor.py"
+    },
+    {
+      "bytes": 2082,
+      "module": "arclm.datasets",
+      "path": "src\\arclm\\datasets\\__init__.py",
+      "sha256": "06eee9697361c2e95dfd4a28f9bced7b8b1bd352f9189fa20c7935bf4de1783b",
+      "source": "src\\arclm\\datasets\\__init__.py"
+    },
+    {
+      "bytes": 3653,
+      "module": "arclm.datasets.base",
+      "path": "src\\arclm\\datasets\\base.py",
+      "sha256": "c8eebb4f8162843336a7127a72056fd5f0344e96c5491692be58a3bde6966d7b",
+      "source": "src\\arclm\\datasets\\base.py"
+    },
+    {
+      "bytes": 486,
+      "module": "arclm.datasets.cleaning",
+      "path": "src\\arclm\\datasets\\cleaning\\__init__.py",
+      "sha256": "86a57e5fd6786ba057bf215a1e38ddccce0f6dd8ee8c6916e8a919bcf67128fa",
+      "source": "src\\arclm\\datasets\\cleaning\\__init__.py"
+    },
+    {
+      "bytes": 99,
+      "module": "arclm.datasets.cleaning.base",
+      "path": "src\\arclm\\datasets\\cleaning\\base.py",
+      "sha256": "fbd4aef6bff37092bc085da5d31c585fbc9cdbfaa44daf43ae5b64983190cee4",
+      "source": "src\\arclm\\datasets\\cleaning\\base.py"
+    },
+    {
+      "bytes": 2713,
+      "module": "arclm.datasets.cleaning.filters",
+      "path": "src\\arclm\\datasets\\cleaning\\filters.py",
+      "sha256": "100d425c6bb5509fe36ae5ab5967ae58548f9d12c900032c24105dbfb1c65937",
+      "source": "src\\arclm\\datasets\\cleaning\\filters.py"
+    },
+    {
+      "bytes": 3406,
+      "module": "arclm.datasets.cleaning.text",
+      "path": "src\\arclm\\datasets\\cleaning\\text.py",
+      "sha256": "4de42d3270d4e6720e4a3cb6dc6a18cf3957649d33fdf90bd70b458c20df34a1",
+      "source": "src\\arclm\\datasets\\cleaning\\text.py"
+    },
+    {
+      "bytes": 330,
+      "module": "arclm.datasets.deduplication",
+      "path": "src\\arclm\\datasets\\deduplication\\__init__.py",
+      "sha256": "ade66c35d41d14cda0c83155b9b7286fb6a64d59e7ff8e50531bf418989b342b",
+      "source": "src\\arclm\\datasets\\deduplication\\__init__.py"
+    },
+    {
+      "bytes": 740,
+      "module": "arclm.datasets.deduplication.base",
+      "path": "src\\arclm\\datasets\\deduplication\\base.py",
+      "sha256": "365e5eb2e2f31b897a64249fe4f6b961124d88a4f18a5d856fdf60fcacdd2b13",
+      "source": "src\\arclm\\datasets\\deduplication\\base.py"
+    },
+    {
+      "bytes": 4432,
+      "module": "arclm.datasets.deduplication.exact",
+      "path": "src\\arclm\\datasets\\deduplication\\exact.py",
+      "sha256": "7136b6c03714576fd5ff315a5091fefcdc9a494a6336f39de1d9166598d2c916",
+      "source": "src\\arclm\\datasets\\deduplication\\exact.py"
+    },
+    {
+      "bytes": 3191,
+      "module": "arclm.datasets.instruction",
+      "path": "src\\arclm\\datasets\\instruction.py",
+      "sha256": "11ab9fb0e0aa7a2da6108402607810f23129b83766d9cc7dbf4c665004e0fce4",
+      "source": "src\\arclm\\datasets\\instruction.py"
+    },
+    {
+      "bytes": 19486,
+      "module": "arclm.datasets.loader",
+      "path": "src\\arclm\\datasets\\loader.py",
+      "sha256": "63085b4fa32a38e8c57c3c2a7e8be659abd7def1aa1d25892d1c8f07aa887615",
+      "source": "src\\arclm\\datasets\\loader.py"
+    },
+    {
+      "bytes": 2795,
+      "module": "arclm.datasets.pipeline",
+      "path": "src\\arclm\\datasets\\pipeline.py",
+      "sha256": "ac8ac63aef41e5e4becb0afec0a0d3b07085955c1f385448170cc23736021ad9",
+      "source": "src\\arclm\\datasets\\pipeline.py"
+    },
+    {
+      "bytes": 6632,
+      "module": "arclm.datasets.processing",
+      "path": "src\\arclm\\datasets\\processing.py",
+      "sha256": "799df6f79358355a1ff640cf32901de7555b8766cc358c19f82dfb5a3b426882",
+      "source": "src\\arclm\\datasets\\processing.py"
+    },
+    {
+      "bytes": 124,
+      "module": "arclm.datasets.streaming",
+      "path": "src\\arclm\\datasets\\streaming\\__init__.py",
+      "sha256": "470103835488fa4008821edd0e2bbf64e295dbc205eda08c39074d6757fe328f",
+      "source": "src\\arclm\\datasets\\streaming\\__init__.py"
+    },
+    {
+      "bytes": 3185,
+      "module": "arclm.datasets.streaming.iterable",
+      "path": "src\\arclm\\datasets\\streaming\\iterable.py",
+      "sha256": "43494c2f1a27fc5703a25ac80ce5d521ad1657b5432ef5f3e28d48b7d75187c8",
+      "source": "src\\arclm\\datasets\\streaming\\iterable.py"
+    },
+    {
+      "bytes": 13844,
+      "module": "arclm.datasets.validation",
+      "path": "src\\arclm\\datasets\\validation.py",
+      "sha256": "fc88770a13030d83730b4185303ff9b240bb1a2b54e28e557b7a26666d81fae4",
+      "source": "src\\arclm\\datasets\\validation.py"
+    },
+    {
+      "bytes": 1416,
+      "module": "arclm.exceptions",
+      "path": "src\\arclm\\exceptions\\__init__.py",
+      "sha256": "0156ec446810df5907c77be5c69e16357f0689d09659129d0085d01d2e870929",
+      "source": "src\\arclm\\exceptions\\__init__.py"
+    },
+    {
+      "bytes": 2701,
+      "module": "arclm.exceptions.base",
+      "path": "src\\arclm\\exceptions\\base.py",
+      "sha256": "f019dd252a2cf2026fa9126671e92eb0854e21aebc7839bff5901e62575dd704",
+      "source": "src\\arclm\\exceptions\\base.py"
+    },
+    {
+      "bytes": 136,
+      "module": "arclm.preprocess",
+      "path": "src\\arclm\\preprocess\\__init__.py",
+      "sha256": "7b2e18851d2fd69c6d97de01265790fad7f8a161bc8f60bfd6dc984ee125bfd0",
+      "source": "src\\arclm\\preprocess\\__init__.py"
+    },
+    {
+      "bytes": 1586,
+      "module": "arclm.preprocess.cleaner",
+      "path": "src\\arclm\\preprocess\\cleaner.py",
+      "sha256": "e300e14b17c925786d5dadc1a36e8c956b48116f1f543c271613af23313b7589",
+      "source": "src\\arclm\\preprocess\\cleaner.py"
+    },
+    {
+      "bytes": 1011,
+      "module": "arclm.preprocess.cli",
+      "path": "src\\arclm\\preprocess\\cli.py",
+      "sha256": "8c6dec95a9b873d2fb6ddefd8990fa226ad016861186c0aa88d33a5bd4b3227d",
+      "source": "src\\arclm\\preprocess\\cli.py"
+    },
+    {
+      "bytes": 1716,
+      "module": "arclm.preprocess.config",
+      "path": "src\\arclm\\preprocess\\config.py",
+      "sha256": "e1612dc88c59e104a573601b70c97dcb7387691dce34764f8a8b7590b6e278ab",
+      "source": "src\\arclm\\preprocess\\config.py"
+    },
+    {
+      "bytes": 1889,
+      "module": "arclm.preprocess.duplicate",
+      "path": "src\\arclm\\preprocess\\duplicate.py",
+      "sha256": "46b995b91335a49ed8917c635e31aeb64876c2db85dcc688c94a39150f5a21ad",
+      "source": "src\\arclm\\preprocess\\duplicate.py"
+    },
+    {
+      "bytes": 2021,
+      "module": "arclm.preprocess.filters",
+      "path": "src\\arclm\\preprocess\\filters.py",
+      "sha256": "a5a3620c82cad2e2ff746ce9503fbc472abb792be52445a8a608a7b5e1225bf9",
+      "source": "src\\arclm\\preprocess\\filters.py"
+    },
+    {
+      "bytes": 1079,
+      "module": "arclm.preprocess.io",
+      "path": "src\\arclm\\preprocess\\io.py",
+      "sha256": "787e37b835171d0fdb559aaffb100db549f122087d176c9949f91f815b0a7060",
+      "source": "src\\arclm\\preprocess\\io.py"
+    },
+    {
+      "bytes": 1216,
+      "module": "arclm.preprocess.language",
+      "path": "src\\arclm\\preprocess\\language.py",
+      "sha256": "8e8a22a5e7d91edca2625e6a95a0327d4f5effb47cc2ec685aced389edd2c550",
+      "source": "src\\arclm\\preprocess\\language.py"
+    },
+    {
+      "bytes": 893,
+      "module": "arclm.preprocess.perplexity",
+      "path": "src\\arclm\\preprocess\\perplexity.py",
+      "sha256": "cb6557a01ebe48c2678d9c7437c23d0c8f0df4b263eb561270c0606c96b4a765",
+      "source": "src\\arclm\\preprocess\\perplexity.py"
+    },
+    {
+      "bytes": 898,
+      "module": "arclm.preprocess.pii",
+      "path": "src\\arclm\\preprocess\\pii.py",
+      "sha256": "c8e4de63f9f332f4bacedecb64349cf57d3bf839f8f92831b6f3d61fc5447944",
+      "source": "src\\arclm\\preprocess\\pii.py"
+    },
+    {
+      "bytes": 3231,
+      "module": "arclm.preprocess.pipeline",
+      "path": "src\\arclm\\preprocess\\pipeline.py",
+      "sha256": "9740c229ab2c9105657cdd08726ac52daa8c8edc01b6227d1b24eaaa96193805",
+      "source": "src\\arclm\\preprocess\\pipeline.py"
+    },
+    {
+      "bytes": 1227,
+      "module": "arclm.preprocess.report",
+      "path": "src\\arclm\\preprocess\\report.py",
+      "sha256": "e1a3f1c9d54846b0fc9be8f500e9f64ba2a2d227578280d0773d00dea4be949f",
+      "source": "src\\arclm\\preprocess\\report.py"
+    },
+    {
+      "bytes": 1299,
+      "module": "arclm.preprocess.statistics",
+      "path": "src\\arclm\\preprocess\\statistics.py",
+      "sha256": "4e0810823e6652d6168bcb4d2b47f4080e9f6153b1b52309b0b5c6b48d7ce0af",
+      "source": "src\\arclm\\preprocess\\statistics.py"
+    },
+    {
+      "bytes": 655,
+      "module": "arclm.preprocess.tokenizer_stats",
+      "path": "src\\arclm\\preprocess\\tokenizer_stats.py",
+      "sha256": "20ed8820a0ebc31f9cae1fbf7b98d74576fe5bf3f78048c2f819e0278d3ef416",
+      "source": "src\\arclm\\preprocess\\tokenizer_stats.py"
+    },
+    {
+      "bytes": 839,
+      "module": "arclm.preprocess.toxicity",
+      "path": "src\\arclm\\preprocess\\toxicity.py",
+      "sha256": "82b1547502c53248aedab3e221ba7e47947ea3d669b77499dac4e0caf2e6cb82",
+      "source": "src\\arclm\\preprocess\\toxicity.py"
+    },
+    {
+      "asset": "arclm/py.typed",
+      "bytes": 2,
+      "path": "src\\arclm\\py.typed",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "source": "src\\arclm\\py.typed"
+    },
+    {
+      "bytes": 589,
+      "module": "arclm.tokenizers",
+      "path": "src\\arclm\\tokenizers\\__init__.py",
+      "sha256": "24809e25cd73298e6fa243367aafe8007442ecaaaa7ee42ba31dac9a6a02cf88",
+      "source": "src\\arclm\\tokenizers\\__init__.py"
+    },
+    {
+      "bytes": 633,
+      "module": "arclm.tokenizers.auto",
+      "path": "src\\arclm\\tokenizers\\auto.py",
+      "sha256": "5fa18abb368414ab487010ff67089e0aabea8aceef99057963df0ca0128dd714",
+      "source": "src\\arclm\\tokenizers\\auto.py"
+    },
+    {
+      "bytes": 21574,
+      "module": "arclm.tokenizers.base",
+      "path": "src\\arclm\\tokenizers\\base.py",
+      "sha256": "155d55c128d906aba303740a438af12dd247fa68724478e136d7c05d36dde7bc",
+      "source": "src\\arclm\\tokenizers\\base.py"
+    },
+    {
+      "bytes": 861,
+      "module": "arclm.utils",
+      "path": "src\\arclm\\utils\\__init__.py",
+      "sha256": "950ab57d8aaa2eb4b1e08f491808c52345e6a146620e249689cdd41239598300",
+      "source": "src\\arclm\\utils\\__init__.py"
+    },
+    {
+      "bytes": 10472,
+      "module": "arclm.utils.formatting",
+      "path": "src\\arclm\\utils\\formatting.py",
+      "sha256": "504451fda979e51a97a022d8706c9e97487df1726db44070d2b7e207c901e291",
+      "source": "src\\arclm\\utils\\formatting.py"
+    },
+    {
+      "bytes": 629,
+      "module": "arclm.utils.imports",
+      "path": "src\\arclm\\utils\\imports.py",
+      "sha256": "c2adcae41c8f43fe6bbae7384eaabad8ab6fcdd41e2e2976dbf02b96dbbafdf5",
+      "source": "src\\arclm\\utils\\imports.py"
+    }
+  ],
+  "generated_at": "2026-07-28T07:30:53.396612+00:00",
+  "notice": "This directory is generated from canonical ArcLM source. Do not edit generated source files directly.",
+  "source_version": "1.13.4"
+}
