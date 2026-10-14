@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import inspect
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM evaluation")
 import torch
 from torch.utils.data import DataLoader
 

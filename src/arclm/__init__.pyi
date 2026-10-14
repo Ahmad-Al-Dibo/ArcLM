@@ -2,17 +2,13 @@ from pathlib import Path as _Path
 from typing import Any as _Any
 from typing import Union as _Union
 
-import torch as _torch
-
 from ._version import __version__ as __version__
 from .models import ArcLM as ArcLM
 from .models import AutoModel as AutoModel
-from .models import MiniGPT as MiniGPT
 from .models import ModelCapabilityReport as ModelCapabilityReport
 from .models import get_model_capability as get_model_capability
 from .models import model_support_matrix as model_support_matrix
 from .configs import Config as Config
-from .configs import TrainingConfig as TrainingConfig
 from .configs import create_config as create_config
 from .tokenizers import AutoTokenizer as AutoTokenizer
 from .tokenizers import SentencePieceTokenizer as SentencePieceTokenizer
@@ -72,13 +68,14 @@ from .training import ModelAdapter as ModelAdapter
 from .training import PreTrainedModelLoader as PreTrainedModelLoader
 from .training import StoppingCriteria as StoppingCriteria
 from .training import Trainer as Trainer
+from .training import TrainingConfig as TrainingConfig
 from .training import TrainingResult as TrainingResult
 from .training import TrainingState as TrainingState
 from .training import UnifiedPipeline as UnifiedPipeline
 from .training import build_model as build_model
 from .training import build_trainer as build_trainer
 from .training import checkpoint_is_compatible_for_continue_training as checkpoint_is_compatible_for_continue_training
-from .training import checkpoint_is_compatible_for_tuining as checkpoint_is_compatible_for_tuining
+from .training import checkpoint_is_compatible_for_tuning as checkpoint_is_compatible_for_tuning
 from .training import create_checkpoint_callback as create_checkpoint_callback
 from .training import create_epoch_checkpoint_callback as create_epoch_checkpoint_callback
 from .training import load_compatible_checkpoint as load_compatible_checkpoint
@@ -172,7 +169,7 @@ from .logics import model_check as model_check
 def get_version() -> str: ...
 
 
-def get_device() -> _torch.device: ...
+def get_device() -> _Any: ...
 
 
 def list_available_models(models_dir: _Union[str, _Path] = ...) -> list[str]: ...
@@ -184,11 +181,3 @@ def load_training_checkpoint(
 
 
 def report_environment(models_dir: _Union[str, _Path] = ...) -> str: ...
-
-
-def create_simple_interface_app() -> _Any: ...
-
-
-def run_simple_interface(
-    host: str | None = ..., port: int | None = ..., debug: bool | None = ...
-) -> None: ...

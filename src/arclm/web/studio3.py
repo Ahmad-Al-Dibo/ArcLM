@@ -23,6 +23,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from arclm.utils.imports import require_torch
+
+require_torch("ArcLM Studio evaluation and generation")
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Subset

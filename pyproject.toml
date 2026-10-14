@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "arclm"
 dynamic = ["version"]
-description = "A compact PyTorch toolkit for native language-model training and Hugging Face SFT."
+description = "A compact toolkit for language-model data workflows, tokenizers, training (optional torch), and Hugging Face SFT."
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [
   { name = "Ahmad Al Dibo"}
@@ -42,26 +42,13 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "torch>=2.1,<3",
   "numpy>=1.24,<3",
   "sentencepiece>=0.2,<0.3",
 ]
 
 [project.optional-dependencies]
-cpu = [
+train = [
   "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
-]
-cuda = [
-  "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
-]
-cuda121 = [
-  "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
 ]
 dev = [
   "pytest>=8",
@@ -69,21 +56,12 @@ dev = [
   "twine>=5,<7",
 ]
 web = [
+  "torch>=2.1,<3",
   "flask>=3,<4",
   "fastapi==0.139.0; python_version >= '3.10'",
   "uvicorn==0.51.0; python_version >= '3.10'",
 ]
-preprocess = [
-  "beautifulsoup4>=4.12,<5",
-  "PyYAML>=6,<7",
-  "tqdm>=4.66,<5",
-]
-agents = []
-agents-web = []
 agents-audio = [
-  "openai-whisper>=20231117",
-]
-agents-all = [
   "openai-whisper>=20231117",
 ]
 security = [
@@ -93,11 +71,8 @@ security-keyring = [
   "cryptography>=42,<47",
   "keyring>=25,<27",
 ]
-security-all = [
-  "cryptography>=42,<47",
-  "keyring>=25,<27",
-]
 peft = [
+  "torch>=2.1,<3",
   "peft>=0.11,<1",
 ]
 qlora = [
@@ -106,17 +81,20 @@ qlora = [
   "bitsandbytes>=0.49,<1; python_version >= '3.10'",
 ]
 hf = [
+  "torch>=2.1,<3",
   "transformers>=4.51,<6",
   "accelerate>=0.30,<2",
   "datasets>=2.18,<4",
   "peft>=0.11,<1",
 ]
 hf-inference = [
+  "torch>=2.1,<3",
   "transformers>=4.51,<6",
   "accelerate>=0.30,<2",
   "safetensors>=0.4,<1",
 ]
 examples = [
+  "torch>=2.1,<3",
   "transformers>=4.51,<6",
   "accelerate>=0.30,<2",
   "datasets>=2.18,<4",
@@ -125,67 +103,15 @@ examples = [
 ]
 all = [
   "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
   "transformers>=4.51,<6",
   "flask>=3,<4",
   "fastapi==0.139.0; python_version >= '3.10'",
   "uvicorn==0.51.0; python_version >= '3.10'",
-  "beautifulsoup4>=4.12,<5",
-  "PyYAML>=6,<7",
-  "tqdm>=4.66,<5",
   "accelerate>=0.30,<2",
   "datasets>=2.18,<4",
   "peft>=0.11,<1",
   "safetensors>=0.4,<1",
-]
-all-cpu = [
-  "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
-  "transformers>=4.51,<6",
-  "flask>=3,<4",
-  "fastapi==0.139.0; python_version >= '3.10'",
-  "uvicorn==0.51.0; python_version >= '3.10'",
-  "beautifulsoup4>=4.12,<5",
-  "PyYAML>=6,<7",
-  "tqdm>=4.66,<5",
-  "accelerate>=0.30,<2",
-  "datasets>=2.18,<4",
-  "peft>=0.11,<1",
-  "safetensors>=0.4,<1",
-]
-all-cuda = [
-  "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
-  "transformers>=4.51,<6",
-  "flask>=3,<4",
-  "fastapi==0.139.0; python_version >= '3.10'",
-  "uvicorn==0.51.0; python_version >= '3.10'",
-  "beautifulsoup4>=4.12,<5",
-  "PyYAML>=6,<7",
-  "tqdm>=4.66,<5",
-  "accelerate>=0.30,<2",
-  "datasets>=2.18,<4",
-  "peft>=0.11,<1",
-  "safetensors>=0.4,<1",
-]
-all-cuda121 = [
-  "torch>=2.1,<3",
-  "torchvision>=0.16,<1",
-  "torchaudio>=2.1,<3",
-  "transformers>=4.51,<6",
-  "flask>=3,<4",
-  "fastapi==0.139.0; python_version >= '3.10'",
-  "uvicorn==0.51.0; python_version >= '3.10'",
-  "beautifulsoup4>=4.12,<5",
-  "PyYAML>=6,<7",
-  "tqdm>=4.66,<5",
-  "accelerate>=0.30,<2",
-  "datasets>=2.18,<4",
-  "peft>=0.11,<1",
-  "safetensors>=0.4,<1",
+  "cryptography>=42,<47",
 ]
 
 [project.urls]

@@ -9,6 +9,9 @@ Key Components:
   4. StoppingCriteria - max_steps, early_stopping, patience controls
 """
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 import torch.nn as nn
 from pathlib import Path

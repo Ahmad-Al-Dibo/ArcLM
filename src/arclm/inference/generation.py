@@ -8,6 +8,9 @@ maps; external Hugging Face generation lives in ``arclm.inference.external``.
 
 from __future__ import annotations
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM inference")
 import torch
 
 

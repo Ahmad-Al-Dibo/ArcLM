@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from arclm.utils.imports import require_torch
+
+require_torch("ArcLM Studio training")
 import torch
 from torch.utils.data import TensorDataset
 

@@ -1,5 +1,5 @@
 """Text model implementations."""
 
-from .causal_lm import ArcLM, GPTBlock, MiniGPT, SelfAttention
+from .causal_lm import ArcLM, GPTBlock, SelfAttention
 
-__all__ = ["ArcLM", "MiniGPT", "GPTBlock", "SelfAttention"]
+__all__ = ["ArcLM", "GPTBlock", "SelfAttention"]

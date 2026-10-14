@@ -97,26 +97,9 @@ for name in ["keyring", "tink", "fastapi", "openai", "anthropic", "safetensors"]
     assert result.returncode == 0, result.stderr
 
 
-def test_external_model_remote_code_defaults_are_safe(monkeypatch):
+def test_external_model_remote_code_defaults_are_safe():
     from arclm.finetuning.sft import train_sft
     from arclm.inference._external_loading import ExternalModelConfig
 
     assert ExternalModelConfig(source="example/model").trust_remote_code is False
     assert signature(train_sft).parameters["trust_remote_code"].default is False
-
-    pytest.importorskip("flask")
-    from arclm.simple_interface import default_load_options, run_simple_interface
-
-    monkeypatch.delenv("TRUST_REMOTE_CODE", raising=False)
-    monkeypatch.delenv("HOST", raising=False)
-    monkeypatch.delenv("FLASK_DEBUG", raising=False)
-    assert default_load_options()["trust_remote_code"] is False
-
-    calls = {}
-
-    def fake_run(self, *, host, port, debug):
-        calls.update({"host": host, "port": port, "debug": debug})
-
-    monkeypatch.setattr("flask.Flask.run", fake_run)
-    run_simple_interface()
-    assert calls == {"host": "127.0.0.1", "port": 5000, "debug": False}

@@ -149,12 +149,10 @@ for name in ["torch", "transformers", "peft", "datasets", "flask"]:
 def test_training_config_names_are_documented_as_different_contracts():
     from arclm import TrainingConfig as RootTrainingConfig
     from arclm.configs import Config
-    from arclm.configs import TrainingConfig as LegacyTrainingConfig
     from arclm.training import TrainingConfig as CoreTrainingConfig
 
-    assert LegacyTrainingConfig is Config
-    assert RootTrainingConfig is LegacyTrainingConfig
-    assert CoreTrainingConfig is not LegacyTrainingConfig
+    assert RootTrainingConfig is CoreTrainingConfig
+    assert CoreTrainingConfig is not Config
 
 
 def test_model_adapter_names_are_domain_specific():

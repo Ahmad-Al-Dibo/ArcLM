@@ -217,8 +217,3 @@ def test_optional_dependency_message(monkeypatch):
     with pytest.raises(RuntimeError, match='pip install "arclm\\[web\\]"'):
         app_module._optional_fastapi()
 
-
-def test_legacy_flask_import_still_exists():
-    from arclm.simple_interface import create_simple_interface_app
-
-    assert callable(create_simple_interface_app)

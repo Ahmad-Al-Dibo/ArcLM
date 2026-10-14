@@ -113,9 +113,11 @@ def test_chat_command_keeps_history_and_exits(monkeypatch, capsys):
         {"role": "system", "content": "Be concise."},
         {"role": "user", "content": "first question"},
     ]
-    assert calls[1][-2:] == [
-        {"role": "user", "content": "second question"},
+    assert calls[1] == [
+        {"role": "system", "content": "Be concise."},
+        {"role": "user", "content": "first question"},
         {"role": "assistant", "content": "reply"},
+        {"role": "user", "content": "second question"},
     ]
     assert "ArcLM: reply" in capsys.readouterr().out
 

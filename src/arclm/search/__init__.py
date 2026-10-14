@@ -17,9 +17,9 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol
 
-from arclm.finetuning import FineTuningConfig
-from arclm.peft import LoRAConfig, QLoRAConfig
-from arclm.training import TrainingConfig
+from arclm.finetuning.config import FineTuningConfig
+from arclm.peft.config import LoRAConfig, QLoRAConfig
+from arclm.training.config import TrainingConfig
 from arclm.tracking import (
     RunConfig,
     RunOperation,

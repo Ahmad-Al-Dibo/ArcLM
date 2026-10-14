@@ -1,8 +1,8 @@
 def test_configs_public_import():
-    from arclm.configs import Config, TrainingConfig
+    from arclm.configs import Config
 
     assert Config is not None
-    assert TrainingConfig is Config
+    assert Config().embed_dim == 64
 
 
 def test_tokenizer_public_import():

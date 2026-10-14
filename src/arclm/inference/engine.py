@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 import warnings
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM inference")
 import torch
 
 from ..configs import Config

@@ -63,7 +63,7 @@ def test_lab_does_not_advertise_production_modification() -> None:
     for entry in manifest["challenges"]:
         source = (challenge_path(entry) / "challenge.py").read_text(encoding="utf-8")
         assert '"production_code_modified": False' in source
-    assert (REPO_ROOT / "src" / "arclm" / "_version.py").read_text(encoding="utf-8").count("0.10.0") == 1
+    assert (REPO_ROOT / "src" / "arclm" / "_version.py").read_text(encoding="utf-8").count("0.11.0") == 1
 
 
 def test_manifest_paths_are_relative_and_inside_lab() -> None:

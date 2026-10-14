@@ -3,7 +3,7 @@ import json
 import pytest
 
 from arclm import SFTTrainingResult, train_sft
-from arclm.sft import _find_subsequence, _load_sft_records
+from arclm.finetuning.sft import _find_subsequence, _load_sft_records
 
 
 def test_train_sft_is_public_api():

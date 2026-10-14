@@ -5,11 +5,14 @@ benchmarks, and legacy metrics reports. Reusable metric math belongs in
 ``arclm.evaluation.metrics``; this module focuses on interpretation and report
 formatting for students debugging trained models.
 """
-
-from dataclasses import dataclass
-
-import torch
-
+from dataclasses import dataclass
+
+
+
+from ..utils.imports import require_torch
+
+require_torch("ArcLM evaluation")
+import torch
 from ..configs import Config
 from ..datasets import prepare_data
 from ..inference import Generator

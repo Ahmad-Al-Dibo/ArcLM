@@ -1,10 +1,8 @@
-﻿"""Centrale configuratie voor ArcLM."""
+﻿"""Central configuration for ArcLM."""
 
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 import json
-
-import torch
 
 class Config:
     
@@ -141,7 +139,9 @@ class Config:
         return self
 
     def get_device(self):
-        """Geeft het ingestelde torch device terug."""
+        """Return the configured torch device (requires the train extra)."""
+        import torch
+
         return torch.device(self.device)
     
     def __repr__(self):
@@ -212,7 +212,7 @@ def create_config(**kwargs) -> Config:
         "max_data_size": 1_000_000,
         "tokenizer_rare_threshold": 2,
 
-        "device": "cuda" if torch.cuda.is_available() else "cpu",
+        "device": "cpu",
 
         "validation_split": 0.0,
         "early_stopping_patience": None,
@@ -256,8 +256,6 @@ def create_config(**kwargs) -> Config:
         )
 
     defaults.update(kwargs)
-
-    torch.manual_seed(defaults.get("seed"))
 
     return Config(**defaults)
 

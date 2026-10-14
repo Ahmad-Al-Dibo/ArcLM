@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import time
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM training")
 import torch
 import torch.nn as nn
 
@@ -369,12 +372,11 @@ def checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_siz
         == config.validation_split
     )
     
-    print("same_vocab, same_shape, same_tokenizer, same_training_strategy", same_vocab, same_shape, same_tokenizer, same_training_strategy)
-    # Continued training is streng: vocab, modelvorm, tokenizer en training moeten kloppen.
+    # Continued training is strict: vocab, model shape, tokenizer and training must match.
     return same_vocab and same_shape and same_tokenizer and same_training_strategy
 
 
-def checkpoint_is_compatible_for_tuining(checkpoint, config, vocab_size, tokenizer=None):
+def checkpoint_is_compatible_for_tuning(checkpoint, config, vocab_size, tokenizer=None):
     """Controleert of een checkpoint past bij finetuning."""
     checkpoint_config = checkpoint.get("config", {})
     if checkpoint_config == {}:

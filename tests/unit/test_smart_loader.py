@@ -1,7 +1,7 @@
 import json
 
 from arclm import SmartLoader, inspect_model_source
-from arclm.loaders import ModelInspector
+from arclm.checkpoints import ModelInspector
 
 
 def test_inspect_huggingface_like_folder_and_apply_overrides(tmp_path):

@@ -2,7 +2,7 @@
 
 ArcLM is a compact native-first Python library for educational and research
 language-model workflows. Its core path is intentionally small: load local data,
-tokenize text, train a tiny PyTorch causal language model, save or reload a
+tokenize text, train a tiny causal language model, save or reload a
 checkpoint, evaluate, generate, and inspect the pipeline.
 
 ArcLM is aimed at students, early researchers, and developers who want to learn
@@ -10,39 +10,44 @@ how an LLM library fits together without depending on a production serving stack
 
 ## Install
 
+Core install is light (~50 MB: numpy + sentencepiece). PyTorch is **optional**
+and only needed for models, training, checkpoints, and generation:
+
 ```bash
-pip install arclm
+pip install arclm            # data, tokenizers, configs, agents, security, search
+pip install "arclm[train]"   # + torch: models, training, inference, evaluation
 ```
 
-PyTorch is the largest required dependency because ArcLM's models and training
-runtime use it. For CPU-only installations, install the CPU wheel first to
-avoid downloading a CUDA-enabled build:
+For CPU-only torch installs, install the CPU wheel first to avoid downloading a
+CUDA-enabled build:
 
 ```bash
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-python -m pip install arclm
+python -m pip install "arclm[train]"
 ```
 
 For local development in this repository:
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev,train]"
 ```
 
 Optional integrations are installed only when requested:
 
 ```bash
-pip install "arclm[web]"
-pip install "arclm[hf]"
-pip install "arclm[peft]"
-pip install "arclm[preprocess]"
+pip install "arclm[web]"     # FastAPI Studio (includes torch)
+pip install "arclm[hf]"      # Hugging Face transformers stack
+pip install "arclm[peft]"    # LoRA / QLoRA
+pip install "arclm[security]"
 ```
 
-The local Studio backend is optional:
+The local Studio backend:
 
 ```bash
 python -m arclm web-api
 ```
+
+Migrating from 1.x? See [docs/migration-1-to-2.md](docs/migration-1-to-2.md).
 
 ## Quick Start
 

@@ -7,17 +7,17 @@ Available Commands:
   - arclm train    : Train a model from scratch or fine-tune
   - arclm eval     : Evaluate model performance
   - arclm generate : Generate text from a trained model
-    - arclm chat     : Chat with a loaded model in the console
+  - arclm chat     : Chat with a loaded model in the console
   - arclm web-api  : Start the modern local Web API
-  - arclm --run simple-interface : Start the simple web interface
+  - arclm security : Security status and audit tools
+  - arclm doctor   : Runtime diagnostics
 
 Usage:
   arclm train --config config.yaml --data data.txt
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "Hello"
-    arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
+  arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
   python -m arclm web-api
-  python -m arclm --run simple-interface
 """
 
 import argparse
@@ -25,23 +25,24 @@ import json
 import sys
 from pathlib import Path
 
-import torch
-
-from arclm import (
-    Config,
-    calculate_metrics,
-    export_metrics_to_json,
-    export_metrics_to_markdown,
-    load_model,
-)
-from arclm.configs import load_config_json, load_config_yaml
-from arclm.datasets import create_dataloader
 from arclm.diagnostics_runtime import build_runtime_diagnostics, format_runtime_diagnostics, runtime_diagnostics_json
-from arclm.training import train_model
+
+
+def _require_torch():
+    """Fail with a clear install hint when torch-backed commands run without torch."""
+    try:
+        import torch  # noqa: F401
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "This command requires PyTorch.\n"
+            'Install it with: pip install "arclm[train]"'
+        ) from exc
 
 
 def resolve_cli_device(device):
     """Zet `auto` om naar een echt torch device voor CLI commands."""
+    import torch
+
     if device == "auto":
         return "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cuda" and not torch.cuda.is_available():
@@ -51,6 +52,8 @@ def resolve_cli_device(device):
 
 def load_cli_config(path):
     """Laadt een YAML of JSON config voor de CLI."""
+    from arclm.configs import load_config_json, load_config_yaml
+
     if path.endswith(".yaml") or path.endswith(".yml"):
         return load_config_yaml(path)
     if path.endswith(".json"):
@@ -326,6 +329,10 @@ def parse_dataset_roots(values):
 
 def train_command(args):
     """Voert het train commando uit."""
+    _require_torch()
+    from arclm import Config
+    from arclm.training import train_model
+
     print("\n" + "=" * 70)
     print("ArcLM Training")
     print("=" * 70)
@@ -393,6 +400,13 @@ def train_command(args):
 
 def eval_command(args):
     """Voert het eval commando uit."""
+    _require_torch()
+    import torch
+
+    from arclm import calculate_metrics, export_metrics_to_json, export_metrics_to_markdown, load_model
+    from arclm.configs import load_config_json
+    from arclm.datasets import create_dataloader
+
     print("\n" + "=" * 70)
     print("ArcLM Evaluation")
     print("=" * 70)
@@ -470,6 +484,9 @@ def eval_command(args):
 
 def generate_command(args):
     """Voert het generate commando uit."""
+    _require_torch()
+    from arclm import load_model
+
     print("\n" + "=" * 70)
     print("ArcLM Text Generation")
     print("=" * 70)
@@ -513,6 +530,7 @@ def generate_command(args):
 
 def chat_command(args):
     """Load a model and run an interactive console conversation."""
+    _require_torch()
     from arclm.inference import load_any_model
 
     try:
@@ -650,25 +668,6 @@ def doctor_command(args):
 
 def run_command(args):
     """Voert package runtime helpers uit."""
-    if args.run in {"simple-interface", "simple_interface"}:
-        try:
-            from arclm.simple_interface import run_simple_interface
-        except ModuleNotFoundError as exc:
-            if exc.name == "flask":
-                print(
-                    "The simple interface requires Flask. "
-                    "Install it with: pip install arclm[web]"
-                )
-                return 1
-            raise
-
-        run_simple_interface(
-            host=args.host,
-            port=args.port,
-            debug=args.debug,
-        )
-        return 0
-
     print(f"Unknown runtime target: {args.run}")
     return 1
 
@@ -686,10 +685,9 @@ Examples:
   arclm train --config config.yaml --data data.txt --output models/model.pth
   arclm eval --model models/model.pth --data test.txt
   arclm generate --model models/model.pth --prompt "The future is"
-    arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
+  arclm chat --model Qwen/Qwen2.5-0.5B-Instruct
   arclm doctor
   python -m arclm web-api
-  python -m arclm --run simple-interface
         """,
     )
 
@@ -697,36 +695,6 @@ Examples:
         "--version",
         action="version",
         version="{} ArcLM".format(__import__("arclm").__version__),
-    )
-    parser.add_argument(
-        "--run",
-        choices=["simple-interface", "simple_interface"],
-        help="Run an ArcLM runtime helper such as the simple web interface",
-    )
-    parser.add_argument(
-        "--host",
-        default=None,
-        help="Host for --run simple-interface, defaults to HOST or 127.0.0.1",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=None,
-        help="Port for --run simple-interface, defaults to PORT or 5000",
-    )
-    debug_group = parser.add_mutually_exclusive_group()
-    debug_group.add_argument(
-        "--debug",
-        dest="debug",
-        action="store_true",
-        default=None,
-        help="Enable Flask debug mode for --run simple-interface",
-    )
-    debug_group.add_argument(
-        "--no-debug",
-        dest="debug",
-        action="store_false",
-        help="Disable Flask debug mode for --run simple-interface",
     )
 
     subparsers = parser.add_subparsers(title="commands", dest="command")
@@ -740,9 +708,6 @@ Examples:
     create_doctor_parser(subparsers)
 
     args = parser.parse_args()
-
-    if args.run:
-        return run_command(args)
 
     if not hasattr(args, "func"):
         parser.print_help()

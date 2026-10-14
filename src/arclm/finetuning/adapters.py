@@ -6,6 +6,9 @@ import inspect
 from pathlib import Path
 from typing import Any
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM fine-tuning")
 import torch
 import torch.nn.functional as F
 

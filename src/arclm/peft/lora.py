@@ -9,6 +9,9 @@ import math
 from dataclasses import asdict, dataclass, field
 from typing import Any, Mapping
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM PEFT")
 import torch
 from torch import nn
 

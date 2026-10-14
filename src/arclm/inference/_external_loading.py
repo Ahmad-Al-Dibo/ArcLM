@@ -22,6 +22,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM inference")
 import torch
 
 from .._version import __version__

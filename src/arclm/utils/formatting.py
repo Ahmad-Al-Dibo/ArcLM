@@ -1,9 +1,8 @@
-"""Kleine gedeelde helpers voor formatting en benchmarks."""
+"""Small shared helpers for formatting and benchmarks."""
 
 import json
 import time
 import re
-import torch
 from datetime import datetime
 
 
@@ -262,7 +261,11 @@ class BenchmarkMetrics:
         )
 
     def peak_gpu_memory_mb(self) -> float:
-        """Geeft piek GPU-geheugen terug in MB."""
+        """Return peak GPU memory in MB (0.0 when torch/CUDA is unavailable)."""
+        try:
+            import torch
+        except ModuleNotFoundError:
+            return 0.0
 
         if not torch.cuda.is_available():
             return 0.0
@@ -336,7 +339,11 @@ class BenchmarkMetrics:
         )
 
     def reset_gpu_memory_stats(self):
-        """Reset CUDA geheugentellers voor generatie."""
+        """Reset CUDA peak-memory counters when torch/CUDA is available."""
+        try:
+            import torch
+        except ModuleNotFoundError:
+            return
 
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()

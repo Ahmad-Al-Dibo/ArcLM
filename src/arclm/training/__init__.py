@@ -34,7 +34,7 @@ _EXPORTS = {
     "build_optimizer_with_discriminative_lr": "arclm.training.pipeline",
     "build_trainer": "arclm.training.pipeline",
     "checkpoint_is_compatible_for_continue_training": "arclm.training.pipeline",
-    "checkpoint_is_compatible_for_tuining": "arclm.training.pipeline",
+    "checkpoint_is_compatible_for_tuning": "arclm.training.pipeline",
     "create_checkpoint_callback": "arclm.training.pipeline",
     "create_epoch_checkpoint_callback": "arclm.training.pipeline",
     "load_compatible_checkpoint": "arclm.training.pipeline",

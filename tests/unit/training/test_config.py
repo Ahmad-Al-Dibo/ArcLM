@@ -34,11 +34,9 @@ def test_training_config_round_trip():
     assert restored == config
 
 
-def test_training_config_paths_are_intentionally_different():
+def test_training_config_is_distinct_from_general_config():
     from arclm.configs import Config
-    from arclm.configs import TrainingConfig as LegacyTrainingConfig
     from arclm.training import TrainingConfig as CoreTrainingConfig
 
-    assert LegacyTrainingConfig is Config
     assert CoreTrainingConfig is not Config
     assert hasattr(CoreTrainingConfig(), "gradient_accumulation_steps")

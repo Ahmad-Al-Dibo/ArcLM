@@ -1,93 +1,65 @@
-"""Publieke PEFT API voor ArcLM."""
+"""Public PEFT API for ArcLM.
 
-from .artifacts import (
-    ADAPTER_ARTIFACT_FORMAT,
-    ADAPTER_ARTIFACT_VERSION,
-    PeftAdapterInfo,
-    PeftAdapterManifest,
-    inspect_adapter_artifact,
-    load_adapter_artifact,
-    save_adapter_artifact,
-    validate_adapter_artifact,
-)
-from .config import (
-    LoRAConfig,
-    PeftConfig,
-    PeftMethod,
-    QLoRAConfig,
-    QuantizationBackend,
-    QuantizationConfig,
-    QuantizationType,
-    QuantizedComputeDType,
-)
-from .lora import (
-    LoRALinear,
-    PeftApplicationResult,
-    PeftParameterReport,
-    PeftTarget,
-    apply_lora,
-    apply_peft,
-    fingerprint_base_model,
-    get_lora_state_dict,
-    get_peft_parameter_report,
-    inspect_lora_targets,
-    is_lora_model,
-    load_lora_state_dict,
-    merge_lora,
-    merged_lora_model,
-    unmerge_lora,
-)
-from .quantization import (
-    QuantizationCapabilityReport,
-    QuantizedModelReport,
-    create_quantized_load_config,
-    get_quantization_backend,
-    inspect_quantization_capabilities,
-    is_quantized_runtime_model,
-    load_quantized_model,
-    prepare_model_for_qlora,
-    validate_quantized_base_model,
-)
+Config types load without torch; LoRA/quantization modules require the
+``train`` extra.
+"""
 
-__all__ = [
-    "ADAPTER_ARTIFACT_FORMAT",
-    "ADAPTER_ARTIFACT_VERSION",
-    "LoRAConfig",
-    "LoRALinear",
-    "PeftAdapterInfo",
-    "PeftAdapterManifest",
-    "PeftApplicationResult",
-    "PeftConfig",
-    "PeftMethod",
-    "PeftParameterReport",
-    "PeftTarget",
-    "QLoRAConfig",
-    "QuantizationBackend",
-    "QuantizationCapabilityReport",
-    "QuantizationConfig",
-    "QuantizationType",
-    "QuantizedComputeDType",
-    "QuantizedModelReport",
-    "apply_lora",
-    "apply_peft",
-    "create_quantized_load_config",
-    "fingerprint_base_model",
-    "get_lora_state_dict",
-    "get_quantization_backend",
-    "get_peft_parameter_report",
-    "inspect_adapter_artifact",
-    "inspect_lora_targets",
-    "inspect_quantization_capabilities",
-    "is_lora_model",
-    "is_quantized_runtime_model",
-    "load_adapter_artifact",
-    "load_lora_state_dict",
-    "load_quantized_model",
-    "merge_lora",
-    "merged_lora_model",
-    "prepare_model_for_qlora",
-    "save_adapter_artifact",
-    "unmerge_lora",
-    "validate_quantized_base_model",
-    "validate_adapter_artifact",
-]
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
+_EXPORTS = {
+    "LoRAConfig": "arclm.peft.config",
+    "PeftConfig": "arclm.peft.config",
+    "PeftMethod": "arclm.peft.config",
+    "QLoRAConfig": "arclm.peft.config",
+    "QuantizationBackend": "arclm.peft.config",
+    "QuantizationConfig": "arclm.peft.config",
+    "QuantizationType": "arclm.peft.config",
+    "QuantizedComputeDType": "arclm.peft.config",
+    "ADAPTER_ARTIFACT_FORMAT": "arclm.peft.artifacts",
+    "ADAPTER_ARTIFACT_VERSION": "arclm.peft.artifacts",
+    "PeftAdapterInfo": "arclm.peft.artifacts",
+    "PeftAdapterManifest": "arclm.peft.artifacts",
+    "inspect_adapter_artifact": "arclm.peft.artifacts",
+    "load_adapter_artifact": "arclm.peft.artifacts",
+    "save_adapter_artifact": "arclm.peft.artifacts",
+    "validate_adapter_artifact": "arclm.peft.artifacts",
+    "LoRALinear": "arclm.peft.lora",
+    "PeftApplicationResult": "arclm.peft.lora",
+    "PeftParameterReport": "arclm.peft.lora",
+    "PeftTarget": "arclm.peft.lora",
+    "apply_lora": "arclm.peft.lora",
+    "apply_peft": "arclm.peft.lora",
+    "fingerprint_base_model": "arclm.peft.lora",
+    "get_lora_state_dict": "arclm.peft.lora",
+    "get_peft_parameter_report": "arclm.peft.lora",
+    "inspect_lora_targets": "arclm.peft.lora",
+    "is_lora_model": "arclm.peft.lora",
+    "load_lora_state_dict": "arclm.peft.lora",
+    "merge_lora": "arclm.peft.lora",
+    "merged_lora_model": "arclm.peft.lora",
+    "unmerge_lora": "arclm.peft.lora",
+    "QuantizationCapabilityReport": "arclm.peft.quantization",
+    "QuantizedModelReport": "arclm.peft.quantization",
+    "create_quantized_load_config": "arclm.peft.quantization",
+    "get_quantization_backend": "arclm.peft.quantization",
+    "inspect_quantization_capabilities": "arclm.peft.quantization",
+    "is_quantized_runtime_model": "arclm.peft.quantization",
+    "load_quantized_model": "arclm.peft.quantization",
+    "prepare_model_for_qlora": "arclm.peft.quantization",
+    "validate_quantized_base_model": "arclm.peft.quantization",
+}
+
+__all__ = sorted(_EXPORTS)
+
+
+def __getattr__(name: str) -> Any:
+    """Load a PEFT attribute only when it is requested."""
+    if name in _EXPORTS:
+        module = import_module(_EXPORTS[name])
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module 'arclm.peft' has no attribute {name!r}")

@@ -1,4 +1,4 @@
-from arclm import TokenizerFactory, create_simple_interface_app, run_simple_interface
+from arclm import TokenizerFactory
 from arclm.tokenizers import Tokenizer, create_tokenizer
 from arclm.training import (
     BaseModelAdapter,
@@ -7,9 +7,8 @@ from arclm.training import (
     ModelAdapter,
     PreTrainedModelLoader,
     UnifiedPipeline,
+    build_model,
 )
-from arclm.pipeline import build_model
-from arclm.pipeline_v2 import build_model as legacy_build_model
 
 
 def test_tokenizer_factory_selects_word_tokenizer():
@@ -35,56 +34,5 @@ def test_training_exports_are_inheritable_base_classes():
     assert issubclass(ModelAdapter, BaseModelAdapter)
 
 
-def test_pipeline_v2_keeps_legacy_helper_imports():
-    assert legacy_build_model is build_model
-
-
-def test_simple_interface_helpers_are_exported_lazily():
-    assert callable(create_simple_interface_app)
-    assert callable(run_simple_interface)
-
-
-def test_simple_interface_can_save_loaded_model(monkeypatch, tmp_path):
-    import arclm.simple_interface as simple_interface
-
-    class FakeSourceInfo:
-        source_type = "hf_full_model"
-
-        def to_dict(self):
-            return {"source_type": self.source_type, "warnings": []}
-
-    class FakeModel:
-        source_info = FakeSourceInfo()
-        device = "cpu"
-
-        def save(self, output_dir, save_config=None):
-            assert save_config.save_mode == "auto"
-            assert save_config.overwrite is True
-            return tmp_path / "saved-model"
-
-    monkeypatch.setattr(simple_interface, "_model", None)
-    monkeypatch.setattr(simple_interface, "_model_cache_key", None)
-    monkeypatch.setattr(simple_interface, "_model_source", None)
-    monkeypatch.setattr(simple_interface, "_model_options", {})
-    monkeypatch.setattr(simple_interface, "load_any_model", lambda *args, **kwargs: FakeModel())
-
-    app = simple_interface.create_simple_interface_app()
-    client = app.test_client()
-
-    home = client.get("/")
-    assert home.status_code == 200
-    assert simple_interface.DEFAULT_MODEL_SAVE_PATH in home.get_data(as_text=True)
-
-    response = client.post(
-        "/model/save",
-        json={
-            "model_source": "example/model",
-            "save_path": str(tmp_path),
-            "save_mode": "auto",
-            "overwrite": True,
-        },
-    )
-
-    assert response.status_code == 200
-    assert response.json["success"] is True
-    assert response.json["saved_path"] == str(tmp_path / "saved-model")
+def test_build_model_is_exported():
+    assert callable(build_model)

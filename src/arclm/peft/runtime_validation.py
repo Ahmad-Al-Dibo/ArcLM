@@ -8,6 +8,9 @@ import platform
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM PEFT")
 import torch
 
 

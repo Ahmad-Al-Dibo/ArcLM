@@ -20,13 +20,11 @@ __author__ = "Ahmad Al Dibo"
 
 _EXPORTS = {
     "ArcLM": "arclm.models",
-    "MiniGPT": "arclm.models",
     "AutoModel": "arclm.models",
     "ModelCapabilityReport": "arclm.models",
     "get_model_capability": "arclm.models",
     "model_support_matrix": "arclm.models",
     "Config": "arclm.configs",
-    "TrainingConfig": "arclm.configs",
     "create_config": "arclm.configs",
     "Tokenizer": "arclm.tokenizers",
     "SentencePieceTokenizer": "arclm.tokenizers",
@@ -71,6 +69,7 @@ _EXPORTS = {
     "PipelineTrace": "arclm.inspection",
     "inspect_text": "arclm.inspection",
     "Trainer": "arclm.training",
+    "TrainingConfig": "arclm.training",
     "BaseTrainer": "arclm.training",
     "BaseCallback": "arclm.training",
     "TrainingState": "arclm.training",
@@ -86,7 +85,7 @@ _EXPORTS = {
     "StoppingCriteria": "arclm.training",
     "UnifiedPipeline": "arclm.training",
     "checkpoint_is_compatible_for_continue_training": "arclm.training",
-    "checkpoint_is_compatible_for_tuining": "arclm.training",
+    "checkpoint_is_compatible_for_tuning": "arclm.training",
     "create_checkpoint_callback": "arclm.training",
     "create_epoch_checkpoint_callback": "arclm.training",
     "load_compatible_checkpoint": "arclm.training",
@@ -191,8 +190,6 @@ __all__ = sorted(
         "list_available_models",
         "load_training_checkpoint",
         "report_environment",
-        "create_simple_interface_app",
-        "run_simple_interface",
         *_EXPORTS,
     ]
 )
@@ -249,16 +246,3 @@ def report_environment(models_dir: str | Path = "models") -> str:
         f"local_checkpoints={models}"
     )
 
-
-def create_simple_interface_app():
-    """Create the optional Flask app for ArcLM's simple web interface."""
-    from .simple_interface import create_simple_interface_app as _create_app
-
-    return _create_app()
-
-
-def run_simple_interface(*args, **kwargs):
-    """Run ArcLM's optional simple web interface."""
-    from .simple_interface import run_simple_interface as _run_interface
-
-    return _run_interface(*args, **kwargs)

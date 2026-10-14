@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import math
 
+from ..utils.imports import require_torch
+
+require_torch("ArcLM evaluation")
 import torch
 
 from ..exceptions import MetricError
