@@ -1,17 +1,22 @@
-include docs/migration-1-to-2.md
-recursive-include examples *.md *.py *.json *.jsonl *.txt *.html
-recursive-include tests *.py
+include LICENSE
+include README.md
+include CHANGELOG.md
 include src/arclm/py.typed
 include src/arclm/*.pyi
 prune .venv
 prune .venv-training-core
 prune build
 prune dist
-prune examples/_outputs
-prune examples/.venv
-prune examples/runs
-prune examples/qwen3_0_6b_sft/output
+prune .git
+prune .github
+prune .pytest_cache
+prune examples
+prune lab
+prune tests
+prune distributions
+prune docs
+prune tools
+prune web
 prune reports
-prune web/node_modules
 global-exclude __pycache__ *.py[cod]
 global-exclude .pytest_cache
