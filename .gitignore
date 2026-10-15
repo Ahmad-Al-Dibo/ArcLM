@@ -56,3 +56,6 @@ web/playwright-report/
 web/tsconfig.tsbuildinfo
 
 ./node_modules/*
+
+# Local article drafts and testing workspace (never commit)
+/local-articles/
