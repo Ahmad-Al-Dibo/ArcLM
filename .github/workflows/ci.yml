@@ -35,7 +35,6 @@ jobs:
           pytest -q
           tests/unit/test_light_imports.py
           tests/unit/datasets
-          tests/unit/tokenizers
           -m "not gpu and not cuda"
 
   test:
