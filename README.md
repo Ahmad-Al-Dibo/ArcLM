@@ -253,8 +253,8 @@ source. `pip install "git+https://github.com/ahmad-al-dibo/arclm.git#subdirector
 | **[docs/guide.md](docs/guide.md)** | Complete framework guide — every subpackage with examples |
 | [docs/migration-1-to-2.md](docs/migration-1-to-2.md) | Upgrading from 1.x |
 | [docs/agent-runtime.md](docs/agent-runtime.md) | Agent runtime deep dive |
-| [examples/](examples/) | Runnable examples, `python examples/run_examples.py run-verified` |
-| [lab/](lab/README.md) | Hands-on curriculum: build the framework yourself |
+| [examples/README.md](examples/README.md) | Runnable examples, `python examples/run_examples.py run-verified` |
+| [lab/README.md](lab/README.md) | Hands-on curriculum: build the framework yourself |
 | [docs/project-status.md](docs/project-status.md) | Support matrix |
 
 ## License
