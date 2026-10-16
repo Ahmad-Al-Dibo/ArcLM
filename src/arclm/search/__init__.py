@@ -11,7 +11,12 @@ import tempfile
 import time
 import uuid
 from dataclasses import asdict, dataclass, field, is_dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+try:  # Python 3.11+
+    from datetime import UTC
+except ImportError:  # pragma: no cover - 3.9/3.10
+    UTC = timezone.utc
 from enum import Enum
 from itertools import product
 from pathlib import Path
