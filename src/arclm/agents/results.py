@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, Dict, List, Union
 
-
-JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
+if sys.version_info >= (3, 10):
+    JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
+else:  # Python 3.9: runtime | unions are not allowed
+    JSONValue = Union[str, int, float, bool, None, List["JSONValue"], Dict[str, "JSONValue"]]
 
 
 def ensure_json_safe(value: Any) -> JSONValue:
