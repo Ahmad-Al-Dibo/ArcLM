@@ -473,7 +473,7 @@ class RunTracker:
             )
             if key in values
         }
-        safe.update(_json_safe(metadata))
+        safe.update(_redact_paths(metadata))
         self.update_manifest(dataset=safe)
 
     def record_fine_tuning_result(self, result: Any) -> None:
