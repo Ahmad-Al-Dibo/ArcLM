@@ -108,11 +108,13 @@ def test_run_create_manifest_validate_list_and_compare(tmp_path):
 def test_run_manifest_redacts_absolute_paths_in_unclassified_metadata(tmp_path):
     tracker = create_run(RunConfig(name="path-redaction", storage=_storage(tmp_path)))
     try:
-        tracker.manifest.summaries["source"] = str(tmp_path / "private-data")
+        dataset_path = "/tmp/pytest-of-runner/pytest-0/private-dataset"
+        tracker.record_dataset(_report(), private_path=dataset_path)
+        tracker.manifest.summaries["source"] = dataset_path
 
         serialized = json.dumps(tracker.manifest.to_dict())
 
-        assert str(tmp_path) not in serialized
+        assert dataset_path not in serialized
         assert "<path omitted>" in serialized
     finally:
         tracker.close()

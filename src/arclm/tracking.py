@@ -21,7 +21,7 @@ try:  # Python 3.11+
 except ImportError:  # pragma: no cover - 3.9/3.10
     UTC = timezone.utc
 from enum import Enum
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Iterable, Mapping
 
 from ._version import __version__
@@ -1304,7 +1304,9 @@ def _redact_paths(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_redact_paths(item) for item in value]
     if isinstance(value, str) and (
-        Path(value).is_absolute() or PureWindowsPath(value).is_absolute()
+        Path(value).is_absolute()
+        or PurePosixPath(value).is_absolute()
+        or PureWindowsPath(value).is_absolute()
     ):
         return "<path omitted>"
     return _json_safe(value)
