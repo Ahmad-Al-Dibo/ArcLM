@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Future roadmap — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Future roadmap</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Future development and roadmap</h1>
+          <p>
+            Labels: <span class="badge ok">Implemented</span> exists and is verified ·
+            <span class="badge exp">In progress</span> active work in the repo ·
+            <span class="badge plan">Planned</span> named in project materials ·
+            <span class="badge prop">Proposed</span> technical suggestion from analysis —
+            <strong>not a commitment</strong>.
+          </p>
+          <p class="small">
+            No calendar dates are promised. Stages are relative priority, not deadlines.
+          </p>
+
+          <h2 id="near">Near-term (stabilize 2.0)</h2>
+          <table class="roadmap">
+            <tr><th>Item</th><th>Label</th><th>Why / success criteria</th></tr>
+            <tr>
+              <td>CI fully green on all matrices</td>
+              <td><span class="badge exp">In progress</span></td>
+              <td>Light + torch jobs pass on 3.9–3.14; tracking path leak and UTC fixes already landed — keep green.</td>
+            </tr>
+            <tr>
+              <td>Editorial pass on freeCodeCamp Part 1 + guidelines</td>
+              <td><span class="badge plan">Planned</span></td>
+              <td>Local article drafts in testing; Ready only after guidelines check.</td>
+            </tr>
+            <tr>
+              <td>Instruction-tuned chat template verification</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Test one real instruct model’s <code>chat_template</code> path beyond tiny-gpt2.</td>
+            </tr>
+            <tr>
+              <td>API reference coverage for extended root modules</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>workflow/config_schema/runs pages thin; expand or explicitly mark out of scope.</td>
+            </tr>
+            <tr>
+              <td>GitHub default branch + discoverability</td>
+              <td><span class="badge plan">Planned</span></td>
+              <td>Set default branch; topics; launch posts (see local launch checklist).</td>
+            </tr>
+          </table>
+
+          <h2 id="mid">Medium-term (product depth)</h2>
+          <table class="roadmap">
+            <tr><th>Item</th><th>Label</th><th>Why / success criteria</th></tr>
+            <tr>
+              <td>Retrieval / RAG building blocks</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Need: document search is missing (search ≠ IR). Success: chunking + index + retrieve API with tests; keep core torch-free where possible.</td>
+            </tr>
+            <tr>
+              <td>Arabic-friendly examples and eval notes</td>
+              <td><span class="badge plan">Planned</span></td>
+              <td>Need: MENA audience. Success: verified examples with Arabic text; documented tokenizer/HF caveats.</td>
+            </tr>
+            <tr>
+              <td>Blocks on clearer git-install story / optional PyPI names</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Need: easier adoption. Success: one-line install docs; optional namespace work if co-install ever required.</td>
+            </tr>
+            <tr>
+              <td>Studio frontend documentation</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Need: web/ is under-documented. Success: architecture + API contract page.</td>
+            </tr>
+            <tr>
+              <td>SFT/LoRA quality metrics in examples</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Need: show before/after honestly. Success: automated smoke reports loss + sample outputs.</td>
+            </tr>
+          </table>
+
+          <h2 id="arch">Architecture &amp; maintainability</h2>
+          <table class="roadmap">
+            <tr><th>Item</th><th>Label</th><th>Notes</th></tr>
+            <tr>
+              <td>Split mega-modules (search, distributed, tracking, _external_loading)</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>~1500+ line files; split when touch cost justifies it.</td>
+            </tr>
+            <tr>
+              <td>English-only for new public APIs</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Existing NL/EN mix; standardize new docstrings.</td>
+            </tr>
+            <tr>
+              <td>Formal deprecation policy for experimental APIs</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Distributed/QLoRA: document support level in one place.</td>
+            </tr>
+          </table>
+
+          <h2 id="dx">Developer experience</h2>
+          <table class="roadmap">
+            <tr><th>Item</th><th>Label</th><th>Notes</th></tr>
+            <tr>
+              <td>Richer CLI help examples</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Each subcommand epilog with copy-paste recipes.</td>
+            </tr>
+            <tr>
+              <td>Type-check CI (mypy/pyright) on public surface</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Complement stub sync tests.</td>
+            </tr>
+            <tr>
+              <td>Contributor cookbook beyond CODEBASE_GUIDE</td>
+              <td><span class="badge prop">Proposed</span></td>
+              <td>Walkthrough PR: new metric, new tool, new Block.</td>
+            </tr>
+          </table>
+
+          <h2 id="research">Longer-term research directions</h2>
+          <ul>
+            <li><span class="badge prop">Proposed</span> Multilingual tokenizer bake-offs with documented methodology (not marketing benchmarks).</li>
+            <li><span class="badge prop">Proposed</span> Tiny-model interpretability hooks beyond current <code>inspect_text</code>.</li>
+            <li><span class="badge prop">Proposed</span> Edge/embedded packaging studies using Blocks.</li>
+          </ul>
+
+          <h2 id="direction">Current direction (summary)</h2>
+          <p>
+            The project is consolidating a clean <strong>2.0</strong>: light install,
+            honest documentation, CI that enforces the torch boundary, and a
+            publishable PyPI package. After that, the highest-leverage gaps are
+            <strong>retrieval/RAG primitives</strong>, <strong>multilingual examples</strong>,
+            and <strong>deepening verified HF/SFT paths</strong> — all currently
+            labeled Proposed or Planned, not implemented commitments.
+          </p>
+          <p>
+            Biggest remaining risks: discoverability vs similarly named packages;
+            keeping docs synchronized with a multi-package codebase; avoiding
+            over-claiming experimental distributed/QLoRA support.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="status.html">Status &amp; limits</a></li>
+            <li><a href="positioning.html">Positioning</a></li>
+            <li><a href="../CHANGELOG.md">CHANGELOG.md</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["status.html", "Status & limits"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

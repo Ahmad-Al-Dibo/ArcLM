@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Core concepts — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Core concepts</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Core concepts</h1>
+          <p>
+            Concepts a developer needs before using ArcLM seriously.
+            Each concept maps to real modules — not abstract marketing terms.
+          </p>
+
+          <h2 id="record">Record</h2>
+          <p>
+            A <strong>record</strong> is a plain Python <code>dict</code> of fields
+            for one training or evaluation example. The conventional text field is
+            <code>"text"</code>. SFT also uses <code>messages</code>,
+            <code>prompt</code>/<code>completion</code>, or
+            <code>instruction</code>/<code>output</code>.
+          </p>
+          <p><strong>Where:</strong> <code>arclm.datasets</code>, JSONL files.
+            <strong>Problem solved:</strong> uniform data interchange without a ORM.</p>
+          <pre><code>records = [{"text": "Hello world"}, {"text": "ArcLM is light"}]</code></pre>
+
+          <h2 id="config">Config vs TrainingConfig</h2>
+          <p>
+            <code>arclm.configs.Config</code> is the broad workflow bag (model size,
+            paths, device, tokenizer type). <code>arclm.training.TrainingConfig</code>
+            is a small validated dataclass for the modern <code>Trainer</code>
+            (epochs, precision, optimizer, …). They are intentionally different types.
+          </p>
+          <pre><code>from arclm.configs import create_config
+from arclm.training import TrainingConfig
+
+cfg = create_config(embed_dim=32, device="cpu")
+tcfg = TrainingConfig(epochs=3, batch_size=8, precision="fp32")</code></pre>
+
+          <h2 id="tokenizer">Tokenizer</h2>
+          <p>
+            Converts text to integer ids. ArcLM ships a
+            <strong>word-level</strong> tokenizer (whitespace, inspectable vocab)
+            and a <strong>SentencePiece</strong> subword tokenizer. No automatic
+            lowercasing — normalize yourself if needed.
+          </p>
+          <pre><code>from arclm.tokenizers import Tokenizer
+tok = Tokenizer(max_vocab=64)
+tok.build("your corpus ...")
+ids = tok.encode_text("some words")</code></pre>
+
+          <h2 id="optional-torch">Optional torch</h2>
+          <p>
+            <code>import arclm</code> and light subpackages do not import torch.
+            Importing <code>arclm.models</code> / <code>arclm.training</code> without
+            torch raises <code>OptionalDependencyError</code> telling you to
+            <code>pip install "arclm[train]"</code>.
+          </p>
+          <pre><code>import arclm, sys
+print("torch" in sys.modules)  # False</code></pre>
+
+          <h2 id="block">Block (trimmed edition)</h2>
+          <p>
+            A <strong>Block</strong> is a generated package that contains only a
+            subset of ArcLM modules (e.g. core-only or agents-only). Produced from
+            the same source by <code>tools/build_arclm_distributions.py</code>.
+            Install Blocks <em>instead of</em> full ArcLM, not alongside it.
+          </p>
+
+          <h2 id="tool">Agent tool</h2>
+          <p>
+            A typed Python function wrapped by <code>@tool</code>. Type hints become
+            a JSON schema; the docstring becomes the description for the model.
+            Tools run inside a bounded <code>AgentRunner</code> loop with permissions.
+          </p>
+          <pre><code>from arclm.agents import tool
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers."""
+    return left + right</code></pre>
+
+          <h2 id="run">Run (tracking)</h2>
+          <p>
+            A <strong>run</strong> is a directory under a tracking root with a
+            manifest, metrics JSONL, and events. Created via
+            <code>arclm.tracking.create_run(RunConfig(...))</code>.
+            Private paths in manifests are redacted to <code>&lt;path omitted&gt;</code>.
+          </p>
+
+          <h2 id="checkpoint">Checkpoint</h2>
+          <p>
+            A serialized training state (weights + optional tokenizer/config
+            metadata). Save with <code>atomic_save_checkpoint</code>; load trusted
+            checkpoints with <code>safe_load_training_checkpoint</code>.
+            Compatibility helpers refuse empty configs for resume/fine-tune.
+          </p>
+
+          <h2 id="hf-model">Hugging Face model handle</h2>
+          <p>
+            <code>load_any_model(source)</code> returns an
+            <code>ExternalLoadedModel</code> with <code>.predict</code>,
+            <code>.generate</code>, and <code>.chat</code>. Chat uses the tokenizer’s
+            <code>chat_template</code> when present. Not every Hub model is supported.
+          </p>
+
+          <h2 id="extra">Extra</h2>
+          <p>
+            A pip extra (e.g. <code>arclm[train]</code>) installs optional
+            dependencies and unlocks packages that require them. Errors name the
+            exact extra when something is missing.
+          </p>
+
+          <h2 id="concept-map">Concept map</h2>
+          <pre><code>record
+  -> dataset pipeline (load / validate / dedupe)
+  -> tokenizer
+  -> token ids
+
+Config / TrainingConfig
+  -> ArcLM model  OR  HF model (load_any_model)
+  -> Trainer  |  train_sft  |  generation
+  -> checkpoint
+  -> evaluation
+  -> tracking run
+
+Agent tools + security  (orthogonal to the training path)</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="workflows.html">How it works</a></li>
+            <li><a href="reference/index.html">API reference</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["getting-started.html", "Getting started"];</script>
+<script>window.DOCS_NEXT = ["architecture.html", "Architecture"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

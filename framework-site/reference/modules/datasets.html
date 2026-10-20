@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.datasets — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.datasets</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.datasets <span class="badge core">core</span></h1>
+          <p>
+            Load, validate, clean, and deduplicate text records.
+            Records are plain <code>dict</code> objects; the usual text key is
+            <code>"text"</code>.
+            <strong>When to use:</strong> preparing local data for native training
+            or inspection. DataLoader helpers that need torch are optional.
+          </p>
+
+          <h2 id="load_dataset">load_dataset(source, **kwargs)</h2>
+          <div class="api">
+            <span class="sig">load_dataset(source, **kwargs) -&gt; list[dict] | StreamingDataset</span>
+            <div class="field"><span class="label">Purpose</span> Load records from a list, path (json/jsonl/csv/txt), or <code>DatasetConfig</code>.</div>
+            <div class="field"><span class="label">Params</span> <code>source</code> — list of dicts, file path string/Path, or DatasetConfig. Additional kwargs depend on format.</div>
+            <div class="field"><span class="label">Returns</span> List of record dicts, or a streaming dataset when streaming is enabled.</div>
+            <div class="field"><span class="label">Errors</span> <code>DatasetLoadError</code> and related dataset exceptions on bad input.</div>
+            <div class="field"><span class="label">Torch</span> Not required for loading lists/JSONL.</div>
+          </div>
+
+          <pre><code># 1. From a list (verified)
+from arclm.datasets import load_dataset
+records = load_dataset([
+    {"text": "Hello world"},
+    {"text": "ArcLM is light"},
+])
+print(len(records), records[0]["text"])
+
+# 2. From JSONL
+# records = load_dataset("data.jsonl")
+
+# 3. From a text file (one document per line)
+# records = load_dataset("corpus.txt")
+
+# 4. DatasetConfig
+from arclm.datasets import DatasetConfig
+cfg = DatasetConfig(source="data.jsonl")
+# bundle = load_dataset(cfg)  # depending on config path support</code></pre>
+
+          <h2 id="validate">validate_records(records, *, required_fields, …)</h2>
+          <div class="api">
+            <span class="sig">validate_records(records, *, required_fields, field_types=None, allow_empty=False, strict=True, record_id_field=None) -&gt; DatasetValidationResult</span>
+            <div class="field"><span class="label">Purpose</span> Check each record for required fields and types.</div>
+            <div class="field"><span class="label">Params</span>
+              <ul>
+                <li><code>required_fields</code> — sequence of field names (keyword-only, required)</li>
+                <li><code>allow_empty</code> — allow empty strings/lists (default False)</li>
+                <li><code>strict</code> — strict schema enforcement</li>
+              </ul>
+            </div>
+            <div class="field"><span class="label">Returns</span> Result with <code>valid_count</code> and issue details.</div>
+          </div>
+
+          <pre><code># Verified
+from arclm.datasets import validate_records
+records = [{"text": "ok"}, {"text": ""}]
+result = validate_records(records, required_fields=["text"])
+print(result.valid_count)
+# empty text may be invalid unless allow_empty=True
+result2 = validate_records(records, required_fields=["text"], allow_empty=True)
+print(result2.valid_count)</code></pre>
+
+          <h2 id="dedupe">deduplicate(dataset, *, return_result=False, **kwargs)</h2>
+          <div class="api">
+            <span class="sig">deduplicate(dataset, *, return_result: bool = False, **kwargs)</span>
+            <div class="field"><span class="label">Purpose</span> Remove exact duplicates via <code>ExactDeduplicator</code>.</div>
+            <div class="field"><span class="label">Returns</span> With <code>return_result=True</code>: <code>DeduplicationResult</code> with <code>dataset</code>, <code>kept</code>, <code>removed</code>, <code>duplicate_keys</code>.</div>
+          </div>
+
+          <pre><code># Verified
+from arclm.datasets import deduplicate
+recs = [
+    {"text": "Hello world"},
+    {"text": "Hello world"},
+    {"text": "ArcLM is light"},
+]
+out = deduplicate(recs, return_result=True)
+print("kept", out.kept, "removed", out.removed)  # kept 2 removed 1
+print([r["text"] for r in out.dataset])</code></pre>
+
+          <h2 id="pipeline">DataPipeline</h2>
+          <div class="api">
+            <span class="sig">DataPipeline(steps)</span>
+            <div class="field"><span class="label">Purpose</span> Chain <code>BaseDataStep</code> transforms; a step may return <code>None</code> to drop a record.</div>
+          </div>
+          <pre><code>from arclm.datasets import DataPipeline
+from arclm.datasets.cleaning import TextCleaner, FilterStep
+
+pipeline = DataPipeline([
+    TextCleaner(lowercase=True, strip=True),
+    FilterStep(min_chars=10),
+])
+# processed = pipeline.run(records)</code></pre>
+
+          <h2 id="loader">DatasetLoader and prepare_data</h2>
+          <div class="api">
+            <span class="sig">DatasetLoader(config=None, *, text_field="text", …)</span>
+            <div class="field"><span class="label">Purpose</span> File-oriented loader with format detection.</div>
+          </div>
+          <div class="api">
+            <span class="sig">prepare_data(config: Config, existing_tokenizer=None) -&gt; DataBundle</span>
+            <div class="field"><span class="label">Purpose</span> High-level prepare using ArcLM <code>Config</code> paths; returns bundle with tokenized splits and tokenizer.</div>
+            <div class="field"><span class="label">Requires</span> Often needs tokenizer; some paths touch training utilities.</div>
+          </div>
+
+          <h2 id="torch-helpers">Torch-dependent helpers</h2>
+          <p>
+            <code>create_dataloader</code> and <code>TextDataset</code> (sliding-window
+            LM tensors) require PyTorch. They live in <code>datasets.base</code>
+            with optional import fallbacks.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="tokenizers.html">arclm.tokenizers</a></li>
+            <li><a href="training.html">arclm.training</a> — consume prepared loaders</li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["tokenizers.html", "arclm.tokenizers"];</script>
+<script>window.DOCS_NEXT = ["security.html", "arclm.security"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

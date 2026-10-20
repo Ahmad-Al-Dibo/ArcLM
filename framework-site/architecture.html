@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Architecture — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Architecture</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Architecture</h1>
+          <p>
+            ArcLM is a single installable package (<code>arclm</code>) composed of
+            domain subpackages. There is no separate microservice runtime. The
+            optional-torch boundary is the most important structural rule.
+          </p>
+
+          <h2 id="diagram">Layer diagram (implementation-aligned)</h2>
+          <div class="diagram" role="img" aria-label="ArcLM architecture layers">
+            <svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg">
+              <text x="12" y="24" font-weight="bold">ArcLM 2.0 layers</text>
+              <!-- Entry -->
+              <rect class="box" x="20" y="40" width="200" height="48" rx="4"/>
+              <text x="30" y="60">CLI (arclm / __main__)</text>
+              <text x="30" y="78">import arclm (lazy root)</text>
+              <rect class="box" x="240" y="40" width="200" height="48" rx="4"/>
+              <text x="250" y="60">Web Studio</text>
+              <text x="250" y="78">web/ FastAPI + Next.js</text>
+              <rect class="box" x="460" y="40" width="240" height="48" rx="4"/>
+              <text x="470" y="60">Library API</text>
+              <text x="470" y="78">from arclm.… import …</text>
+              <!-- Core -->
+              <rect class="box-core" x="20" y="120" width="440" height="120" rx="4"/>
+              <text x="30" y="140" font-weight="bold">Core (no torch) — required deps: numpy, sentencepiece</text>
+              <text x="30" y="162">configs · datasets · tokenizers · exceptions · utils · registry</text>
+              <text x="30" y="184">security · agents · tracking · search (HPO) · logics</text>
+              <text x="30" y="210">require_optional_dependency / require_torch live in utils</text>
+              <text x="30" y="230">CLI: doctor, security, config, data, runs, cache (no torch)</text>
+              <!-- Train stack -->
+              <rect class="box-train" x="480" y="120" width="220" height="120" rx="4"/>
+              <text x="490" y="140" font-weight="bold">Training stack (torch)</text>
+              <text x="490" y="162">models · training · inference</text>
+              <text x="490" y="184">finetuning · checkpoints</text>
+              <text x="490" y="206">evaluation · peft · inspection</text>
+              <text x="490" y="228">lifecycle · distributed (exp.)</text>
+              <!-- External -->
+              <rect class="box-ext" x="20" y="270" width="320" height="70" rx="4"/>
+              <text x="30" y="292" font-weight="bold">External (optional extras)</text>
+              <text x="30" y="314">HF transformers · peft · cryptography</text>
+              <text x="30" y="332">flask/fastapi · whisper · bitsandbytes</text>
+              <rect class="box-ext" x="360" y="270" width="340" height="70" rx="4"/>
+              <text x="370" y="292" font-weight="bold">Artifacts &amp; ops</text>
+              <text x="370" y="314">checkpoints · tracking runs · Blocks</text>
+              <text x="370" y="332">examples suite · lab · docs</text>
+              <!-- Arrows -->
+              <line x1="120" y1="88" x2="120" y2="120" stroke="#555" stroke-width="1.5"/>
+              <line x1="340" y1="88" x2="340" y2="120" stroke="#555" stroke-width="1.5"/>
+              <line x1="580" y1="88" x2="580" y2="120" stroke="#1565c0" stroke-width="1.5"/>
+              <line x1="460" y1="180" x2="480" y2="180" stroke="#555" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <text x="462" y="172" font-size="11">lazy</text>
+              <line x1="180" y1="240" x2="180" y2="270" stroke="#555" stroke-width="1.5"/>
+              <line x1="590" y1="240" x2="530" y2="270" stroke="#555" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <p class="small">
+            Green: torch-free. Blue: requires <code>[train]</code>. Orange: optional
+            third-party or generated artifacts. Dashed: lazy import boundary.
+          </p>
+
+          <h2 id="root">Root package</h2>
+          <p>
+            <code>src/arclm/__init__.py</code> exposes ~230 names via
+            <code>_EXPORTS</code> + module <code>__getattr__</code>. First attribute
+            access imports only that submodule. <code>__init__.pyi</code> mirrors the
+            map for type checkers.
+          </p>
+
+          <h2 id="core">Core components</h2>
+          <table>
+            <tr><th>Component</th><th>Responsibility</th><th>Depends on</th></tr>
+            <tr><td><code>configs</code></td><td>Config objects, YAML/JSON IO</td><td>exceptions, stdlib</td></tr>
+            <tr><td><code>tokenizers</code></td><td>Word + SentencePiece</td><td>sentencepiece</td></tr>
+            <tr><td><code>datasets</code></td><td>Load, validate, clean, dedupe</td><td>configs, tokenizers, exceptions</td></tr>
+            <tr><td><code>security</code></td><td>Crypto, redaction, policy</td><td>cryptography (optional full)</td></tr>
+            <tr><td><code>agents</code></td><td>Tools, runner, sessions</td><td>security.configuration (precise)</td></tr>
+            <tr><td><code>tracking</code></td><td>Runs, metrics, seeds</td><td>stdlib; torch optional inside</td></tr>
+            <tr><td><code>search</code></td><td>Hyperparameter search</td><td>tracking + config types</td></tr>
+            <tr><td><code>exceptions</code></td><td>Error hierarchy</td><td>stdlib</td></tr>
+          </table>
+
+          <h2 id="train">Training-stack components</h2>
+          <table>
+            <tr><th>Component</th><th>Responsibility</th><th>Gate</th></tr>
+            <tr><td><code>models</code></td><td>Native ArcLM GPT</td><td><code>require_torch</code></td></tr>
+            <tr><td><code>training</code></td><td>Trainer, pipeline, compat checks</td><td><code>require_torch</code></td></tr>
+            <tr><td><code>inference</code></td><td>Native + HF generation</td><td><code>require_torch</code> + HF extra</td></tr>
+            <tr><td><code>finetuning</code></td><td>SFT workflows (lazy init)</td><td>torch on leaf modules</td></tr>
+            <tr><td><code>checkpoints</code></td><td>Save/load/SmartLoader</td><td><code>require_torch</code></td></tr>
+            <tr><td><code>evaluation</code></td><td>Metrics, diagnostics</td><td><code>require_torch</code></td></tr>
+            <tr><td><code>peft</code></td><td>LoRA/QLoRA (lazy init)</td><td>torch on lora/quant modules</td></tr>
+            <tr><td><code>inspection</code></td><td>Step traces</td><td><code>require_torch</code></td></tr>
+          </table>
+
+          <h2 id="web">Web layer</h2>
+          <p>
+            <code>src/arclm/web/</code> provides <code>create_app(WebConfig)</code>
+            (FastAPI). Workspace state is JSON on disk. Studio training/eval
+            coordinators import torch. Frontend: separate Next.js app in
+            <code>web/</code> talking to the API.
+          </p>
+
+          <h2 id="blocks">Blocks generator</h2>
+          <p>
+            <code>tools/build_arclm_distributions.py</code> walks import graphs from
+            manifest roots, fails on excluded required imports, copies reachable
+            modules, and writes inventories. Manifests: <code>distributions/manifests/</code>.
+          </p>
+
+          <h2 id="change">Where to change what</h2>
+          <ul>
+            <li>New public name → package <code>__init__</code> + root <code>_EXPORTS</code> + <code>__init__.pyi</code></li>
+            <li>New CLI command → <code>cli.py</code> parser + handler (lazy heavy imports)</li>
+            <li>New Block → manifest + builder</li>
+            <li>Never hand-edit <code>distributions/&lt;id&gt;/src/**</code></li>
+          </ul>
+
+          <h2 id="boundaries">Boundaries not to bypass</h2>
+          <ul>
+            <li>Do not import <code>arclm.web</code> from core packages.</li>
+            <li>Do not module-level import torch in light packages.</li>
+            <li>Do not import <code>arclm.security</code> package root from light packages (use submodules).</li>
+            <li>Do not skip <code>require_torch</code> at heavy package entry.</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="concepts.html">Core concepts</a></li>
+            <li><a href="workflows.html">How it works</a></li>
+            <li><a href="../CODEBASE_GUIDE.md">CODEBASE_GUIDE.md</a> — routing for contributors</li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["concepts.html", "Core concepts"];</script>
+<script>window.DOCS_NEXT = ["workflows.html", "How it works"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

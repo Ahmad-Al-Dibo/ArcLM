@@ -1,0 +1,5 @@
+{"text": "Hello", "label": "greeting"}
+{"text": "world!", "label": "statement"}
+{"text": "This is a test.", "label": "statement"}
+{"text": "Another line.", "label": "statement"}
+{"text": "Final line.", "label": "statement"}

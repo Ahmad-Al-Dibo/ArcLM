@@ -12,7 +12,7 @@ def normalize_text(text: str) -> str:
     Expected output:
         "Hello\\nworld!"
     """
-    pass
+    return text.strip().replace("\r\n", "\n").replace("\r", "")
 
 
 def load_jsonl_records(path: str) -> list[dict[str, object]]:
@@ -31,7 +31,19 @@ def load_jsonl_records(path: str) -> list[dict[str, object]]:
             {"text": "Bye", "label": "farewell"},
         ]
     """
-    pass
+    import json
+
+    records = []
+    with open(path, "r", encoding = "utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    record = json.loads(line)
+                    records.append(record)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON line: {line}") from e
+    return records
 
 
 def split_records(
@@ -47,7 +59,8 @@ def split_records(
     Expected output:
         ([{"id": 1}, {"id": 2}, {"id": 3}], [{"id": 4}])
     """
-    pass
+    split_index = int(len(records) * (1 - validation_fraction))
+    return records[:split_index], records[split_index:]
 
 
 class SimpleDataset:
@@ -65,10 +78,30 @@ class SimpleDataset:
     """
 
     def __init__(self, records: list[dict[str, object]]):
-        pass
+        self.records = records
 
     def __len__(self) -> int:
-        pass
+        return len(self.records)
 
     def __getitem__(self, index: int) -> dict[str, object]:
-        pass
+        return self.records[index]
+
+
+if __name__ == "__main__":
+    # Example usage
+    text = "  Hello\r\nworld!  "
+    print(normalize_text(text))  # Output: "Hello\nworld!"
+
+    # Load JSONL records from a file (replace 'data.jsonl' with your file path)
+    records = load_jsonl_records('lab/beginner/data/data.jsonl')
+    print(records)
+
+    # Split records into training and validation sets
+    train_records, val_records = split_records(records, validation_fraction=0.2)
+    print(f"Train records: {train_records[:5]}")
+    print(f"Validation records: {val_records}")
+
+    # Create a SimpleDataset instance
+    dataset = SimpleDataset(train_records)
+    print(f"Dataset length: {len(dataset)}")
+    print(f"First record: {dataset[0]}")

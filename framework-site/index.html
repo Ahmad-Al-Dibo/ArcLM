@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ArcLM — Framework Presentation</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search this site…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Site"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a></div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>ArcLM</h1>
+          <p class="lead">
+            ArcLM is a compact Python toolkit for language-model
+            <strong>data workflows, tokenizers, optional PyTorch training,
+            Hugging Face inference, agents, and security</strong>.
+            The core install is light; PyTorch is an extra, not a requirement.
+          </p>
+
+          <h2 id="what">What ArcLM does</h2>
+          <ul>
+            <li>Load, validate, clean, and deduplicate local text datasets.</li>
+            <li>Tokenize with word-level or SentencePiece models.</li>
+            <li>Train a <em>native</em> tiny GPT-style model (optional torch).</li>
+            <li>Load Hugging Face causal LMs behind one interface and generate text.</li>
+            <li>Fine-tune with supervised fine-tuning (SFT), including optional LoRA.</li>
+            <li>Evaluate with accuracy / loss / perplexity and export reports.</li>
+            <li>Run bounded tool-calling agents without a GPU.</li>
+            <li>Redact secrets, encrypt/sign artifacts, and audit security status.</li>
+            <li>Track local experiments (runs, metrics, seeds) without a cloud service.</li>
+          </ul>
+
+          <h2 id="problems">Problems it was designed to solve</h2>
+          <table>
+            <tr><th>Problem</th><th>ArcLM response</th></tr>
+            <tr>
+              <td>Installing “just to try an API“ pulls hundreds of megabytes</td>
+              <td>Core install is NumPy + SentencePiece only; torch behind <code>[train]</code></td>
+            </tr>
+            <tr>
+              <td>Docs assume GPU + multi-GB downloads on day one</td>
+              <td>CPU-first examples; verified suite needs no network or GPU</td>
+            </tr>
+            <tr>
+              <td>Hard to see how data → tokens → model → eval fit together</td>
+              <td>Small readable packages; <code>inspect_text</code> pipeline traces</td>
+            </tr>
+            <tr>
+              <td>Educational code and application code live in different worlds</td>
+              <td>Same package for Lab-style scripts and developer apps</td>
+            </tr>
+          </table>
+
+          <h2 id="audience">Intended audience</h2>
+          <ul>
+            <li><strong>Educators and students</strong> — laptop, limited bandwidth, no GPU cluster.</li>
+            <li><strong>Application developers</strong> — HF loading, agents, data pipelines, security helpers.</li>
+            <li><strong>Researchers</strong> — embed a light toolkit; train only when the experiment needs it.</li>
+          </ul>
+
+          <h2 id="principles">Design principles</h2>
+          <ol>
+            <li><strong>Light by default.</strong> <code>import arclm</code> must not import torch.</li>
+            <li><strong>Readable source.</strong> Packages small enough to study; no 10k-line trainer as the only path.</li>
+            <li><strong>Honest limits.</strong> The native model is educational; docs and examples say so.</li>
+            <li><strong>Fail closed</strong> in security paths; clear <code>OptionalDependencyError</code> for missing extras.</li>
+            <li><strong>Verified examples.</strong> The maintained suite runs offline on CPU.</li>
+          </ol>
+
+          <h2 id="distinguish">How it differs (carefully)</h2>
+          <ul>
+            <li>vs <strong>Hugging Face transformers alone</strong>: ArcLM loads HF models but also ships tokenizers, data tools, a tiny native model, agents, and security with a light core. It is not a replacement for the HF model zoo.</li>
+            <li>vs <strong>large training frameworks</strong>: no production multi-GPU serving stack; the native trainer is intentionally small and readable.</li>
+            <li>vs <strong>notebook-only tutorials</strong>: versioned PyPI package, CLI, tests, CI, security layer.</li>
+          </ul>
+
+          <h2 id="realistic">What you can realistically accomplish</h2>
+          <ul>
+            <li>Install in seconds and tokenize/validate data immediately.</li>
+            <li>Load a small public HF model and generate text on CPU.</li>
+            <li>Run a tiny native training smoke test in seconds.</li>
+            <li>Build a local agent with typed tools and no API key (example adapter).</li>
+            <li>Integrate redaction and signed manifests into your own logging/artifacts.</li>
+          </ul>
+
+          <h2 id="not">What it is not</h2>
+          <ul>
+            <li>Not a competitive general-purpose chat LLM by itself.</li>
+            <li>Not a replacement for Hugging Face as a model hub client.</li>
+            <li>Not a production multi-node training or serving platform.</li>
+            <li>Not a guarantee of quality for any specific Hub model — compatibility is per model.</li>
+          </ul>
+
+          <h2 id="site">How to use this site</h2>
+          <p>
+            Start with <a href="getting-started.html">Getting started</a> if you want a working install.
+            Read <a href="architecture.html">Architecture</a> before extending the code.
+            Browse <a href="examples.html">Examples</a> for runnable patterns.
+            Check <a href="status.html">Status &amp; limits</a> before production decisions.
+            The <a href="roadmap.html">roadmap</a> separates implemented work from proposals.
+          </p>
+
+          <h2 id="links">Related resources</h2>
+          <ul>
+            <li><a href="reference/index.html">API reference</a> — function-level reference</li>
+            <li><a href="../README.md">Repository README</a></li>
+            <li>PyPI: <code>pip install arclm</code> (not <code>arcllm</code>)</li>
+            <li>GitHub: <code>Ahmad-Al-Dibo/ArcLM</code></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation Â· Apache-2.0</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_NEXT = ["philosophy.html", "Motivation & design"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

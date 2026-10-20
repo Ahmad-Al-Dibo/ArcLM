@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.inference — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.inference</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.inference <span class="badge torch">needs [train]</span> <span class="badge optional">HF needs [hf]</span></h1>
+          <p>
+            Generation for native ArcLM checkpoints and Hugging Face causal LMs.
+          </p>
+
+          <h2 id="load_model">load_model(path, device=…)</h2>
+          <div class="api">
+            <span class="sig">load_model(path, device=…) -&gt; LoadedModel</span>
+            <div class="field"><span class="label">Purpose</span> Load a native ArcLM training checkpoint for prediction.</div>
+            <div class="field"><span class="label">Errors</span> Checkpoint / file errors; missing torch → OptionalDependencyError.</div>
+          </div>
+
+          <h2 id="load_any_model">load_any_model(source, **kwargs)</h2>
+          <div class="api">
+            <span class="sig">load_any_model(source: PathLike, **kwargs) -&gt; ExternalLoadedModel</span>
+            <div class="field"><span class="label">Purpose</span> Load native or Hugging Face models behind one interface.</div>
+            <div class="field"><span class="label">Params</span> <code>device="cpu"</code>, <code>trust_remote_code=False</code> (safe default), plus backend kwargs.</div>
+            <div class="field"><span class="label">Requires</span> torch; HF models need transformers (<code>[hf]</code> / <code>[hf-inference]</code>).</div>
+            <div class="field"><span class="label">When not</span> Not every Hub model is supported — test per model id.</div>
+          </div>
+
+          <h2 id="ExternalLoadedModel">ExternalLoadedModel</h2>
+          <div class="api">
+            <span class="sig">.predict(prompt, **generation_kwargs) -&gt; str</span>
+            <span class="sig">.generate(prompt, **generation_kwargs) -&gt; str</span>
+            <span class="sig">.chat(messages: Sequence[Mapping[str, str]], **kwargs) -&gt; str</span>
+            <span class="sig">.batch_predict(prompts, **kwargs) -&gt; list[str]</span>
+          </div>
+          <p>
+            <code>.chat()</code> uses the tokenizer’s <code>chat_template</code> via
+            <code>apply_chat_template</code> when present; otherwise a simple
+            <code>role: content</code> fallback.
+          </p>
+
+          <pre><code># Verified with sshleifer/tiny-gpt2 on CPU (fixture weights)
+from arclm.inference import load_any_model
+
+model = load_any_model("sshleifer/tiny-gpt2", device="cpu", trust_remote_code=False)
+out = model.predict("Hello", max_new_tokens=5)
+print(repr(out))
+
+reply = model.chat([{"role": "user", "content": "Hi"}], max_new_tokens=6)
+print(repr(reply))
+
+# Generation kwargs (typical)
+model.predict("The capital of France is", max_new_tokens=8, temperature=0.2)</code></pre>
+          <div class="note">
+            Output quality depends entirely on the checkpoint.
+            <code>tiny-gpt2</code> produces nonsense on purpose — it proves the API path.
+          </div>
+
+          <h2 id="native-gen">Native Generator</h2>
+          <pre><code>from arclm.inference import load_model, Generator
+model = load_model("models/tiny.pth")
+print(model.predict("the future is", max_new_tokens=20, temperature=0.8))</code></pre>
+
+          <h2 id="save">Save / export</h2>
+          <p><code>save_loaded_model</code>, <code>ModelSaveConfig</code> — export loaded models with save mode and overwrite flags.</p>
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="models.html">arclm.models</a></li>
+            <li><a href="training.html">arclm.training</a></li>
+            <li><a href="checkpoints.html">arclm.checkpoints</a></li>
+            <li><a href="finetuning.html">arclm.finetuning</a></li>
+            <li><a href="../cli.html">CLI generate / chat</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["training.html", "arclm.training"];</script>
+<script>window.DOCS_NEXT = ["finetuning.html", "arclm.finetuning"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

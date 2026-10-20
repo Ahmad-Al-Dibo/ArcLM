@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Developer workflows — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Developer workflows</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Developer, researcher, and contributor workflows</h1>
+
+          <h2 id="app">Application developer</h2>
+          <p><strong>Goal:</strong> ship features using ArcLM without forking it.</p>
+          <ol>
+            <li>Install the extras you need (<code>[hf]</code>, <code>[security]</code>, …).</li>
+            <li>Prefer public packages: <code>datasets</code>, <code>tokenizers</code>, <code>inference</code>, <code>agents</code>, <code>security</code>.</li>
+            <li>Handle <code>OptionalDependencyError</code> and domain errors explicitly.</li>
+            <li>Use <code>tracking</code> for experiment metadata in your product logs.</li>
+            <li>Pin the <code>arclm</code> version; re-run your integration tests on upgrade.</li>
+          </ol>
+          <p><strong>Avoid:</strong> deep imports into private helpers; relying on undocumented root aliases.</p>
+
+          <h2 id="research">Researcher</h2>
+          <p><strong>Goal:</strong> controlled experiments, custom models/data.</p>
+          <ol>
+            <li>Start from native <code>ArcLM</code> + <code>Trainer</code> or custom <code>nn.Module</code> with the same trainer if compatible.</li>
+            <li>Use <code>tracking</code> + <code>search</code> for sweeps.</li>
+            <li>Use <code>inspection.inspect_text</code> to debug generation steps.</li>
+            <li>Consider Blocks if you only need a subset of packages in an embedded project.</li>
+            <li>Record seeds, config fingerprints, and hardware in run manifests.</li>
+          </ol>
+
+          <h2 id="contributor">Contributor</h2>
+          <p><strong>Goal:</strong> change ArcLM itself safely.</p>
+          <ol>
+            <li>Read <a href="../CODEBASE_GUIDE.md"><code>CODEBASE_GUIDE.md</code></a> (routing).</li>
+            <li>Fork; install <code>-e ".[dev,train]"</code>.</li>
+            <li>Follow import boundaries (no torch in light packages).</li>
+            <li>Add/adjust tests: unit + light-import + relevant suite.</li>
+            <li>Update public API stubs if you change <code>_EXPORTS</code>.</li>
+            <li>Run CI-equivalent pytest + <code>run-verified</code> examples.</li>
+            <li>Update <code>reference/</code> docs and guide if routing or API changed.</li>
+          </ol>
+
+          <h2 id="performance">Performance / debugging</h2>
+          <ul>
+            <li><code>arclm doctor</code> — environment and optional deps.</li>
+            <li>Tracking environment snapshot — torch/CUDA info per run.</li>
+            <li>Native model: reduce embed_dim / num_blocks first; profile with standard Python tools.</li>
+            <li>HF: prefer small models; check memory before raising batch size.</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="status.html">Status &amp; limits</a></li>
+            <li><a href="../CODEBASE_GUIDE.md">CODEBASE_GUIDE.md</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["examples.html", "Examples"];</script>
+<script>window.DOCS_NEXT = ["positioning.html", "Positioning"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

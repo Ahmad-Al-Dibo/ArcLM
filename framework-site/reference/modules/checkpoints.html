@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.checkpoints — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.checkpoints</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>arclm.checkpoints <span class="badge torch">needs [train]</span></h1>
+          <p>
+            Save, load, inspect, and adapt model checkpoints.
+            <strong>When to use:</strong> durable training state, trusted reload,
+            SmartLoader planning before a big load.
+            <strong>When not:</strong> for untrusted pickle files from strangers —
+            use the safe/trusted APIs only.
+          </p>
+
+          <h2 id="save">atomic_save_checkpoint</h2>
+          <div class="api">
+            <span class="sig">atomic_save_checkpoint(state, path, …) -&gt; Path</span>
+            <div class="field"><span class="label">Purpose</span> Write via temp file + <code>os.replace</code>; validate before replace.</div>
+            <div class="field"><span class="label">Errors</span> <code>CheckpointError</code> on IO/validate failure.</div>
+          </div>
+
+          <h2 id="load">safe_load_training_checkpoint</h2>
+          <div class="api">
+            <span class="sig">safe_load_training_checkpoint(path, map_location=…) -&gt; dict</span>
+            <div class="field"><span class="label">Purpose</span> Trusted load path for ArcLM training checkpoints.</div>
+          </div>
+          <pre><code>from arclm.checkpoints import (
+    atomic_save_checkpoint,
+    safe_load_training_checkpoint,
+    inspect_checkpoint,
+    validate_checkpoint,
+    SmartLoader,
+)
+
+# atomic_save_checkpoint(payload, "models/run1/training.pt")
+# ckpt = safe_load_training_checkpoint("models/run1/training.pt", map_location="cpu")
+# info = inspect_checkpoint("models/run1/training.pt")
+# validate_checkpoint("models/run1/training.pt")
+
+# SmartLoader: inspect before load
+# plan = SmartLoader("path/to/weights").plan()
+# bundle = plan  # or loader.load_for_training(...)</code></pre>
+
+          <h2 id="smart">SmartLoader, LoadPlan, ModelInspector</h2>
+          <ul>
+            <li><code>SmartLoader</code> — detect source type (ArcLM / HF / safetensors / state dict)</li>
+            <li><code>LoadPlan</code> — planned load steps</li>
+            <li><code>ModelInspector</code> / <code>register_model_inspector</code> — extensible inspection</li>
+            <li><code>adapt_for_training</code>, <code>validate_tokenizer_compatibility</code></li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="training.html">arclm.training</a> — resume / compatibility helpers</li>
+            <li><a href="inference.html">arclm.inference</a> — load models for generation</li>
+            <li><a href="evaluation.html">arclm.evaluation</a> — score loaded checkpoints</li>
+            <li><a href="models.html">arclm.models</a> — architecture that owns weights</li>
+            <li><a href="../examples-index.html">Example catalogue</a> — folder 06</li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["finetuning.html", "arclm.finetuning"];</script>
+<script>window.DOCS_NEXT = ["evaluation.html", "arclm.evaluation"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

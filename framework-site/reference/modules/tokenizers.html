@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.tokenizers — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.tokenizers</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.tokenizers <span class="badge core">core</span></h1>
+          <p>
+            Word-level and SentencePiece tokenizers.
+            <strong>When to use:</strong> any text → id pipeline for native ArcLM
+            models or inspection. <strong>When not:</strong> when you need a
+            Hugging Face tokenizer for an external model — use that model’s
+            tokenizer from transformers instead.
+          </p>
+
+          <h2 id="tokenizer">class Tokenizer</h2>
+          <div class="api">
+            <span class="sig">Tokenizer(max_vocab=50000, default_token="&lt;UNK&gt;", user_defined_symbols=None)</span>
+            <div class="field"><span class="label">Purpose</span> Whitespace word-level tokenizer with an inspectable vocabulary.</div>
+            <div class="field"><span class="label">When to use</span> Teaching, tiny corpora, debugging token ids.</div>
+            <div class="field"><span class="label">When not</span> Production multilingual subword needs — use SentencePiece.</div>
+          </div>
+
+          <h3>Methods</h3>
+          <div class="api">
+            <span class="sig">build(text: str) -&gt; None</span>
+            <div class="field"><span class="label">Purpose</span> Split on whitespace, count tokens, keep top <code>max_vocab</code> entries. Fills <code>vocab</code>, <code>stoi</code>, <code>itos</code>, <code>token_counts</code>.</div>
+            <div class="field"><span class="label">Note</span> Does <strong>not</strong> lowercase. <code>"Arc"</code> —‰  <code>"arc"</code>.</div>
+          </div>
+          <div class="api">
+            <span class="sig">encode_text(text: str) -&gt; list[int]</span>
+            <div class="field"><span class="label">Purpose</span> Whitespace-split then map via <code>stoi</code>; unknown → default token index.</div>
+          </div>
+          <div class="api">
+            <span class="sig">encode(tokens: list[str]) -&gt; list[int]</span>
+          </div>
+          <div class="api">
+            <span class="sig">decode(indices: list[int]) -&gt; list[str]</span>
+            <span class="sig">decode_string(indices: list[int]) -&gt; str</span>
+          </div>
+          <div class="api">
+            <span class="sig">get_vocab_size() -&gt; int</span>
+            <span class="sig">get_unknown_index() -&gt; int</span>
+          </div>
+          <div class="api">
+            <span class="sig">to_checkpoint() -&gt; dict</span>
+            <div class="field"><span class="label">Purpose</span> Serializable tokenizer metadata for ArcLM training checkpoints.</div>
+          </div>
+
+          <h3>Examples</h3>
+          <pre><code># 1. Minimal build + encode (verified)
+from arclm.tokenizers import Tokenizer
+text = "arc lm trains tiny models on local text about language models"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+print(tok.encode_text("arc lm trains"))  # [2, 3, 4]
+print(tok.get_vocab_size())              # 11 on this corpus
+print(tok.decode([2, 3, 4]))             # ['arc', 'lm', 'trains']
+
+# 2. Unknown words map to &lt;UNK&gt;
+ids = tok.encode_text("completely novel tokens here")
+print(tok.decode(ids))  # mostly ['&lt;UNK&gt;', ...]
+
+# 3. Case sensitivity
+tok2 = Tokenizer(max_vocab=32)
+tok2.build("Arc arc ARC")
+print(tok2.encode_text("arc"), tok2.encode_text("Arc"))  # different ids
+
+# 4. Save / load vocabulary
+tok.save_vocab("vocab.txt")
+tok2 = Tokenizer(max_vocab=64)
+tok2.load_vocab("vocab.txt")
+
+# 5. Coverage analysis
+tokens = text.split()
+stats = tok.analyze_coverage(tokens)
+print(stats)  # unknown-rate / vocab coverage dict</code></pre>
+
+          <h2 id="sentencepiece">class SentencePieceTokenizer</h2>
+          <div class="api">
+            <span class="sig">SentencePieceTokenizer(model_type="bpe", vocab_size=…, character_coverage=1.0, …)</span>
+            <div class="field"><span class="label">Purpose</span> Subword tokenizer via the sentencepiece library.</div>
+            <div class="field"><span class="label">When to use</span> Multilingual text, fewer UNKs, closer to production tokenization.</div>
+            <div class="field"><span class="label">Requires</span> <code>sentencepiece</code> (core dependency).</div>
+          </div>
+          <pre><code>from arclm.tokenizers import SentencePieceTokenizer
+sp = SentencePieceTokenizer(model_type="bpe", vocab_size=200)
+sp.build("your corpus text ...")
+ids = sp.encode_text("hello world", out_type=int)
+print(ids)</code></pre>
+
+          <h2 id="factory">TokenizerFactory and helpers</h2>
+          <div class="api">
+            <span class="sig">TokenizerFactory.create(kind: str, **kwargs)</span>
+            <div class="field"><span class="label">Purpose</span> Build a tokenizer by registered name (e.g. <code>"word"</code>).</div>
+          </div>
+          <div class="api">
+            <span class="sig">TokenizerFactory.register(name, cls) -&gt; None</span>
+            <div class="field"><span class="label">Purpose</span> Register a custom <code>Tokenizer</code> subclass.</div>
+          </div>
+          <div class="api">
+            <span class="sig">create_tokenizer(kind: str, **kwargs)</span>
+            <span class="sig">AutoTokenizer.from_config(config)</span>
+            <span class="sig">get_tokenizer_from_config(config)</span>
+          </div>
+
+          <pre><code>from arclm.tokenizers import TokenizerFactory, Tokenizer, create_tokenizer
+
+class MyTok(Tokenizer):
+    pass
+
+TokenizerFactory.register("custom", MyTok)
+t = TokenizerFactory.create("custom", max_vocab=16)
+t2 = create_tokenizer("word", max_vocab=8)
+
+from arclm.configs import Config
+from arclm.tokenizers import AutoTokenizer
+cfg = Config(tokenizer_type="word")
+# AutoTokenizer.from_config uses config.tokenizer_type when implemented</code></pre>
+
+          <h2 id="common">Common mistakes</h2>
+          <ul>
+            <li>Building on one corpus then encoding OOD text → high UNK rate. Build on a representative sample.</li>
+            <li>Expecting automatic lowercasing — normalize yourself before <code>build</code>.</li>
+            <li>Using this tokenizer with an HF model — use the HF tokenizer for that model.</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="datasets.html">arclm.datasets</a></li>
+            <li><a href="training.html">arclm.training</a> — <code>tokenizer_from_checkpoint</code></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["configs.html", "arclm.configs"];</script>
+<script>window.DOCS_NEXT = ["datasets.html", "arclm.datasets"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

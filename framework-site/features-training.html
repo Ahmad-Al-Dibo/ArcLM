@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Models &amp; training — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Models &amp; training</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Models and training <span class="badge exp">needs [train]</span></h1>
+
+          <h2 id="model">Native ArcLM model</h2>
+          <p>
+            <strong>What:</strong> GPT-style causal LM (embeddings → transformer
+            blocks → LM head).
+            <strong>Why:</strong> a model small enough to read and run in seconds on CPU.
+            <strong>Limit:</strong> educational scale — not a competitive chat model.
+          </p>
+          <pre><code>import torch
+from arclm.models import ArcLM, AutoModel
+
+model = ArcLM(vocab_size=64, embed_dim=16, block_size=8, num_blocks=1)
+logits = model(torch.tensor([[1, 2, 3]]))
+print(tuple(logits.shape), model.get_num_parameters())
+
+model2 = AutoModel.from_config(config)  # config.vocab_size required</code></pre>
+          <p>
+            <strong>Config options:</strong> embed_dim, block_size, num_blocks, dropout.
+            <strong>Errors:</strong> ValueError on bad shapes, sequence longer than
+            block_size, out-of-range token ids.
+          </p>
+
+          <h2 id="trainer">Trainer and TrainingConfig</h2>
+          <pre><code>from arclm.training import Trainer, TrainingConfig
+
+tcfg = TrainingConfig(epochs=5, batch_size=8, precision="fp32", optimizer="adamw")
+trainer = Trainer(model=model, config=tcfg)
+# history = trainer.train_dataset(train_loader, val_loader=val_loader)</code></pre>
+          <p>
+            <strong>Why TrainingConfig ≠  Config:</strong> trainer fields are validated
+            (precision, optimizer names, positive epochs). Use
+            <code>arclm.configs.Config</code> for data paths and model shape in the
+            high-level <code>train_model</code> path.
+          </p>
+
+          <h2 id="train_model">One-call train_model</h2>
+          <pre><code>from arclm.configs import create_config
+from arclm.training import train_model
+
+result = train_model(
+    mode="pre_training",  # or fine_tuning / instruction_tuning
+    data="data.txt",
+    output="models/out.pth",
+    config=create_config(device="cpu", num_epochs=1),
+)</code></pre>
+
+          <h2 id="compat">Checkpoint compatibility</h2>
+          <ul>
+            <li><code>checkpoint_is_compatible_for_continue_training</code> — strict: vocab, shape, tokenizer, training hyperparameters; empty config → False.</li>
+            <li><code>checkpoint_is_compatible_for_tuning</code> — allows different learning rate; still requires shape + tokenizer; empty config → False.</li>
+          </ul>
+
+          <h2 id="checkpoints">Checkpoints</h2>
+          <pre><code>from arclm.checkpoints import atomic_save_checkpoint, safe_load_training_checkpoint, SmartLoader
+
+atomic_save_checkpoint(state, "models/m.pth")
+ckpt = safe_load_training_checkpoint("models/m.pth", map_location="cpu")
+plan = SmartLoader("path/to/weights").plan()</code></pre>
+
+          <h2 id="regularization">Regularization utilities</h2>
+          <p>
+            L1/L2, EarlyStopping, LearningRateScheduler, LabelSmoothing,
+            MixupAugmentation, GeneralizationMonitor in
+            <code>arclm.training.regularization</code>.
+          </p>
+
+          <h2 id="gpu">GPU</h2>
+          <pre><code>config = create_config(device="cuda")  # fails loud if no CUDA
+# or device="auto" where resolve helpers support it
+arclm train --data data.txt --device cuda</code></pre>
+          <p>
+            Install CUDA torch wheel first, then <code>arclm[train]</code>.
+            Verify with <code>arclm doctor</code>. Multi-GPU: experimental contracts
+            in <code>arclm.distributed</code>.
+          </p>
+
+          <h2 id="peft">LoRA / QLoRA</h2>
+          <pre><code>from arclm.peft import LoRAConfig, apply_lora, merge_lora
+# apply_lora(model, LoRAConfig(r=8, alpha=16, target_modules=["attn"]))
+# merge_lora(model)</code></pre>
+          <p>QLoRA requires <code>arclm[qlora]</code> (bitsandbytes, Python ≥3.10).</p>
+
+          <h2 id="sft">Supervised fine-tuning</h2>
+          <pre><code>from arclm.finetuning import train_sft, validate_sft_records
+# train_sft(model=..., dataset="sft.jsonl", output_dir=..., backend="huggingface")</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="features-inference.html">Inference &amp; evaluation</a></li>
+            <li><a href="workflows.html#w-native">Workflow B</a></li>
+            <li><a href="reference/modules/training.html">training API</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["features-data.html", "Data & tokenizers"];</script>
+<script>window.DOCS_NEXT = ["features-inference.html", "Inference & eval"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

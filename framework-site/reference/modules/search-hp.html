@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.search — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.search</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.search <span class="badge core">core</span></h1>
+          <div class="note warn">
+            <strong>Naming:</strong> <code>arclm.search</code> is <em>hyperparameter
+            search</em> (grid/random over training configs), not BM25/semantic
+            information retrieval. Text search belongs in your application or a
+            future retrieval module.
+          </div>
+
+          <h2 id="overview">Overview</h2>
+          <p>
+            Search spaces, trial lifecycle, JSONL persistence, and comparison —
+            built on <code>arclm.tracking</code>. Config types for training/fine-tuning
+            are imported from light config modules so the search package stays
+            importable without torch.
+          </p>
+
+          <h2 id="api">Public API (high level)</h2>
+          <ul>
+            <li><code>create_search</code> — build a search from a space + objective</li>
+            <li><code>SearchSpace</code>, parameter types (<code>ChoiceParameter</code>, <code>IntegerParameter</code>, …)</li>
+            <li><code>HyperparameterSearch</code>, trial records, <code>compare_trials</code></li>
+            <li><code>load_search</code>, <code>inspect_search</code>, <code>validate_search</code>, <code>list_searches</code></li>
+          </ul>
+          <pre><code># Sketch — verify signatures against your installed version
+from arclm.search import create_search, SearchSpace  # names from package
+
+# See tests/search/test_hyperparameter_search.py and
+# docs/guide.md Â§ hyperparameter search for full examples.</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="tracking.html">arclm.tracking</a></li>
+            <li><a href="training.html">arclm.training</a> — TrainingConfig fields searched</li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["tracking.html", "arclm.tracking"];</script>
+<script>window.DOCS_NEXT = ["logics.html", "arclm.logics"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

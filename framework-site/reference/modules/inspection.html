@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.inspection — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.inspection</div>
+    <article id="doc-content">
+      <h1>arclm.inspection <span class="badge torch">needs [train]</span></h1>
+      <p>Metadata-first trace of one native generation step (tokens → embeddings → forward → logits → decode).</p>
+      <div class="api">
+        <span class="sig">inspect_text(model, tokenizer, text, **kwargs) -&gt; PipelineTrace</span>
+        <div class="field"><span class="label">Purpose</span> Educational visibility into a single step without dumping full tensors.</div>
+        <div class="field"><span class="label">When not</span> Not a profiler; attention maps are not captured yet.</div>
+      </div>
+      <pre><code>from arclm.inspection import inspect_text
+# trace = inspect_text(model, tokenizer, "hello world", max_new_tokens=1)
+# print(trace.token_ids)
+# print(trace.to_dict())</code></pre>
+      <p>Related: <a href="models.html">arclm.models</a>, <a href="inference.html">arclm.inference</a>.</p>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["peft.html", "arclm.peft"];</script>
+<script>window.DOCS_NEXT = ["../cli.html", "CLI"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

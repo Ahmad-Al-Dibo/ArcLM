@@ -21,7 +21,7 @@ try:  # Python 3.11+
 except ImportError:  # pragma: no cover - 3.9/3.10
     UTC = timezone.utc
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Iterable, Mapping
 
 from ._version import __version__
@@ -180,7 +180,7 @@ class RunManifest:
 
     def to_dict(self) -> dict[str, Any]:
         """Zet manifest om naar een gewone dict."""
-        return _json_safe(asdict(self))
+        return _redact_paths(asdict(self))
 
     @classmethod
     def from_dict(cls, values: Mapping[str, Any]) -> "RunManifest":
@@ -1301,8 +1301,12 @@ def _redact_paths(value: Any) -> Any:
             else:
                 redacted[str(key)] = _redact_paths(item)
         return redacted
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         return [_redact_paths(item) for item in value]
+    if isinstance(value, str) and (
+        Path(value).is_absolute() or PureWindowsPath(value).is_absolute()
+    ):
+        return "<path omitted>"
     return _json_safe(value)
 
 

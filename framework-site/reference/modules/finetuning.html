@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.finetuning — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.finetuning</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.finetuning <span class="badge torch">needs [train]</span> <span class="badge optional">HF SFT needs [hf]</span></h1>
+          <p>
+            Supervised fine-tuning: record contracts, formatting, native full FT,
+            and Hugging Face <code>train_sft</code>.
+          </p>
+
+          <h2 id="train_sft">train_sft(...)</h2>
+          <div class="api">
+            <span class="sig">train_sft(model, dataset, output_dir, *, backend="huggingface", …) -&gt; SFTTrainingResult</span>
+            <div class="field"><span class="label">Purpose</span> Fine-tune a causal LM on SFT JSONL (messages / prompt-completion / instruction).</div>
+            <div class="field"><span class="label">Params</span> <code>model</code> — HF id or path; <code>dataset</code> — JSONL path; <code>backend</code> — currently Hugging Face path; optional LoRA flags.</div>
+            <div class="field"><span class="label">Requires</span> <code>[hf]</code> stack; network for Hub models.</div>
+            <div class="field"><span class="label">trust_remote_code</span> Defaults to False.</div>
+          </div>
+          <pre><code>from arclm.finetuning import train_sft
+
+result = train_sft(
+    model="Qwen/Qwen3-0.6B",
+    dataset="sft.jsonl",
+    output_dir="out/sft",
+    backend="huggingface",
+    use_lora=True,
+    lora_r=8,
+)
+print(result.output_dir)</code></pre>
+          <p>JSONL record shapes:</p>
+          <pre><code>{"messages": [{"role": "system", "content": "..."},
+              {"role": "user", "content": "..."},
+              {"role": "assistant", "content": "..."}]}
+{"prompt": "Question?", "completion": "Answer."}
+{"instruction": "Do X", "input": "context", "output": "result"}</code></pre>
+
+          <h2 id="contract">Record contract</h2>
+          <div class="api">
+            <span class="sig">get_sft_record_contract()</span>
+            <span class="sig">validate_sft_records(records, contract=…)</span>
+            <span class="sig">prepare_fine_tuning_dataset(records, config=…)</span>
+            <span class="sig">fine_tune(...)  # native workflow entry</span>
+          </div>
+          <pre><code>from arclm.finetuning import (
+    get_sft_record_contract, validate_sft_records,
+    prepare_fine_tuning_dataset, FineTuningConfig,
+)
+contract = get_sft_record_contract()
+validate_sft_records(records, contract=contract)
+prepared = prepare_fine_tuning_dataset(records, config=FineTuningConfig())</code></pre>
+
+          <h2 id="configs">FineTuningConfig</h2>
+          <p>Controls data formatting/labels (not the optimizer loop — that stays in TrainingConfig).</p>
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="inference.html">arclm.inference</a></li>
+            <li><a href="training.html">arclm.training</a></li>
+            <li><a href="datasets.html">arclm.datasets</a></li>
+            <li><a href="peft.html">arclm.peft</a></li>
+            <li><a href="checkpoints.html">arclm.checkpoints</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["inference.html", "arclm.inference"];</script>
+<script>window.DOCS_NEXT = ["checkpoints.html", "arclm.checkpoints"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

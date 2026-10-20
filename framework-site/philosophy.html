@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Motivation &amp; design — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Motivation &amp; design</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Motivation and design philosophy</h1>
+
+          <h2 id="why">Why ArcLM exists</h2>
+          <p>
+            Working with language models often forces a false choice: a multi-gigabyte
+            install before you can read one line of tokenizer code, or a pile of
+            notebooks with no package, tests, or CLI. ArcLM was built so that
+            <strong>data preparation, tokenization, agents, and security work on a
+            laptop</strong>, and compute-heavy paths (native training, HF inference)
+            are opt-in extras.
+          </p>
+
+          <h2 id="decisions">Engineering decisions (and why)</h2>
+          <h3 id="d-light">1. Light core, optional torch</h3>
+          <p>
+            <code>pyproject.toml</code> lists only NumPy and SentencePiece as required
+            dependencies. The root package uses a lazy export map. Torch-backed
+            modules call <code>require_torch()</code> before importing torch and raise
+            <code>OptionalDependencyError</code> with an install hint.
+            CI blocks torch at import time for light packages
+            (<code>tests/unit/test_light_imports.py</code>).
+          </p>
+          <p>
+            <em>Why:</em> classrooms and app backends should not pay 500&nbsp;MB for a
+            tokenizer. <em>Cost:</em> more documentation and error-message care.
+          </p>
+
+          <h3 id="d-readable">2. Readable packages over framework magic</h3>
+          <p>
+            Domain packages (<code>datasets</code>, <code>tokenizers</code>,
+            <code>training</code>, …) are small enough to open and read. There is no
+            single 10k-line “engine” that hides the whole pipeline. The native model
+            is a few hundred lines of PyTorch.
+          </p>
+          <p>
+            <em>Why:</em> the primary audience includes people learning how an LLM
+            library fits together. <em>Cost:</em> ArcLM is not a drop-in replacement
+            for a large production trainer.
+          </p>
+
+          <h3 id="d-honest">3. Honest limits in the product</h3>
+          <p>
+            Examples that use <code>sshleifer/tiny-gpt2</code> state that output text
+            is nonsense on purpose (fixture weights). The native model is labeled
+            educational. Multi-GPU contracts in <code>distributed.py</code> are marked
+            experimental.
+          </p>
+
+          <h3 id="d-security">4. Security fail-closed</h3>
+          <p>
+            <code>arclm.security</code> raises when keys or crypto libraries are
+            missing rather than silently skipping. Agents import
+            <code>SecurityPolicy</code> from
+            <code>arclm.security.configuration</code> (not the package root) so the
+            agents Block does not pull the entire crypto stack.
+          </p>
+
+          <h3 id="d-blocks">5. One source, many editions</h3>
+          <p>
+            <code>distributions/</code> + <code>tools/build_arclm_distributions.py</code>
+            generate trimmed “Blocks” (core, training, agents, security, …) from the
+            same source using AST import analysis and hard exclude boundaries.
+            Generated trees are rebuildable artifacts, not forks.
+          </p>
+
+          <h2 id="extensibility">Extensibility model</h2>
+          <ul>
+            <li><strong>Registry / factory:</strong> tokenizers via <code>TokenizerFactory</code>; checkpoints via <code>SmartLoader</code> inspectors.</li>
+            <li><strong>Tools:</strong> any typed Python function becomes an agent tool via <code>@tool</code>.</li>
+            <li><strong>Pipelines:</strong> <code>DataPipeline</code> chains <code>BaseDataStep</code> transforms.</li>
+            <li><strong>Public API:</strong> extend via package <code>__init__</code> + root <code>_EXPORTS</code> (keep <code>__init__.pyi</code> in sync).</li>
+          </ul>
+
+          <h2 id="repro">Reproducibility</h2>
+          <ul>
+            <li><code>set_reproducible_seed</code> seeds Python, NumPy (if present), and torch (if present).</li>
+            <li><code>arclm.tracking</code> records run manifests, metrics JSONL, environment snapshots, and redacts private paths.</li>
+            <li>Verified examples avoid network and GPU so CI results are comparable.</li>
+          </ul>
+
+          <h2 id="simplicity">Simplicity vs flexibility</h2>
+          <p>
+            High-level paths (<code>train_model</code>, <code>load_dataset</code>, CLI)
+            trade some flexibility for fewer decisions. Lower-level paths
+            (<code>Trainer</code>, native model internals, custom tools) trade
+            convenience for control. Both live in the same package; the
+            <a href="architecture.html">architecture page</a> maps Lab / Developer /
+            Research usage onto real modules.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="status.html">Status &amp; limits</a></li>
+            <li><a href="positioning.html">Positioning</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["index.html", "Introduction"];</script>
+<script>window.DOCS_NEXT = ["getting-started.html", "Getting started"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

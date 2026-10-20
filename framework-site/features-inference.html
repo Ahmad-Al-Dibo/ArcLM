@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inference &amp; evaluation — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Inference &amp; eval</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Inference and evaluation <span class="badge exp">needs [train]</span> <span class="badge plan">HF needs [hf]</span></h1>
+
+          <h2 id="native">Native generation</h2>
+          <pre><code>from arclm.inference import load_model
+
+model = load_model("models/tiny.pth")
+print(model.predict("the future is", max_new_tokens=20, temperature=0.8))</code></pre>
+          <p>
+            Sampling options: temperature, top_k, top_p, repetition_penalty.
+            Quality depends entirely on the checkpoint — tiny native models will
+            not write useful prose.
+          </p>
+
+          <h2 id="hf">Hugging Face models</h2>
+          <pre><code>from arclm.inference import load_any_model
+
+model = load_any_model(
+    "sshleifer/tiny-gpt2",
+    device="cpu",
+    trust_remote_code=False,  # safe default
+)
+print(model.predict("Hello", max_new_tokens=5))
+print(model.chat([{"role": "user", "content": "Hi"}], max_new_tokens=6))</code></pre>
+          <p>
+            <strong>Chat templates:</strong> if the tokenizer defines
+            <code>chat_template</code>, ArcLM uses
+            <code>apply_chat_template</code>; otherwise a simple
+            <code>role: content</code> fallback.
+            <strong>Limit:</strong> not every Hub model is supported — test per model.
+            <strong>Verified:</strong> tiny-gpt2 load ~39s cold, generate ~1s on CPU
+            (fixture weights; output is intentionally nonsense).
+          </p>
+
+          <h2 id="inspect">Pipeline inspection</h2>
+          <pre><code>from arclm.inspection import inspect_text
+# trace = inspect_text(model, tokenizer, "hello", max_new_tokens=1)
+# print(trace.token_ids, trace.logits_shape)</code></pre>
+
+          <h2 id="eval">Evaluation metrics</h2>
+          <pre><code>from arclm.evaluation import Evaluator, Accuracy, Perplexity, export_metrics_to_json
+
+# ev = Evaluator(model, metrics=[Accuracy(), Perplexity()])
+# result = ev.evaluate(loader)
+# export_metrics_to_json(result, "metrics.json")</code></pre>
+          <p>
+            Also: <code>predict_top_k</code>, diagnostics reports, Markdown export.
+            <strong>Honesty:</strong> perplexity on a tiny demo model is not a
+            competitive benchmark — report hardware, data, and model size.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="workflows.html#w-hf">Workflow C</a></li>
+            <li><a href="reference/modules/inference.html">inference API</a></li>
+            <li><a href="reference/modules/evaluation.html">evaluation API</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["features-training.html", "Models & training"];</script>
+<script>window.DOCS_NEXT = ["features-agents.html", "Agents & security"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

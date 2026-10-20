@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Status &amp; limits — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Status &amp; limits</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Limitations and current status</h1>
+          <p>
+            Status as of ArcLM <strong>2.0.0</strong> on PyPI, branch
+            <code>cleanup-2.0</code>. Development Status classifier:
+            <strong>4 – Beta</strong>.
+          </p>
+
+          <h2 id="works">What works today (verified)</h2>
+          <ul>
+            <li>Core install without torch (NumPy + SentencePiece).</li>
+            <li>Word + SentencePiece tokenizers; dataset load/validate/dedupe.</li>
+            <li>Security redaction, path safety, status; full crypto with <code>[security]</code>.</li>
+            <li>Agent tools + deterministic runner examples (no GPU).</li>
+            <li>Native ArcLM forward pass; tiny pretraining smoke on CPU.</li>
+            <li>HF <code>load_any_model</code> + predict/chat on <code>sshleifer/tiny-gpt2</code> (CPU).</li>
+            <li>Training run tracking with path redaction.</li>
+            <li>CLI (14+ commands); doctor without torch.</li>
+            <li>Blocks builder: 7 editions, check-drift/test-all green when last run.</li>
+            <li>Examples suite <code>run-verified</code>: 28/28 CPU-local (session result).</li>
+            <li>CI: light + torch matrices on Python 3.9–3.14 (after UTC fix).</li>
+            <li>PyPI package <code>arclm</code> 2.0.0 published.</li>
+          </ul>
+
+          <h2 id="experimental">Experimental</h2>
+          <ul>
+            <li><code>arclm.distributed</code> — DDP/FSDP contracts and validation; not a production multi-node trainer.</li>
+            <li>QLoRA runtime — depends on bitsandbytes and hardware; not fully exercised in default CI.</li>
+            <li>Web Studio training jobs — implemented but heavier; torch required.</li>
+          </ul>
+
+          <h2 id="incomplete">Incomplete or thin</h2>
+          <ul>
+            <li>No first-class retrieval / RAG / vector index module (search = hyperparameter search only).</li>
+            <li>Arabic-specific NLP examples and chat-template tests for instruct models: not fully verified.</li>
+            <li>Next.js Studio frontend: present but not fully documented on this site.</li>
+            <li>Extended root modules (<code>workflow.py</code>, <code>config_schema.py</code>, …) have uneven docs coverage.</li>
+          </ul>
+
+          <h2 id="unsupported">Unsupported</h2>
+          <ul>
+            <li>Production multi-node training/serving as a product goal.</li>
+            <li>Guaranteed compatibility with every Hugging Face Hub model.</li>
+            <li>Native model quality comparable to commercial chat LLMs.</li>
+            <li>Co-installing multiple Blocks side by side (they all provide <code>arclm</code>).</li>
+          </ul>
+
+          <h2 id="constraints">Technical constraints</h2>
+          <table>
+            <tr><th>Constraint</th><th>Detail</th></tr>
+            <tr><td>Python</td><td><code>&gt;=3.9</code>; CI light on 3.9/3.10/3.12/3.14; torch jobs on 3.10/3.12/3.14</td></tr>
+            <tr><td>Native model</td><td>Single architecture; educational scale</td></tr>
+            <tr><td>Word tokenizer</td><td>No auto-lowercase; whitespace split</td></tr>
+            <tr><td>HF path</td><td><code>trust_remote_code=False</code> default; per-model testing required</td></tr>
+            <tr><td>Blocks</td><td>Same namespace; install one block or full package</td></tr>
+            <tr><td>Name collision</td><td>PyPI <code>arcllm</code> is a different project</td></tr>
+          </table>
+
+          <h2 id="testing">Areas needing more testing</h2>
+          <ul>
+            <li>Instruction-tuned chat models with real <code>chat_template</code> (beyond tiny-gpt2).</li>
+            <li>Longer SFT runs and LoRA merge quality metrics.</li>
+            <li>Studio frontend ↔ backend contract tests under load.</li>
+            <li>Windows path edge cases in tracking (partially covered locally).</li>
+          </ul>
+
+          <h2 id="when-other">When another tool is more appropriate</h2>
+          <ul>
+            <li>Large-scale distributed training → dedicated frameworks.</li>
+            <li>Managed LLM APIs as the product → use provider SDKs; ArcLM agents can still orchestrate tools.</li>
+            <li>Production RAG at scale → dedicated vector DBs and retrieval stacks.</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="roadmap.html">Future roadmap</a></li>
+            <li><a href="positioning.html">Positioning</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["positioning.html", "Positioning"];</script>
+<script>window.DOCS_NEXT = ["roadmap.html", "Future roadmap"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

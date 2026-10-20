@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.agents — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.agents</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.agents <span class="badge core">core</span></h1>
+          <p>
+            Provider-independent agent runtime: typed tools, bounded runner,
+            permissions, sessions, and traces. <strong>When to use:</strong>
+            local tool-calling agents without a GPU. <strong>When not:</strong>
+            when you only need a raw completion API — use inference instead.
+          </p>
+
+          <h2 id="tool">@tool decorator</h2>
+          <div class="api">
+            <span class="sig">@tool(category="utilities", **options)</span>
+            <div class="field"><span class="label">Purpose</span> Wrap a Python function as a tool: docstring becomes the description; type hints become a JSON schema.</div>
+            <div class="field"><span class="label">Params</span> Function with typed parameters. Options: <code>name</code>, <code>description</code>, <code>category</code>, <code>side_effect</code>, <code>permission</code>, <code>timeout_seconds</code>, …</div>
+            <div class="field"><span class="label">Returns</span> A <code>Tool</code> object usable in a registry/agent.</div>
+          </div>
+          <pre><code># Verified pattern (examples/10_agents_tools)
+from arclm.agents import tool
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers and return the sum."""
+    return left + right
+
+# Registry
+from arclm.agents import ToolRegistry
+registry = ToolRegistry([add_numbers])
+print(registry.get("add_numbers").description)
+
+# Observed runner output (deterministic example adapter)
+# {
+#   "tool_calls": ["add_numbers"],
+#   "output": "Done. The tool result was processed safely."
+# }</code></pre>
+
+          <h2 id="agent">Agent and AgentRunner</h2>
+          <div class="api">
+            <span class="sig">Agent(...)</span>
+            <div class="field"><span class="label">Purpose</span> Holds model adapter, tools, config, security policy.</div>
+          </div>
+          <div class="api">
+            <span class="sig">AgentRunner</span>
+            <div class="field"><span class="label">Purpose</span> Bounded loop: model → tool calls → results → repeat until final response or step limit.</div>
+            <div class="field"><span class="label">When to use</span> Production-shaped agents with max steps and approvals.</div>
+          </div>
+          <pre><code># Full runnable example in the repository:
+# python examples/10_agents_tools/01_custom_tool_agent.py
+# Uses a deterministic adapter so CI needs no API key.</code></pre>
+
+          <h2 id="model-adapters">Model adapters</h2>
+          <p>
+            Adapters translate agent messages to a model call and parse tool calls.
+            Include callable adapters and JSON tool-calling adapters
+            (<code>arclm.agents.model</code>).
+          </p>
+
+          <h2 id="permissions">Permissions and side effects</h2>
+          <ul>
+            <li><code>SideEffectLevel</code> — none / read-only / network / write …</li>
+            <li>Default deny for risky tools unless an approval handler allows them</li>
+            <li>Traces can be redacted via <code>SecurityPolicy.redact_traces</code></li>
+          </ul>
+
+          <h2 id="builtins">Built-in tools</h2>
+          <ul>
+            <li><code>arclm.agents.builtins.documents</code> — markdown/HTML/text file readers (path-traversal safe)</li>
+            <li><code>arclm.agents.builtins.utilities</code> — math/JSON helpers</li>
+            <li><code>arclm.agents.builtins.web</code> — <code>SafeWebReader</code> (blocks private hosts)</li>
+          </ul>
+
+          <h2 id="common">Common mistakes</h2>
+          <ul>
+            <li>Omitting type hints → weak schema; always type parameters.</li>
+            <li>Unbounded loops → always set max steps / session limits.</li>
+            <li>Logging raw tool args with secrets → redact first.</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="security.html">arclm.security</a></li>
+            <li><a href="tracking.html">arclm.tracking</a></li>
+            <li><a href="exceptions.html">arclm.exceptions</a></li>
+            <li><a href="../examples-index.html">Example catalogue</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["security.html", "arclm.security"];</script>
+<script>window.DOCS_NEXT = ["tracking.html", "arclm.tracking"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

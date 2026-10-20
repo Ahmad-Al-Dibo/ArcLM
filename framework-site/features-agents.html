@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agents &amp; security — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Agents &amp; security</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Agents and security <span class="badge ok">core</span></h1>
+
+          <h2 id="agents">Agent runtime</h2>
+          <p>
+            <strong>What:</strong> provider-independent tool-calling loop.
+            <strong>Why:</strong> structured tools with schemas, permissions, and
+            bounded steps — without requiring a GPU or a specific LLM vendor.
+            <strong>Modules:</strong> <code>arclm.agents</code>.
+          </p>
+          <pre><code>from arclm.agents import tool
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers."""
+    return left + right
+
+# Runnable example:
+# python examples/10_agents_tools/01_custom_tool_agent.py
+# Observed: {"tool_calls": ["add_numbers"], "output": "Done. …"}</code></pre>
+          <p>
+            <strong>Components:</strong> <code>Tool</code> / <code>@tool</code>,
+            <code>ToolRegistry</code>, <code>Agent</code>, <code>AgentRunner</code>
+            (max steps), model adapters, sessions, traces, approvals,
+            <code>SideEffectLevel</code>.
+          </p>
+          <p>
+            <strong>Builtins:</strong> document readers (safe paths), math/JSON
+            utilities, <code>SafeWebReader</code> (blocks private hosts).
+            Whisper STT optional via <code>[agents-audio]</code>.
+          </p>
+          <p>
+            <strong>Limits:</strong> example uses a deterministic adapter (no API
+            key). Production adapters plug in your model. Approvals default-deny
+            risky side effects.
+          </p>
+
+          <h2 id="security">Security core</h2>
+          <p>
+            <strong>What:</strong> redaction, safe paths, hashing, AEAD crypto,
+            manifest signing, status reporting.
+            <strong>Why:</strong> local AI apps log prompts and store artifacts —
+            secrets leak without tooling.
+            <strong>Modules:</strong> <code>arclm.security</code>.
+          </p>
+          <pre><code>from arclm.security import redact_sensitive_text, security_status
+
+print(redact_sensitive_text("use api_key=sk-test-1234567890"))
+# use api_key=[REDACTED]
+print(security_status())</code></pre>
+          <p>
+            Full crypto needs <code>arclm[security]</code> (cryptography).
+            Encrypt/decrypt, Argon2id key derivation, sign/verify manifests,
+            encrypted artifact stores. <strong>Fail-closed:</strong> missing keys or
+            libraries raise — they do not silently skip.
+          </p>
+          <pre><code># CLI
+arclm security status --json
+arclm security audit</code></pre>
+
+          <h2 id="integration">How agents use security</h2>
+          <p>
+            Agents import <code>SecurityPolicy</code> from
+            <code>arclm.security.configuration</code> (not the package root) so the
+            agents Block stays free of the full crypto stack. Traces can redact
+            sensitive text via policy flags.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="workflows.html#w-agent">Workflow E</a></li>
+            <li><a href="features-platform.html">Platform tooling</a></li>
+            <li><a href="reference/modules/agents.html">agents API</a></li>
+            <li><a href="reference/modules/security.html">security API</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["features-inference.html", "Inference & eval"];</script>
+<script>window.DOCS_NEXT = ["features-platform.html", "Platform & tooling"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

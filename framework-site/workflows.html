@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How it works — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › How it works</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>How the framework works</h1>
+          <p>Complete workflows using real APIs. Prerequisites noted per workflow.</p>
+
+          <h2 id="w-data">Workflow A — Data preparation (core only)</h2>
+          <pre><code>from arclm.datasets import load_dataset, validate_records, deduplicate
+from arclm.tokenizers import Tokenizer
+
+records = load_dataset("data.jsonl")  # or list of dicts
+result = validate_records(records, required_fields=["text"])
+print("valid", result.valid_count)
+
+clean = deduplicate(records, return_result=True)
+print("kept", clean.kept, "removed", clean.removed)
+
+tok = Tokenizer(max_vocab=1000)
+tok.build(" ".join(r["text"] for r in clean.dataset))
+# ids for training later: [tok.encode_text(r["text"]) for r in clean.dataset]</code></pre>
+          <p><strong>Steps:</strong> load → validate → dedupe → tokenize.
+            <strong>No torch.</strong> Errors: <code>DatasetLoadError</code>, validation issues.</p>
+
+          <h2 id="w-native">Workflow B — Native tiny model (train extra)</h2>
+          <pre><code># pip install "arclm[train]"
+from arclm.configs import create_config
+from arclm.training import train_model
+
+config = create_config(embed_dim=32, block_size=16, num_epochs=1, device="cpu")
+result = train_model(
+    mode="pre_training",
+    data="data.txt",
+    output="models/tiny.pth",
+    config=config,
+)
+print(result.history.get("train_losses", [None])[-1])</code></pre>
+          <p><strong>Steps:</strong> config → data file → train_model → checkpoint path.
+            Alternative lower-level path: build <code>ArcLM</code> + <code>Trainer.train_dataset</code>.
+            CLI equivalent: <code>arclm train --data data.txt --device cpu</code>.</p>
+
+          <h2 id="w-hf">Workflow C — HF inference (hf extra)</h2>
+          <pre><code># pip install "arclm[hf]"
+from arclm.inference import load_any_model
+
+model = load_any_model("sshleifer/tiny-gpt2", device="cpu", trust_remote_code=False)
+print(model.predict("Hello", max_new_tokens=5, temperature=0.7))
+print(model.chat([{"role": "user", "content": "Hi"}], max_new_tokens=6))</code></pre>
+          <p>
+            <strong>Steps:</strong> load (downloads once) → predict/chat.
+            First load can take tens of seconds; later loads use the HF cache.
+            Chat uses tokenizer templates when available.
+          </p>
+
+          <h2 id="w-sft">Workflow D — SFT smoke (hf extra)</h2>
+          <pre><code>from arclm.finetuning import validate_sft_records, get_sft_record_contract, train_sft
+
+# records: JSONL with messages / prompt+completion / instruction
+contract = get_sft_record_contract()
+validate_sft_records(records, contract=contract)
+
+result = train_sft(
+    model="Qwen/Qwen3-0.6B",
+    dataset="sft.jsonl",
+    output_dir="out/sft",
+    backend="huggingface",
+    use_lora=True,
+    lora_r=8,
+)</code></pre>
+          <p>
+            <strong>Steps:</strong> prepare JSONL → validate contract → train_sft → output dir.
+            Needs network/disk for Hub models. Start with tiny configs.
+          </p>
+
+          <h2 id="w-agent">Workflow E — Agent with tools (core only)</h2>
+          <pre><code>from arclm.agents import tool, ToolRegistry
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers."""
+    return left + right
+
+registry = ToolRegistry([add_numbers])
+# Full loop: examples/10_agents_tools/01_custom_tool_agent.py
+# Uses a deterministic adapter so no API key is required.</code></pre>
+
+          <h2 id="w-secure">Workflow F — Secure logging (core + [security] for crypto)</h2>
+          <pre><code>from arclm.security import redact_sensitive_text, security_status
+
+safe = redact_sensitive_text(user_supplied_log_line)
+logger.info(safe)
+print(security_status())</code></pre>
+
+          <h2 id="w-track">Workflow G — Experiment tracking</h2>
+          <pre><code>from pathlib import Path
+from arclm.tracking import (
+    create_run, RunConfig, RunOperation, RunStorageConfig,
+    set_reproducible_seed, load_run_manifest,
+)
+
+set_reproducible_seed(42)
+tracker = create_run(RunConfig(
+    name="baseline",
+    operation=RunOperation.TRAINING,
+    storage=RunStorageConfig(root_directory=Path("runs"), fsync=False),
+))
+tracker.start()
+tracker.record_metric(metrics={"loss": 2.0}, step=1)
+tracker.complete({"final_loss": 2.0})
+tracker.close()
+manifest = load_run_manifest(tracker.run_dir)</code></pre>
+
+          <h2 id="w-choice">Choosing a path</h2>
+          <table>
+            <tr><th>Goal</th><th>Path</th><th>Install</th></tr>
+            <tr><td>Understand data/tokenization</td><td>A</td><td>core</td></tr>
+            <tr><td>See a model forward pass</td><td>B (forward example)</td><td>[train]</td></tr>
+            <tr><td>Use a real pretrained model</td><td>C</td><td>[hf]</td></tr>
+            <tr><td>Adapt a model to your format</td><td>D</td><td>[hf] + data prep</td></tr>
+            <tr><td>Build a local tool agent</td><td>E</td><td>core</td></tr>
+            <tr><td>Ship safer logs</td><td>F</td><td>core / [security]</td></tr>
+            <tr><td>Compare experiments</td><td>G (+ B or D)</td><td>[train] for real runs</td></tr>
+          </table>
+
+          <h2 id="errors">Error handling across workflows</h2>
+          <ul>
+            <li>Missing extra → <code>OptionalDependencyError</code> with pip hint.</li>
+            <li>Bad data paths → <code>DatasetLoadError</code>.</li>
+            <li>Bad TrainingConfig → <code>TrainingConfigError</code>.</li>
+            <li>Empty checkpoint config → compatibility functions return False (no silent resume).</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="examples.html">Examples</a></li>
+            <li><a href="features-training.html">Models &amp; training features</a></li>
+            <li><a href="reference/quickstart.html">API reference quick start</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["architecture.html", "Architecture"];</script>
+<script>window.DOCS_NEXT = ["features-data.html", "Data & tokenizers"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

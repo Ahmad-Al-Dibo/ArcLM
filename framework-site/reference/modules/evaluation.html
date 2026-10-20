@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.evaluation — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.evaluation</div>
+    <article id="doc-content">
+      <h1>arclm.evaluation <span class="badge torch">needs [train]</span></h1>
+      <p>
+        Metrics, evaluator loop, diagnostics, and report export.
+        <strong>When to use:</strong> measure a trained native model on a loader.
+        <strong>When not:</strong> software tests that only check “it runs“ —
+        evaluation is about model quality, which needs careful data splits.
+      </p>
+
+      <h2 id="Evaluator">Evaluator</h2>
+      <div class="api">
+        <span class="sig">Evaluator(model, metrics=…, config=…)</span>
+        <span class="sig">.evaluate(loader) -&gt; result</span>
+        <div class="field"><span class="label">Purpose</span> Run metric objects over a DataLoader-like iterable.</div>
+        <div class="field"><span class="label">Requires</span> <code>arclm[train]</code>.</div>
+      </div>
+
+      <h2 id="metrics">Metrics</h2>
+      <ul>
+        <li><code>Accuracy</code></li>
+        <li><code>LossMetric</code></li>
+        <li><code>Perplexity</code></li>
+      </ul>
+
+      <h2 id="export">Export</h2>
+      <ul>
+        <li><code>export_metrics_to_json(result, path)</code></li>
+        <li><code>export_metrics_to_markdown(result, path)</code></li>
+      </ul>
+
+      <h2 id="diagnostics">Diagnostics</h2>
+      <ul>
+        <li><code>predict_top_k(model, tokenizer, text, k=…)</code></li>
+        <li><code>build_training_diagnostics_report(...)</code></li>
+        <li><code>score_concept_relationships</code>, <code>run_long_context_evaluation</code></li>
+        <li>Formatting helpers: <code>format_top_k_predictions</code>, <code>format_tokenizer_coverage_report</code>, …</li>
+      </ul>
+
+      <h2 id="examples">Examples</h2>
+      <pre><code># Pattern from examples/07_evaluation_benchmarks
+from arclm.evaluation import Evaluator, Accuracy, Perplexity, LossMetric
+from arclm.evaluation import export_metrics_to_json, export_metrics_to_markdown
+
+# ev = Evaluator(model, metrics=[Accuracy(), Perplexity(), LossMetric()])
+# result = ev.evaluate(val_loader)
+# print(result.metrics)
+# export_metrics_to_json(result, "metrics.json")
+# export_metrics_to_markdown(result, "metrics.md")
+
+from arclm.evaluation import predict_top_k
+# preds = predict_top_k(model, tokenizer, "machine learning", k=5)
+# print(preds)</code></pre>
+          <div class="note warn">
+            A tiny demo model’s perplexity is not a competitive benchmark.
+            Report hardware, data, and model size with any number you publish.
+          </div>
+
+      <h2 id="related">Related</h2>
+      <ul>
+        <li><a href="training.html">arclm.training</a></li>
+        <li><a href="checkpoints.html">arclm.checkpoints</a></li>
+        <li><a href="models.html">arclm.models</a></li>
+        <li><a href="../examples-index.html">Example catalogue</a></li>
+      </ul>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["checkpoints.html", "arclm.checkpoints"];</script>
+<script>window.DOCS_NEXT = ["peft.html", "arclm.peft"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

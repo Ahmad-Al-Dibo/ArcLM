@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quick start — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Quick start</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>Quick start</h1>
+          <p>Three short paths: core only, training, and Hugging Face inference.</p>
+
+          <h2 id="path-core">Path A — Core only (no PyTorch)</h2>
+          <pre><code>pip install arclm</code></pre>
+          <pre><code>from arclm.configs import Config, create_config
+from arclm.tokenizers import Tokenizer
+from arclm.datasets import load_dataset, validate_records, deduplicate
+from arclm.security import redact_sensitive_text
+
+config = create_config(embed_dim=32, block_size=16, device="cpu")
+print(config.embed_dim)  # 32
+
+text = "arc lm trains tiny models on local text about language models"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+print(tok.encode_text("arc lm trains"))  # e.g. [2, 3, 4]
+print(tok.get_vocab_size())
+
+records = load_dataset([
+    {"text": "Hello world"},
+    {"text": "Hello world"},
+    {"text": "ArcLM is light"},
+])
+result = validate_records(records, required_fields=["text"])
+print(result.valid_count)  # 3
+out = deduplicate(records, return_result=True)
+print(out.kept, out.removed)  # 2 1
+
+print(redact_sensitive_text("api_key=sk-test-123"))
+# api_key=[REDACTED]</code></pre>
+
+          <h2 id="path-train">Path B — Native tiny model</h2>
+          <pre><code>pip install "arclm[train]"</code></pre>
+          <pre><code>import torch
+from arclm.models import ArcLM
+from arclm.tokenizers import Tokenizer
+
+text = "arc lm trains tiny models on local text about language models"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+
+model = ArcLM(
+    vocab_size=tok.get_vocab_size(),
+    embed_dim=16,
+    block_size=8,
+    num_blocks=1,
+)
+ids = torch.tensor([tok.encode_text("arc lm trains")[:8]])
+logits = model(ids)
+print(tuple(logits.shape))       # (1, 3, 11) on the sample text
+print(model.get_num_parameters())</code></pre>
+          <div class="note">
+            The native <code>ArcLM</code> model is intentionally tiny and educational.
+            It is not a general-purpose chat model.
+          </div>
+
+          <h2 id="path-hf">Path C — Hugging Face model</h2>
+          <pre><code>pip install "arclm[hf]"</code></pre>
+          <pre><code>from arclm.inference import load_any_model
+
+model = load_any_model(
+    "sshleifer/tiny-gpt2",
+    device="cpu",
+    trust_remote_code=False,
+)
+print(model.predict("Hello", max_new_tokens=5))
+print(model.chat([{"role": "user", "content": "Hi"}], max_new_tokens=6))</code></pre>
+          <p>
+            First call downloads weights into the Hugging Face cache.
+            Use a small public model for experiments. Gated models need a token;
+            do not hard-code secrets.
+          </p>
+
+          <h2 id="cli">CLI check</h2>
+          <pre><code>arclm doctor</code></pre>
+          <p>Prints version, Python, torch (if present), CUDA, and optional dependency status without requiring torch.</p>
+
+          <h2 id="next">Next</h2>
+          <p>
+            <a href="packages.html">Architecture →</a> or jump to
+            <a href="modules/configs.html">module reference</a>.
+          </p>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["install.html", "Installation"];</script>
+<script>window.DOCS_NEXT = ["architecture.html", "Architecture"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

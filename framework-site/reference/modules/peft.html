@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.peft — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.peft</div>
+    <article id="doc-content">
+      <h1>arclm.peft <span class="badge torch">needs [train]</span></h1>
+      <p>LoRA / QLoRA adapters and quantization helpers. Config types load lightly; LoRA modules need torch.</p>
+      <pre><code>from arclm.peft import LoRAConfig, apply_lora, apply_peft, merge_lora, unmerge_lora
+from arclm.peft import get_lora_state_dict, save_adapter_artifact, load_adapter_artifact
+from arclm.peft import QLoRAConfig, prepare_model_for_qlora, load_quantized_model
+
+# LoRA
+# apply_lora(model, LoRAConfig(r=8, alpha=16, dropout=0.05, target_modules=["attn"]))
+# state = get_lora_state_dict(model)
+# merge_lora(model)
+
+# Light config only (no torch module import for config types)
+from arclm.peft.config import LoRAConfig as LoRAConfigOnly
+print(LoRAConfigOnly(r=4))</code></pre>
+      <p>QLoRA requires <code>arclm[qlora]</code> (bitsandbytes, Python ≥3.10).</p>
+      <p>Related:</p>
+      <ul>
+        <li><a href="finetuning.html">arclm.finetuning</a></li>
+        <li><a href="training.html">arclm.training</a></li>
+        <li><a href="checkpoints.html">arclm.checkpoints</a> — adapter artifacts</li>
+        <li><a href="evaluation.html">arclm.evaluation</a></li>
+      </ul>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["evaluation.html", "arclm.evaluation"];</script>
+<script>window.DOCS_NEXT = ["inspection.html", "arclm.inspection"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

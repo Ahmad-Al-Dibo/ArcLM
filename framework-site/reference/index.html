@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Introduction — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Introduction</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>ArcLM</h1>
+          <p class="lead">
+            ArcLM is a compact Python toolkit for language-model data workflows,
+            tokenizers, optional PyTorch training, Hugging Face inference,
+            agents, and security helpers.
+          </p>
+
+          <h2 id="what">What ArcLM is</h2>
+          <p>
+            The core install is light (~50&nbsp;MB: NumPy + SentencePiece).
+            PyTorch is <strong>optional</strong> and only required for native
+            models, training, evaluation, and checkpoint tensor operations.
+            Install it with the <code>train</code> extra.
+          </p>
+          <pre><code>pip install arclm            # core
+pip install "arclm[train]"   # + PyTorch</code></pre>
+          <p>
+            The design goal is a library you can <em>read</em>: small modules,
+            explicit errors, CPU-first examples, and honest limits (the native
+            model is a teaching model, not a production chat LLM).
+          </p>
+
+          <h2 id="audience">Audience</h2>
+          <ul>
+            <li><strong>Educators and students</strong> — laptop, no GPU cluster.</li>
+            <li><strong>Application developers</strong> — load HF models, agents, data pipelines.</li>
+            <li><strong>Researchers</strong> — embed a light toolkit; train only when needed.</li>
+          </ul>
+
+          <h2 id="not">What ArcLM is not</h2>
+          <ul>
+            <li>Not a replacement for Hugging Face as a model zoo.</li>
+            <li>Not a competitive large language model by itself.</li>
+            <li>Not a production multi-GPU serving stack.</li>
+          </ul>
+
+          <h2 id="map">Documentation map</h2>
+          <table>
+            <tr><th>Section</th><th>Contents</th></tr>
+            <tr><td><a href="install.html">Installation</a></td><td>Core, extras, CPU/CUDA torch</td></tr>
+            <tr><td><a href="quickstart.html">Quick start</a></td><td>First successful run in minutes</td></tr>
+            <tr><td><a href="packages.html">Architecture</a></td><td>Layers, optional torch, Blocks</td></tr>
+            <tr><td><a href="modules/configs.html">Module reference</a></td><td>Every public package API</td></tr>
+            <tr><td><a href="cli.html">CLI</a></td><td>All <code>arclm</code> subcommands</td></tr>
+            <tr><td><a href="errors.html">Errors</a></td><td>Exception hierarchy</td></tr>
+            <tr><td><a href="troubleshooting.html">Troubleshooting</a></td><td>Common failures</td></tr>
+          </table>
+
+          <h2 id="version">Version and compatibility</h2>
+          <ul>
+            <li>Package version: <code>2.0.0</code> (see <code>arclm.__version__</code>)</li>
+            <li>Web API version: <code>0.11.0</code></li>
+            <li>Python: <code>&gt;=3.9</code> (tested 3.9–3.14)</li>
+            <li>License: Apache-2.0</li>
+          </ul>
+
+          <h2 id="next">Next</h2>
+          <p><a href="install.html">Install ArcLM →</a></p>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation Â· Apache-2.0 Â· Traditional layout for readability</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_NEXT = ["install.html", "Installation"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

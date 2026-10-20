@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Package map — ArcLM API Reference</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM API Reference</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search reference…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › <a href="../index.html">Framework</a> › Package map</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>Package map</h1>
+
+          <h2 id="layers">Conceptual layers</h2>
+          <p>
+            ArcLM exposes domain packages rather than three separate products.
+            In practice, three usage paths map onto those packages:
+          </p>
+          <table>
+            <tr><th>Path</th><th>Typical APIs</th><th>Audience</th></tr>
+            <tr>
+              <td><strong>Lab</strong></td>
+              <td><code>train_model</code>, <code>load_dataset</code>, CLI</td>
+              <td>Classrooms, first experiments</td>
+            </tr>
+            <tr>
+              <td><strong>Developer</strong></td>
+              <td><code>Trainer</code>, <code>Config</code>, checkpoints, agents, web API</td>
+              <td>Application builders</td>
+            </tr>
+            <tr>
+              <td><strong>Research</strong></td>
+              <td>Native model internals, tracking, search, inspection</td>
+              <td>Experimentation and extension</td>
+            </tr>
+          </table>
+
+          <h2 id="optional-torch">Optional PyTorch</h2>
+          <p>
+            The root package uses a lazy export map. <code>import arclm</code> does not
+            import torch. Torch-backed modules call <code>require_torch()</code> before
+            importing torch and raise <code>OptionalDependencyError</code> with an
+            install hint if torch is missing.
+          </p>
+          <pre><code>import arclm
+import sys
+print("torch" in sys.modules)  # False
+
+from arclm.tokenizers import Tokenizer
+print("torch" in sys.modules)  # still False
+
+from arclm.models import ArcLM  # requires arclm[train]</code></pre>
+
+          <h2 id="packages">Package map</h2>
+          <h3>Core (torch-free)</h3>
+          <ul>
+            <li><code>arclm.configs</code> — configuration objects and YAML/JSON IO</li>
+            <li><code>arclm.datasets</code> — load, validate, clean, deduplicate</li>
+            <li><code>arclm.tokenizers</code> — word-level and SentencePiece</li>
+            <li><code>arclm.security</code> — crypto, redaction, signing, policies</li>
+            <li><code>arclm.agents</code> — tools, runner, sessions</li>
+            <li><code>arclm.tracking</code> — local run manifests and seeds</li>
+            <li><code>arclm.search</code> — hyperparameter search (not IR search)</li>
+            <li><code>arclm.logics</code> — propositional logic utilities</li>
+            <li><code>arclm.exceptions</code> — error hierarchy</li>
+            <li><code>arclm.registry</code>, <code>arclm.utils</code></li>
+          </ul>
+          <h3>Training stack (needs <code>[train]</code>)</h3>
+          <ul>
+            <li><code>arclm.models</code> — native ArcLM GPT</li>
+            <li><code>arclm.training</code> — Trainer, pipeline, regularization</li>
+            <li><code>arclm.inference</code> — generation and HF loading</li>
+            <li><code>arclm.finetuning</code> — SFT workflows</li>
+            <li><code>arclm.checkpoints</code> — save/load/adapt</li>
+            <li><code>arclm.evaluation</code> — metrics and diagnostics</li>
+            <li><code>arclm.peft</code> — LoRA / QLoRA</li>
+            <li><code>arclm.inspection</code> — pipeline traces</li>
+          </ul>
+
+          <h2 id="error-contract">Error contract</h2>
+          <p>
+            Domain errors inherit from <code>ArcLMError</code>.
+            Missing optional dependencies raise <code>OptionalDependencyError</code>
+            with a message that names the extra (<code>train</code>, <code>hf</code>, …).
+          </p>
+
+          <h2 id="blocks">Blocks</h2>
+          <p>
+            <code>distributions/</code> contains manifests that generate trimmed
+            editions (core, training, agents, security, …) from the same source
+            using AST import analysis and hard exclude boundaries. Blocks are
+            alternatives to the full package, not add-ons.
+          </p>
+
+          <h2 id="next">Next</h2>
+          <p><a href="modules/configs.html">Module reference: arclm.configs →</a></p>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["quickstart.html", "Quick start"];</script>
+<script>window.DOCS_NEXT = ["modules/configs.html", "arclm.configs"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

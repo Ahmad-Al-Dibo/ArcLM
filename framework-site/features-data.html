@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Data &amp; tokenizers — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Data &amp; tokenizers</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Data and tokenizers <span class="badge ok">core</span></h1>
+
+          <h2 id="datasets">Datasets</h2>
+          <p>
+            <strong>What:</strong> load local records, validate fields, remove exact
+            duplicates, chain cleaning steps.
+            <strong>Why:</strong> dirty data wastes training time and skews metrics.
+            <strong>Modules:</strong> <code>arclm.datasets</code>.
+          </p>
+          <pre><code>from arclm.datasets import load_dataset, validate_records, deduplicate
+
+records = load_dataset([{"text": "Hello"}, {"text": "Hello"}, {"text": "World"}])
+vr = validate_records(records, required_fields=["text"])
+print(vr.valid_count)  # 3
+
+out = deduplicate(records, return_result=True)
+print(out.kept, out.removed)  # 2 1</code></pre>
+          <p>
+            <strong>Configuration:</strong> <code>DatasetConfig(source, text_field, …)</code>.
+            <strong>Limits:</strong> exact dedupe only (not fuzzy); streaming for large files.
+            <strong>Related:</strong> <a href="features-training.html">training</a> consumes tokenized data.
+          </p>
+
+          <h2 id="cleaning">Cleaning pipeline</h2>
+          <pre><code>from arclm.datasets import DataPipeline
+from arclm.datasets.cleaning import TextCleaner, FilterStep
+
+pipeline = DataPipeline([
+    TextCleaner(lowercase=True, strip=True),
+    FilterStep(min_chars=10),
+])
+# processed = pipeline.run(records)  # step may return None to drop</code></pre>
+
+          <h2 id="tokenizers">Tokenizers</h2>
+          <p>
+            <strong>What:</strong> word-level and SentencePiece tokenizers.
+            <strong>Why:</strong> native ArcLM models need integer ids; subwords
+            handle morphology better than pure word-level.
+            <strong>Modules:</strong> <code>arclm.tokenizers</code>.
+          </p>
+          <pre><code>from arclm.tokenizers import Tokenizer, SentencePieceTokenizer
+
+tok = Tokenizer(max_vocab=64)
+tok.build("arc lm trains tiny models on local text")
+print(tok.encode_text("arc lm trains"), tok.get_vocab_size())
+
+sp = SentencePieceTokenizer(model_type="bpe", vocab_size=200)
+sp.build("your corpus ...")</code></pre>
+          <p>
+            <strong>Limits:</strong> no auto-lowercase; word tokenizer is for teaching
+            and small corpora. <strong>Related:</strong> checkpoint tokenizer restore
+            via <code>arclm.training.tokenizer_from_checkpoint</code>.
+          </p>
+
+          <h2 id="schemas">Record schemas (extended)</h2>
+          <p>
+            Beyond simple text dicts, <code>arclm.schemas</code> defines validated
+            record types (text, prompt/completion, instruction, conversation) used
+            by data quality and web layers.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="workflows.html#w-data">Workflow A</a></li>
+            <li><a href="reference/modules/datasets.html">datasets API</a></li>
+            <li><a href="reference/modules/tokenizers.html">tokenizers API</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["workflows.html", "How it works"];</script>
+<script>window.DOCS_NEXT = ["features-training.html", "Models & training"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

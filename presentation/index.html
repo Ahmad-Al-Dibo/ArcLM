@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ArcLM — Presentation</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #121a2f;
+    --ink: #e8eefc;
+    --muted: #9db0d0;
+    --accent: #5b9dff;
+    --accent2: #3dd6c3;
+    --warn: #ffb454;
+    --danger: #ff6b7a;
+    --ok: #3ecf8e;
+    --line: rgba(255,255,255,0.08);
+    --shadow: 0 20px 60px rgba(0,0,0,0.35);
+    --radius: 18px;
+    --font: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", "Fira Code", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: radial-gradient(1200px 800px at 10% -10%, #1a2750 0%, var(--bg) 55%);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .deck { height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+  header.bar, footer.bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; color: var(--muted); font-size: 14px;
+    background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+  }
+  header .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
+  header .brand span.logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: inline-grid; place-items: center; color: #06101f; font-weight: 800; font-size: 13px;
+  }
+  .stage { position: relative; overflow: hidden; }
+  .slide {
+    position: absolute; inset: 0;
+    padding: 36px 64px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    animation: fade .35s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: none; } }
+  h1 { font-size: clamp(36px, 5vw, 64px); line-height: 1.1; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(28px, 3.5vw, 44px); margin-bottom: 18px; letter-spacing: -0.02em; }
+  h3 { font-size: 18px; color: var(--accent2); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  p.lead { font-size: clamp(18px, 2vw, 24px); color: var(--muted); max-width: 52ch; margin-top: 16px; line-height: 1.5; }
+  ul.clean { list-style: none; display: grid; gap: 12px; margin-top: 12px; max-width: 70ch; }
+  ul.clean li { display: flex; gap: 12px; align-items: flex-start; font-size: 18px; line-height: 1.45; color: var(--ink); }
+  ul.clean li::before { content: "▸"; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow);
+  }
+  .card h4 { font-size: 15px; color: var(--accent); margin-bottom: 8px; }
+  .card p, .card li { color: var(--muted); font-size: 15px; line-height: 1.45; }
+  .card ul { list-style: none; display: grid; gap: 6px; }
+  .card ul li { font-size: 14px; }
+  .card ul li::before { content: "· "; color: var(--accent2); }
+  pre.code {
+    background: #0a0f1c; border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; overflow-x: auto; font-family: var(--mono);
+    font-size: 15px; line-height: 1.55; color: #cfe0ff;
+  }
+  pre.code .c { color: #6f84ad; }
+  pre.code .g { color: var(--accent2); }
+  pre.code .y { color: var(--warn); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: rgba(91,157,255,0.12); color: var(--accent); border: 1px solid rgba(91,157,255,0.25);
+  }
+  .badge.ok { background: rgba(62,207,142,0.12); color: var(--ok); border-color: rgba(62,207,142,0.3); }
+  .badge.warn { background: rgba(255,180,84,0.12); color: var(--warn); border-color: rgba(255,180,84,0.3); }
+  .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+  .kpi .n { font-size: 40px; font-weight: 800; color: var(--accent2); letter-spacing: -0.03em; }
+  .kpi .l { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .timeline { display: grid; gap: 14px; margin-top: 16px; max-width: 80ch; }
+  .timeline .row { display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: start; }
+  .timeline .t { color: var(--accent); font-weight: 700; font-size: 15px; padding-top: 2px; }
+  .timeline .d { color: var(--muted); font-size: 16px; line-height: 1.4; }
+  .timeline .d strong { color: var(--ink); }
+  .footer-note { margin-top: 20px; color: var(--muted); font-size: 14px; }
+  .progress {
+    position: fixed; left: 0; top: 0; height: 3px; z-index: 50;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .25s ease;
+  }
+  .kbd { font-family: var(--mono); font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; color: var(--ink); }
+  .center { text-align: center; align-items: center; }
+  .center p.lead { text-align: center; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; justify-content: center; }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; color: var(--muted); font-size: 14px; background: rgba(255,255,255,0.03); }
+  .pill strong { color: var(--ink); }
+  .split-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
+  .small { font-size: 14px; color: var(--muted); }
+  .arrow-nav { display: flex; gap: 8px; align-items: center; }
+  button.nav {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 10px; padding: 8px 14px; cursor: pointer; font-size: 14px;
+  }
+  button.nav:hover { background: rgba(255,255,255,0.1); }
+  @media print {
+    .slide { display: flex !important; page-break-after: always; position: relative; min-height: 100vh; }
+    header.bar, footer.bar, .progress { display: none; }
+    body { overflow: auto; background: #fff; color: #111; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck">
+  <header class="bar">
+    <div class="brand"><span class="logo">A</span> ArcLM 2.0</div>
+    <div id="slideMeta">1 / 12 · 25 min</div>
+    <div class="arrow-nav">
+      <button class="nav" id="btnPrev" title="Previous">←</button>
+      <button class="nav" id="btnNext" title="Next">→</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 Title -->
+    <section class="slide active center">
+      <div class="badge">Technical presentation · ~25 minutes</div>
+      <h1 style="margin-top:18px">ArcLM</h1>
+      <p class="lead">
+        A compact language-model toolkit you can actually read —
+        light install first, PyTorch only when you train or run native models.
+      </p>
+      <div class="pill-row">
+        <div class="pill"><strong>Python</strong> 3.9 – 3.14</div>
+        <div class="pill"><strong>PyPI</strong> arclm 2.0.0</div>
+        <div class="pill"><strong>Core size</strong> ~50&nbsp;MB</div>
+        <div class="pill"><strong>License</strong> Apache-2.0</div>
+      </div>
+      <p class="footer-note">Ahmad Al Dibo · Open source · <span class="kbd">→</span> or <span class="kbd">Space</span> to continue</p>
+    </section>
+
+    <!-- 2 Agenda -->
+    <section class="slide">
+      <h2>Agenda — ~40 minutes</h2>
+      <div class="timeline">
+        <div class="row"><div class="t">0–5 min</div><div class="d"><strong>Why + who</strong> — problem, audience, can/cannot</div></div>
+        <div class="row"><div class="t">5–12 min</div><div class="d"><strong>Inside the core</strong> — packages, lazy loading, configs/tokenizers/data/agents/security</div></div>
+        <div class="row"><div class="t">12–28 min</div><div class="d"><strong>Live examples</strong> — 8 walkthroughs with real output</div></div>
+        <div class="row"><div class="t">28–34 min</div><div class="d"><strong>Deeper topics</strong> — SFT, evaluation, checkpoints, comparison</div></div>
+        <div class="row"><div class="t">34–38 min</div><div class="d"><strong>GPU, Blocks, ecosystem, honesty</strong></div></div>
+        <div class="row"><div class="t">38–40 min</div><div class="d"><strong>Q&amp;A</strong> — architecture, deployment, contribution</div></div>
+      </div>
+    </section>
+
+    <!-- 3 Problem -->
+    <section class="slide">
+      <h2>The problem we kept hitting</h2>
+      <div class="grid2">
+        <div>
+          <ul class="clean">
+            <li>Installing “just to try an API” pulls hundreds of MB</li>
+            <li>Docs assume GPU + multi-GB downloads on day one</li>
+            <li>Hard to <em>read</em> how data → tokens → model → eval fits together</li>
+            <li>Educational code and production code live in different worlds</li>
+          </ul>
+          <p class="footer-note" style="margin-top:28px">Engineers in emerging markets &amp; classrooms pay the highest cost for this.</p>
+        </div>
+        <div class="card">
+          <h4>What we wanted</h4>
+          <ul>
+            <li>Install in seconds on a laptop</li>
+            <li>Useful results before any training</li>
+            <li>Torch optional, not mandatory</li>
+            <li>Source small enough to study in a week</li>
+            <li>Same package for teaching and building apps</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who is this for -->
+    <section class="slide">
+      <h2>Who is ArcLM for?</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4> educators &amp; students</h4>
+          <p>Classrooms with laptops, limited bandwidth, no GPU cluster.</p>
+          <ul>
+            <li>Verified examples run offline on CPU</li>
+            <li>Lab: 32 progressive challenges</li>
+            <li>Native model is small enough to read</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>App developers</h4>
+          <p>Need LLM features without owning a training stack.</p>
+          <ul>
+            <li>Load HF models behind one API</li>
+            <li>Agents + tools without torch</li>
+            <li>Security helpers for logs and artifacts</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Researchers / MENA teams</h4>
+          <p>Embed a light toolkit; train only when the experiment needs it.</p>
+          <ul>
+            <li>Blocks for trimmed installs</li>
+            <li>Reproducible seeds + run tracking</li>
+            <li>Honest limits on native models</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">Not trying to replace transformers as a model zoo — complements it with a readable local layer.</p>
+    </section>
+
+    <!-- 4 Solution -->
+    <section class="slide">
+      <h2>ArcLM in one idea</h2>
+      <p class="lead">Core is light. Heavy compute is an extra — not the entry ticket.</p>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># default install — no PyTorch</span>
+pip install arclm
+
+<span class="c"># ~50 MB: numpy + sentencepiece</span>
+<span class="g">import arclm</span>
+print(arclm.get_version())  <span class="c"># 2.0.0</span></pre>
+        <pre class="code"><span class="c"># when you train or run native models</span>
+pip install <span class="y">"arclm[train]"</span>
+
+<span class="c"># adds torch; enables models/training/eval</span>
+<span class="g">from arclm.models import ArcLM</span></pre>
+      </div>
+      <div class="kpi">
+        <div><div class="n">~50&nbsp;MB</div><div class="l">core install</div></div>
+        <div><div class="n">0</div><div class="l">required GPU</div></div>
+        <div><div class="n">2.0.0</div><div class="l">on PyPI today</div></div>
+      </div>
+    </section>
+
+    <!-- 5 First result -->
+    <section class="slide">
+      <h2>What ArcLM can (and cannot)</h2>
+      <div class="grid2">
+        <div class="card" style="border-color: rgba(62,207,142,0.35)">
+          <h4 style="color:var(--ok)">✓ Can</h4>
+          <ul>
+            <li>Light install (~50&nbsp;MB, no torch)</li>
+            <li>Tokenize, validate &amp; dedupe data</li>
+            <li>Load HF models &amp; generate text</li>
+            <li>Train tiny native models (CPU/GPU)</li>
+            <li>Fine-tune with SFT / LoRA</li>
+            <li>Agents with typed tools</li>
+            <li>Encrypt, sign, redact secrets</li>
+            <li>Evaluate &amp; export metrics</li>
+            <li>CLI + local web Studio</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color: rgba(255,107,122,0.35)">
+          <h4 style="color:var(--danger)">✗ Cannot / will not claim</h4>
+          <ul>
+            <li>Compete with ChatGPT / Claude</li>
+            <li>Native model writes useful prose</li>
+            <li>Every Hub model works (test per model)</li>
+            <li>Production multi-GPU serving</li>
+            <li>Replace Hugging Face as a model zoo</li>
+            <li>Arabic-specific LLM quality guarantees</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">Honesty is a feature — senior engineers trust libraries that state limits.</p>
+    </section>
+
+    <!-- Inside the core 1: package map -->
+    <section class="slide">
+      <h2>Inside the core — package map</h2>
+      <div class="grid2">
+        <pre class="code">arclm/
+├── <span class="g">configs/</span>       <span class="c"># Config, YAML/JSON</span>
+├── <span class="g">datasets/</span>      <span class="c"># load, validate, clean</span>
+│   ├── cleaning/
+│   ├── deduplication/
+│   └── streaming/
+├── <span class="g">tokenizers/</span>    <span class="c"># word + SentencePiece</span>
+├── <span class="g">security/</span>      <span class="c"># crypto, redact, sign</span>
+│   ├── crypto/  keys/  artifacts/
+├── <span class="g">agents/</span>        <span class="c"># tools, runner, sessions</span>
+│   └── builtins/
+├── <span class="g">tracking/</span>      <span class="c"># run manifests, seeds</span>
+├── <span class="g">search/</span>        <span class="c"># hyperparameter search</span>
+├── <span class="g">logics/</span>        <span class="c"># propositional logic</span>
+├── <span class="g">exceptions/</span>    <span class="c"># ArcLMError tree</span>
+├── <span class="g">registry/</span>      <span class="c"># name → object maps</span>
+└── <span class="g">utils/</span>         <span class="c"># format, require_* deps</span></pre>
+        <div>
+          <h3>All torch-free</h3>
+          <ul class="clean">
+            <li>Install <code>arclm</code> only — works on Python 3.9–3.14</li>
+            <li>CI blocks <code>import torch</code> in these packages</li>
+            <li>Useful alone: data pipelines, agents, security tools</li>
+          </ul>
+          <h3 style="margin-top:20px">When you add <code>[train]</code></h3>
+          <ul class="clean">
+            <li><code>models/</code> · <code>training/</code> · <code>inference/</code></li>
+            <li><code>evaluation/</code> · <code>checkpoints/</code> · <code>peft/</code></li>
+            <li><code>finetuning/</code> · <code>lifecycle/</code> · <code>inspection.py</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inside the core 2: configs + tokenizers + datasets -->
+    <section class="slide">
+      <h2>Core deep dive — configs, tokenizers, data</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>configs/</h4>
+          <p>One broad <code>Config</code> object — plain Python, no torch.</p>
+          <ul>
+            <li>Model size: embed_dim, blocks, vocab</li>
+            <li>Data paths, device, seed</li>
+            <li><code>create_config()</code> with defaults</li>
+            <li>YAML / JSON save &amp; load</li>
+            <li>No global RNG side effects (2.0 fix)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>tokenizers/</h4>
+          <p>Two implementations, one factory.</p>
+          <ul>
+            <li><strong>Word-level</strong> — whitespace, inspectable vocab</li>
+            <li><strong>SentencePiece</strong> — BPE subwords</li>
+            <li><code>TokenizerFactory</code> + custom registration</li>
+            <li><code>encode_text</code> / <code>decode</code></li>
+            <li>No auto-lowercase (explicit control)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>datasets/</h4>
+          <p>Records are plain <code>dict</code>s.</p>
+          <ul>
+            <li><code>load_dataset</code> — list, JSONL, CSV, TXT</li>
+            <li><code>validate_records</code> — required fields</li>
+            <li><code>deduplicate</code> — exact match + report</li>
+            <li><code>DataPipeline</code> — chain cleaners</li>
+            <li><code>StreamingDataset</code> — lazy iteration</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">Design rule: each package is readable in isolation. No hidden global state.</p>
+    </section>
+
+    <!-- Inside the core 3: agents + security + tracking -->
+    <section class="slide">
+      <h2>Core deep dive — agents, security, tracking</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>agents/</h4>
+          <p>Provider-independent tool-calling runtime.</p>
+          <ul>
+            <li><code>@tool</code> — type hints → JSON schema</li>
+            <li><code>AgentRunner</code> — bounded loop</li>
+            <li>Permissions + side-effect levels</li>
+            <li>Sessions, traces, approvals</li>
+            <li>Builtins: documents, math, safe web</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>security/</h4>
+          <p>Fail-closed by design.</p>
+          <ul>
+            <li>AEAD encrypt/decrypt + Argon2id</li>
+            <li>Key providers (memory, password)</li>
+            <li>Manifest signing + integrity</li>
+            <li>Path sandbox + URL checks</li>
+            <li>Redaction for logs/traces</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>tracking/ + search/</h4>
+          <p>Local experiments, no cloud.</p>
+          <ul>
+            <li>Run manifests + JSONL events</li>
+            <li><code>set_reproducible_seed</code></li>
+            <li>Path redaction in manifests</li>
+            <li><code>search/</code> = hyperparameter grid/random</li>
+            <li>Not semantic/IR search (name check!)</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">All three work without torch — useful for agent backends and data platforms.</p>
+    </section>
+
+    <!-- Inside the core 4: lazy loading -->
+    <section class="slide">
+      <h2>How the core stays light — lazy loading</h2>
+      <div class="grid2">
+        <div>
+          <ul class="clean">
+            <li>Root <code>__init__</code> uses a <strong>lazy export map</strong> (~230 names)</li>
+            <li><code>import arclm</code> does <strong>not</strong> load torch or heavy subpackages</li>
+            <li>First access of <code>arclm.Trainer</code> imports that module only</li>
+            <li>Heavy modules call <code>require_torch()</code> before <code>import torch</code></li>
+            <li>Missing torch → clear <code>OptionalDependencyError</code> with install hint</li>
+          </ul>
+        </div>
+        <pre class="code"><span class="c"># Root stays tiny</span>
+<span class="g">import arclm</span>
+<span class="g">import sys</span>
+print(arclm.get_version())
+print(<span class="y">"torch"</span> in sys.modules)  <span class="c"># False</span>
+
+<span class="c"># First real use pulls one module</span>
+<span class="g">from arclm.tokenizers import Tokenizer</span>
+<span class="c"># still no torch in sys.modules</span>
+
+<span class="c"># Only training stack loads torch</span>
+<span class="g">from arclm.models import ArcLM</span>  <span class="c"># needs [train]</span></pre>
+      </div>
+      <p class="footer-note">This is why <code>pip install arclm</code> can stay ~50&nbsp;MB and still expose a large API surface.</p>
+    </section>
+
+    <!-- 6 Example: core (no torch) -->
+    <section class="slide">
+      <h2>Example 1 — Core only (no torch)</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Tokenizer</span>
+<span class="g">from arclm.tokenizers import Tokenizer</span>
+text = "arc lm trains tiny models on local text"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+print(tok.encode_text("arc lm trains"))
+print(tok.get_vocab_size())
+print(tok.decode([2, 3, 4]))
+
+<span class="c"># Config</span>
+<span class="g">from arclm.configs import Config</span>
+c = Config(embed_dim=32, block_size=16, device="cpu")
+print(c.embed_dim, c.block_size, c.device)</pre>
+        <pre class="code"><span class="c"># Observed output (ArcLM 2.0.0)</span>
+[2, 3, 4]
+11
+['arc', 'lm', 'trains']
+32 16 cpu
+
+<span class="c"># Note: no automatic lowercasing —</span>
+<span class="c"># "Arc" ≠ "arc" unless you normalize.</span></pre>
+      </div>
+      <p class="footer-note">Install: <code>pip install arclm</code> · Runtime: &lt;1&nbsp;s CPU · No GPU, no download</p>
+    </section>
+
+    <!-- 7 Example: data + security -->
+    <section class="slide">
+      <h2>Example 2 — Data + Security</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Dedupe dataset</span>
+<span class="g">from arclm.datasets import load_dataset, deduplicate</span>
+recs = load_dataset([
+  {"text": "Hello world"},
+  {"text": "Hello world"},
+  {"text": "ArcLM is light"},
+])
+out = deduplicate(recs, return_result=True)
+print("kept", out.kept, "removed", out.removed)
+
+<span class="c"># Redact secrets before logging</span>
+<span class="g">from arclm.security import redact_sensitive_text</span>
+print(redact_sensitive_text("api_key=sk-test-1234567890"))</pre>
+        <pre class="code"><span class="c"># Observed output</span>
+kept 2 removed 1
+api_key=[REDACTED]
+
+<span class="c"># Also verified:</span>
+<span class="c"># encrypt_bytes / decrypt_bytes round-trip</span>
+<span class="c"># manifest signing + tamper rejection</span>
+<span class="c"># security_status() → signing: available</span></pre>
+      </div>
+      <p class="footer-note">Both torch-free · Ideal for data pipelines and agent backends</p>
+    </section>
+
+    <!-- 8 Example: native model + doctor -->
+    <section class="slide">
+      <h2>Example 3 — Native model + CLI doctor</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Requires: pip install "arclm[train]"</span>
+<span class="g">import torch</span>
+<span class="g">from arclm.models import ArcLM</span>
+model = ArcLM(vocab_size=11, embed_dim=16,
+              block_size=8, num_blocks=1)
+ids = torch.tensor([[2, 3, 4]])
+logits = model(ids)
+print(tuple(logits.shape))
+print(model.get_num_parameters())
+
+<span class="c"># CLI health check (no torch needed)</span>
+arclm doctor</pre>
+        <pre class="code"><span class="c"># Observed output</span>
+(1, 3, 11)
+3531
+
+ArcLM version: 2.0.0
+Python version: 3.12.10
+CUDA available: False
+Current device: cpu
+
+<span class="c"># Educational model — not for chat quality.</span></pre>
+      </div>
+      <p class="footer-note">Forward pass on CPU in milliseconds · Shape = (batch, seq, vocab)</p>
+    </section>
+
+    <!-- 9 Example: HF load -->
+    <section class="slide">
+      <h2>Example 4 — Load a real HF model</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Requires: pip install "arclm[hf]"</span>
+<span class="g">from arclm.inference import load_any_model</span>
+
+model = load_any_model(
+    "sshleifer/tiny-gpt2",
+    device="cpu",
+    trust_remote_code=False,
+)
+out = model.predict("Hello", max_new_tokens=5)
+print(repr(out))
+
+reply = model.chat(
+    [{"role": "user", "content": "Hi"}],
+    max_new_tokens=6,
+)
+print(repr(reply))</pre>
+        <pre class="code"><span class="c"># Observed (CPU, 2026-10-15)</span>
+load_seconds: 39.3
+generate_seconds: 1.2
+'Prob trilogyohoJD ...'
+
+chat → 'Medic perhapsozyg ...'
+
+<span class="c"># tiny-gpt2 = test fixture weights.</span>
+<span class="c"># Text is nonsense on purpose.</span>
+<span class="c"># API path is what we verified.</span></pre>
+      </div>
+      <p class="footer-note">First load downloads to HF cache · Later loads faster · Works on any standard causal LM</p>
+    </section>
+
+    <!-- 10 Example: training smoke + GPU -->
+    <section class="slide">
+      <h2>Example 5 — Training smoke test</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Tiny pretraining step (CPU, seconds)</span>
+<span class="g">from arclm.configs import create_config</span>
+<span class="g">from arclm.training import train_model</span>
+
+config = create_config(
+    embed_dim=32, block_size=16,
+    num_epochs=1, device=<span class="y">"cpu"</span>,  <span class="c"># or "cuda"</span>
+)
+result = train_model(
+    mode="pre_training",
+    data="data.txt",
+    output="models/tiny.pth",
+    config=config,
+)
+print(result.history["train_losses"][-1])</pre>
+        <pre class="code"><span class="c"># Observed (examples/04_training)</span>
+initial_loss:     3.07
+after_one_step:   2.68
+tokens:           25
+<span class="c"># loss went down in one optimizer step</span>
+
+<span class="c"># GPU: device="cuda" + CUDA torch wheel</span>
+<span class="c"># CLI: arclm train --device cuda</span></pre>
+      </div>
+      <p class="footer-note">Smoke test ≠ full experiment · Full runs need real data + more epochs</p>
+    </section>
+
+    <!-- 11 Example: agent -->
+    <section class="slide">
+      <h2>Example 6 — Agent with a typed tool</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># torch-free: pip install arclm</span>
+<span class="g">from arclm.agents import tool</span>
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers."""
+    return left + right
+
+<span class="c"># Full example in repo:</span>
+<span class="c"># examples/10_agents_tools/01_...</span></pre>
+        <pre class="code"><span class="c"># Observed output (T06)</span>
+{
+  "tool_calls": ["add_numbers"],
+  "output": "Done. The tool result
+             was processed safely."
+}
+
+<span class="c"># Type hints → JSON schema</span>
+<span class="c"># Bounded runner · permissions</span></pre>
+      </div>
+      <p class="footer-note">Deterministic · No API key needed for the example adapter · CI-friendly</p>
+    </section>
+
+    <!-- Example 7: SentencePiece + validate -->
+    <section class="slide">
+      <h2>Example 7 — SentencePiece + record validation</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Subword tokenizer (still no torch)</span>
+<span class="g">from arclm.tokenizers import SentencePieceTokenizer</span>
+sp = SentencePieceTokenizer(model_type="bpe", vocab_size=200)
+sp.build("hello world arc lm trains models ...")
+print(sp.encode_text("hello world"))
+
+<span class="c"># Validate required fields</span>
+<span class="g">from arclm.datasets import validate_records</span>
+r = validate_records([{"text": "ok"}], required_fields=["text"])
+print("valid_count", r.valid_count)</pre>
+        <pre class="code"><span class="c"># Why SentencePiece?</span>
+<span class="c"># - subwords handle typos / morphology</span>
+<span class="c"># - smaller vocab, fewer UNKs</span>
+<span class="c"># - standard for multilingual work</span>
+
+<span class="c"># Observed</span>
+[[...ids...]]
+valid_count 1</pre>
+      </div>
+      <p class="footer-note">Word tokenizer = teaching clarity · SentencePiece = closer to production tokenization.</p>
+    </section>
+
+    <!-- Example 8: evaluation + checkpoints -->
+    <section class="slide">
+      <h2>Example 8 — Checkpoints &amp; evaluation</h2>
+      <div class="split-demo">
+        <pre class="code"><span class="c"># Safe checkpoint IO</span>
+<span class="g">from arclm.checkpoints import (
+  atomic_save_checkpoint,
+  safe_load_training_checkpoint,
+)</span>
+atomic_save_checkpoint(state, "m.pth")
+ckpt = safe_load_training_checkpoint("m.pth")
+
+<span class="c"># Metrics</span>
+<span class="g">from arclm.evaluation import Evaluator, Accuracy, Perplexity</span>
+ev = Evaluator(model, metrics=[Accuracy(), Perplexity()])
+result = ev.evaluate(loader)
+print(result.metrics)</pre>
+        <pre class="code"><span class="c"># Design notes</span>
+<span class="c"># - trusted load path (no pickle RCE)</span>
+<span class="c"># - empty config ⇒ never "compatible"</span>
+<span class="c"># - metrics exported JSON + Markdown</span>
+
+<span class="c"># From examples/06 + 07 (repo)</span>
+checkpoint saved / loaded
+perplexity: measured on tiny model
+<span class="c"># not a competitive benchmark</span></pre>
+      </div>
+    </section>
+
+    <!-- SFT overview -->
+    <section class="slide">
+      <h2>Fine-tuning path (overview)</h2>
+      <div class="grid2">
+        <div>
+          <ul class="clean">
+            <li><strong>SFT</strong> adapts a pretrained model to your format</li>
+            <li>Dataset: messages / prompt+completion / instruction</li>
+            <li><code>validate_sft_records</code> before training</li>
+            <li><code>train_sft(..., backend="huggingface")</code></li>
+            <li>Optional LoRA via <code>[peft]</code> or <code>[qlora]</code></li>
+          </ul>
+        </div>
+        <pre class="code"><span class="g">from arclm.finetuning import train_sft</span>
+
+result = train_sft(
+  model="Qwen/Qwen3-0.6B",
+  dataset="sft.jsonl",
+  output_dir="out/sft",
+  backend="huggingface",
+  use_lora=True, lora_r=8,
+)
+<span class="c"># Needs [hf] + network + disk</span>
+<span class="c"># Smoke-scale first; full runs later</span></pre>
+      </div>
+      <p class="footer-note">Introduce SFT only after data + inference are solid (curriculum stage 6).</p>
+    </section>
+
+    <!-- Comparison -->
+    <section class="slide">
+      <h2>ArcLM vs common stacks (honest)</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>vs Hugging Face only</h4>
+          <ul>
+            <li>HF = model zoo + heavy deps</li>
+            <li>ArcLM loads HF <em>and</em> teaches the path</li>
+            <li>Complement, not replacement</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>vs full training frameworks</h4>
+          <ul>
+            <li>No distributed production stack</li>
+            <li>Tiny native model on purpose</li>
+            <li>Readable trainer, not 10k LOC</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>vs “notebook only”</h4>
+          <ul>
+            <li>Real package, CLI, tests, CI</li>
+            <li>Security + agents included</li>
+            <li>Versioned on PyPI</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">Choose the right tool: ArcLM for learning + light apps; HF for model access; big trainers for scale.</p>
+    </section>
+
+    <!-- Contribution / roadmap -->
+    <section class="slide">
+      <h2>Open source &amp; roadmap</h2>
+      <div class="grid2">
+        <div>
+          <h3>Today (2.0.0)</h3>
+          <ul class="clean">
+            <li>Light core + optional torch</li>
+            <li>HF load, SFT, LoRA extras</li>
+            <li>Agents, security, Studio</li>
+            <li>Blocks + Lab + examples suite</li>
+            <li>CI: Python 3.9–3.14</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Direction</h3>
+          <ul class="clean">
+            <li>Retrieval / RAG building blocks</li>
+            <li>More verified Arabic-friendly examples</li>
+            <li>Blocks on clearer git-install story</li>
+            <li>Community contributions via GitHub</li>
+          </ul>
+          <p class="footer-note">Apache-2.0 · Issues and PRs welcome.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 Architecture -->
+    <section class="slide">
+      <h2>Architecture — readable layers</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>Lab path</h4>
+          <p>One-call workflows for classrooms &amp; quick experiments.</p>
+          <ul>
+            <li><code>train_model</code></li>
+            <li><code>load_dataset</code></li>
+            <li>CLI <code>doctor</code> / <code>train</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Developer path</h4>
+          <p>Build apps with explicit objects and boundaries.</p>
+          <ul>
+            <li><code>Trainer</code> + <code>Config</code></li>
+            <li>Checkpoints, agents, web API</li>
+            <li>Error contracts (<code>OptionalDependencyError</code>)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Research path</h4>
+          <p>Open the boxes; change the internals.</p>
+          <ul>
+            <li>Native model blocks</li>
+            <li>Tracking + hyperparameter search</li>
+            <li>Pipeline inspection traces</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note" style="margin-top:18px">Implemented as domain packages — not three separate products. Same public <code>arclm</code> namespace.</p>
+    </section>
+
+    <!-- 7 Optional torch enforcement -->
+    <section class="slide">
+      <h2>Optional torch is enforced, not hoped for</h2>
+      <div class="grid2">
+        <div>
+          <ul class="clean">
+            <li>Root package is <strong>lazy</strong> (<code>__getattr__</code> export map)</li>
+            <li>Heavy modules call <code>require_torch("feature")</code> before import</li>
+            <li>Clear error: <em>pip install "arclm[train]"</em></li>
+            <li>CI blocks torch at import time for light packages</li>
+          </ul>
+        </div>
+        <pre class="code"><span class="c"># without torch</span>
+<span class="g">&gt;&gt;&gt; from arclm.models import ArcLM</span>
+OptionalDependencyError:
+  arclm.models requires 'torch'.
+
+  pip install <span class="y">"arclm[train]"</span>
+
+<span class="c"># light packages still work</span>
+<span class="g">&gt;&gt;&gt; from arclm.tokenizers import Tokenizer</span>
+<span class="g">&gt;&gt;&gt; from arclm.agents import Agent</span></pre>
+      </div>
+    </section>
+
+    <!-- 8 Blocks -->
+    <section class="slide">
+      <h2>ArcLM Blocks — trimmed editions</h2>
+      <p class="lead">Same source → generated mini-packages for research embedding and constrained environments.</p>
+      <div class="grid3" style="margin-top:8px">
+        <div class="card"><h4>core</h4><p>configs · datasets · tokenizers · no torch</p></div>
+        <div class="card"><h4>training</h4><p>Trainer · models · checkpoints · torch</p></div>
+        <div class="card"><h4>finetuning</h4><p>SFT workflows · adapters · torch</p></div>
+        <div class="card"><h4>loading-inference</h4><p>load · generate · inspect · torch</p></div>
+        <div class="card"><h4>evaluation</h4><p>metrics · diagnostics · torch</p></div>
+        <div class="card"><h4>agents-tools / security</h4><p>runtime + crypto · no torch</p></div>
+      </div>
+      <p class="footer-note">AST import graph + hard exclude boundaries + SHA-256 drift detection. Install from git subdirectory or local build.</p>
+    </section>
+
+    <!-- 9 Live capabilities -->
+    <section class="slide">
+      <h2>Capabilities you can demo</h2>
+      <div class="grid2">
+        <div class="card">
+          <h4>Hugging Face loading</h4>
+          <p><code>load_any_model</code> · <code>.predict()</code> · <code>.chat()</code></p>
+          <p class="small" style="margin-top:8px">Tested: <code>sshleifer/tiny-gpt2</code> on CPU (~39s cold load). Safe default <code>trust_remote_code=False</code>.</p>
+        </div>
+        <div class="card">
+          <h4>Agents &amp; tools</h4>
+          <p>Typed <code>@tool</code> · permissions · bounded runner</p>
+          <p class="small" style="margin-top:8px">Deterministic calculator agent runs without GPU.</p>
+        </div>
+        <div class="card">
+          <h4>Data pipeline</h4>
+          <p>JSONL load → validate → dedupe → train</p>
+          <p class="small" style="margin-top:8px">Exact-duplicate removal with structured reports.</p>
+        </div>
+        <div class="card">
+          <h4>Security</h4>
+          <p>Redact · encrypt · sign · status</p>
+          <p class="small" style="margin-top:8px"><code>api_key=… → [REDACTED]</code> before logs leave your machine.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 GPU training -->
+    <section class="slide">
+      <h2>Training with GPU (when you have one)</h2>
+      <div class="grid2">
+        <div>
+          <h3>Install CUDA torch first</h3>
+          <pre class="code"><span class="c"># pick the wheel that matches your CUDA</span>
+pip install torch --index-url https://download.pytorch.org/whl/cu124
+pip install <span class="y">"arclm[train]"</span>
+
+<span class="c"># verify ArcLM sees the GPU</span>
+arclm doctor</pre>
+          <p class="small" style="margin-top:12px">Doctor prints <strong>CUDA available</strong>, GPU count, name, and capability.</p>
+        </div>
+        <div>
+          <h3>Use it in code / CLI</h3>
+          <pre class="code"><span class="c"># Python</span>
+<span class="g">from arclm.configs import create_config</span>
+<span class="g">from arclm.training import train_model</span>
+
+config = create_config(device=<span class="y">"cuda"</span>)  <span class="c"># or "auto"</span>
+train_model(..., config=config)
+
+<span class="c"># CLI</span>
+arclm train --data data.txt --device cuda</pre>
+          <ul class="clean" style="margin-top:14px">
+            <li><code>device="auto"</code> → CUDA if available, else CPU</li>
+            <li><code>device="cuda"</code> → hard fail if no GPU</li>
+            <li>Precision: <code>fp32</code> / <code>fp16</code> / <code>bf16</code></li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note" style="margin-top:16px">
+        Multi-GPU (DDP/FSDP): experimental contracts in <code>arclm.distributed</code> — validate before production use.
+        CPU remains the supported default path for teaching and CI.
+      </p>
+    </section>
+
+    <!-- 11 Ecosystem -->
+    <section class="slide">
+      <h2>Ecosystem around the library</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>Examples suite</h4>
+          <p>13 numbered folders, CPU-verified runner — no downloads required for the verified set.</p>
+        </div>
+        <div class="card">
+          <h4>Lab curriculum</h4>
+          <p>32 challenges: beginner → expert. Build the architecture yourself.</p>
+        </div>
+        <div class="card">
+          <h4>Web Studio</h4>
+          <p>Local FastAPI backend + Next.js UI for datasets, training, evaluation.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h4>CLI surface</h4>
+        <p><code>train</code> · <code>eval</code> · <code>generate</code> · <code>chat</code> · <code>doctor</code> · <code>security</code> · <code>config</code> · <code>data</code> · <code>run(s)</code> · <code>cache</code> · <code>web-api</code></p>
+      </div>
+    </section>
+
+    <!-- 11 Quality / honesty -->
+    <section class="slide">
+      <h2>How we keep claims honest</h2>
+      <ul class="clean">
+        <li><strong>Light-import CI</strong> — torch blocked at import on 3.9–3.14</li>
+        <li><strong>Verified examples</strong> — <code>run-verified</code> is CPU-local, no network</li>
+        <li><strong>Real-model tests recorded</strong> — including “fixture model produces gibberish” disclaimers</li>
+        <li><strong>Security fail-closed</strong> — missing keys/deps raise, never silently skip</li>
+        <li><strong>Tiny model ≠ competitive LLM</strong> — stated in every teaching path</li>
+      </ul>
+      <p class="footer-note" style="margin-top:24px">Published on PyPI · GitHub Actions CI · Apache-2.0</p>
+    </section>
+
+    <!-- 12 Close -->
+    <section class="slide center">
+      <div class="badge ok">Thank you</div>
+      <h1 style="margin-top:16px;font-size:clamp(28px,4vw,48px)">Questions &amp; next steps</h1>
+      <div class="pill-row">
+        <div class="pill">pip install arclm</div>
+        <div class="pill">github.com/Ahmad-Al-Dibo/ArcLM</div>
+        <div class="pill">pypi.org/project/arclm</div>
+      </div>
+      <p class="lead" style="margin-top:28px">
+        Start light. Load a model when you need it. Read the source when you want to understand it.
+      </p>
+      <p class="footer-note">Discussion welcome — architecture, education, regional deployment, contributions.</p>
+    </section>
+
+  </main>
+
+  <footer class="bar">
+    <div>English · for engineering teams</div>
+    <div><span class="kbd">←</span> <span class="kbd">→</span> navigate · <span class="kbd">F</span> fullscreen · <span class="kbd">P</span> print PDF</div>
+    <div id="clock"></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const progress = document.getElementById("progress");
+  const meta = document.getElementById("slideMeta");
+  const clock = document.getElementById("clock");
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + "%";
+    meta.textContent = (i + 1) + " / " + slides.length + " · 25 min";
+    location.hash = "#/" + (i + 1);
+  }
+
+  function tick() {
+    const d = new Date();
+    clock.textContent = d.toLocaleTimeString();
+  }
+  setInterval(tick, 1000);
+  tick();
+
+  document.getElementById("btnNext").onclick = () => show(i + 1);
+  document.getElementById("btnPrev").onclick = () => show(i - 1);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+      e.preventDefault(); show(i + 1);
+    } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+      e.preventDefault(); show(i - 1);
+    } else if (e.key === "Home") {
+      show(0);
+    } else if (e.key === "End") {
+      show(slides.length - 1);
+    } else if (e.key === "f" || e.key === "F") {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    } else if (e.key === "p" || e.key === "P") {
+      window.print();
+    }
+  });
+
+  const m = location.hash.match(/^#\/(\d+)/);
+  if (m) show(parseInt(m[1], 10) - 1);
+  else show(0);
+})();
+</script>
+</body>
+</html>

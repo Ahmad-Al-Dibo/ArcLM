@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Getting started — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Getting started</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Getting started</h1>
+
+          <h2 id="requirements">System requirements</h2>
+          <ul>
+            <li><strong>Python:</strong> 3.9 or newer (tested 3.9–3.14 on local venvs and CI light matrix)</li>
+            <li><strong>OS:</strong> Linux, Windows, macOS (developed on Windows; CI on Ubuntu)</li>
+            <li><strong>Hardware:</strong> CPU sufficient for core + tiny native models; GPU optional</li>
+            <li><strong>Disk:</strong> ~50&nbsp;MB core; hundreds of MB if you add torch; GBs if you download large HF models</li>
+          </ul>
+
+          <h2 id="install">Installation</h2>
+          <h3>Minimal (no PyTorch)</h3>
+          <pre><code>python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install arclm
+python -c "import arclm; print(arclm.get_version())"</code></pre>
+          <p>Required packages: <code>numpy</code>, <code>sentencepiece</code>.</p>
+
+          <h3>Training stack</h3>
+          <pre><code>pip install "arclm[train]"
+# CPU-only torch first if preferred:
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "arclm[train]"</code></pre>
+
+          <h3>Hugging Face inference</h3>
+          <pre><code>pip install "arclm[hf]"</code></pre>
+
+          <h3>Other extras</h3>
+          <table>
+            <tr><th>Extra</th><th>Unlocks</th></tr>
+            <tr><td><code>web</code></td><td>FastAPI Studio (+ torch)</td></tr>
+            <tr><td><code>peft</code> / <code>qlora</code></td><td>LoRA / QLoRA</td></tr>
+            <tr><td><code>security</code></td><td>Full crypto (cryptography)</td></tr>
+            <tr><td><code>agents-audio</code></td><td>Whisper STT</td></tr>
+            <tr><td><code>dev</code></td><td>pytest, build, twine</td></tr>
+          </table>
+
+          <h2 id="first">First working result (core only)</h2>
+          <pre><code>from arclm.tokenizers import Tokenizer
+from arclm.configs import create_config
+from arclm.security import redact_sensitive_text
+
+config = create_config(embed_dim=32, block_size=16, device="cpu")
+tok = Tokenizer(max_vocab=64)
+tok.build("arc lm trains tiny models on local text about language models")
+print(tok.encode_text("arc lm trains"))  # e.g. [2, 3, 4]
+print(redact_sensitive_text("api_key=sk-test-123"))  # api_key=[REDACTED]</code></pre>
+
+          <h2 id="first-train">First native forward pass (needs [train])</h2>
+          <pre><code>import torch
+from arclm.models import ArcLM
+from arclm.tokenizers import Tokenizer
+
+text = "arc lm trains tiny models on local text about language models"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+model = ArcLM(vocab_size=tok.get_vocab_size(), embed_dim=16, block_size=8, num_blocks=1)
+ids = torch.tensor([tok.encode_text("arc lm trains")[:8]])
+print(tuple(model(ids).shape))  # (1, 3, 11) on this corpus</code></pre>
+
+          <h2 id="cli">CLI health check</h2>
+          <pre><code>arclm --version
+arclm doctor</code></pre>
+          <p>
+            <code>doctor</code> prints Python, torch (if any), CUDA, and optional
+            dependency status. It does not require torch.
+          </p>
+
+          <h2 id="config">Configuration basics</h2>
+          <p>
+            <code>arclm.configs.Config</code> / <code>create_config</code> store model
+            size, paths, device, and tokenizer type. Persist with
+            <code>save_config_yaml</code> / <code>load_config_yaml</code>.
+            Device defaults to <code>"cpu"</code>. Use
+            <code>arclm.tracking.set_reproducible_seed</code> to seed RNGs
+            (config creation does not seed torch).
+          </p>
+
+          <h2 id="problems">Install troubleshooting</h2>
+          <table>
+            <tr><th>Symptom</th><th>Fix</th></tr>
+            <tr><td><code>OptionalDependencyError</code> mentioning torch</td><td><code>pip install "arclm[train]"</code></td></tr>
+            <tr><td>Missing transformers</td><td><code>pip install "arclm[hf]"</code></td></tr>
+            <tr><td>CUDA not available</td><td>Install matching CUDA torch wheel; <code>arclm doctor</code></td></tr>
+            <tr><td>Wrong package name</td><td>Install <code>arclm</code>, not <code>arcllm</code></td></tr>
+          </table>
+
+          <h2 id="next">Next steps</h2>
+          <ul>
+            <li><a href="examples.html">Examples</a> — beginner to advanced</li>
+            <li><a href="workflows.html">How it works</a> — end-to-end workflows</li>
+            <li><a href="reference/index.html">API reference</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["philosophy.html", "Motivation & design"];</script>
+<script>window.DOCS_NEXT = ["concepts.html", "Core concepts"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

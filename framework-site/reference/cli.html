@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Command-line interface — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › CLI</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Command-line interface</h1>
+          <p>Entry points: <code>arclm</code> and <code>python -m arclm</code>.</p>
+
+          <h2 id="commands">Commands (verified via <code>arclm --help</code>)</h2>
+          <table>
+            <tr><th>Command</th><th>Purpose</th><th>Torch?</th></tr>
+            <tr><td><code>version</code></td><td>Print version</td><td>no</td></tr>
+            <tr><td><code>info</code></td><td>Safe runtime info</td><td>no</td></tr>
+            <tr><td><code>doctor</code></td><td>Diagnostics (no downloads)</td><td>no</td></tr>
+            <tr><td><code>config validate|show|migrate</code></td><td>Typed config tools</td><td>no</td></tr>
+            <tr><td><code>data validate|analyze|split|…</code></td><td>Dataset tools</td><td>no</td></tr>
+            <tr><td><code>runs</code></td><td>Inspect local runs</td><td>no</td></tr>
+            <tr><td><code>cache</code></td><td>Inspect/clear caches</td><td>no</td></tr>
+            <tr><td><code>security status|audit</code></td><td>Security inventory</td><td>no*</td></tr>
+            <tr><td><code>train</code></td><td>Train / fine-tune</td><td>yes</td></tr>
+            <tr><td><code>eval</code></td><td>Evaluate checkpoint</td><td>yes</td></tr>
+            <tr><td><code>generate</code></td><td>Generate text</td><td>yes</td></tr>
+            <tr><td><code>chat</code></td><td>Interactive chat</td><td>yes</td></tr>
+            <tr><td><code>run</code></td><td>Config-driven workflow</td><td>typically</td></tr>
+            <tr><td><code>web-api</code></td><td>FastAPI Studio</td><td>web extra</td></tr>
+          </table>
+          <p class="small">*Some security crypto paths need <code>cryptography</code>.</p>
+
+          <h2 id="examples">Examples</h2>
+          <pre><code>arclm --version
+arclm doctor
+arclm doctor --json
+arclm security status --json
+
+arclm train --config config.yaml --data data.txt --output models/model.pth
+arclm train --embed-dim 64 --num-blocks 2 --data data.txt --epochs 5 --device cpu
+arclm eval --model models/model.pth --data test.txt --output metrics.json
+arclm generate --model models/model.pth --prompt "hello" --length 50 --temperature 0.8
+arclm chat --model Qwen/Qwen2.5-0.5B-Instruct --device cpu --system-prompt "Be concise."
+python -m arclm web-api --host 127.0.0.1 --port 8765</code></pre>
+
+          <h2 id="errors">Missing torch</h2>
+          <p>Train/eval/generate/chat print a clear hint: <code>pip install "arclm[train]"</code>.</p>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["modules/inspection.html", "arclm.inspection"];</script>
+<script>window.DOCS_NEXT = ["errors.html", "Errors"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

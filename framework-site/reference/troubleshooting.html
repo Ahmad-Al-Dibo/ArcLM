@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Troubleshooting — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Troubleshooting</div>
+    <article id="doc-content">
+      <h1>Troubleshooting</h1>
+
+      <h2 id="torch">OptionalDependencyError: torch</h2>
+      <p>You imported a training/model package without torch.</p>
+      <pre><code>pip install "arclm[train]"
+# or CPU wheel first:
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "arclm[train]"</code></pre>
+
+      <h2 id="cuda">device="cuda" but no GPU</h2>
+      <p>ArcLM fails loudly. Check <code>arclm doctor</code>. Install a CUDA torch build matching your drivers, or use <code>device="cpu"</code>.</p>
+
+      <h2 id="unk">Too many &lt;UNK&gt; tokens</h2>
+      <p>Tokenizer vocab is too small or built on the wrong corpus. Rebuild on representative text; consider SentencePiece.</p>
+
+      <h2 id="block">Sequence longer than block_size</h2>
+      <p>Native ArcLM forward rejects T &gt; block_size. Slice tokens or increase <code>block_size</code> (and retrain).</p>
+
+      <h2 id="hf">HF model fails to load</h2>
+      <ul>
+        <li>Missing transformers → <code>pip install "arclm[hf]"</code></li>
+        <li>Network / Hub outage</li>
+        <li>Gated model → set HF token in the environment (never hard-code)</li>
+        <li>Architecture not supported by ArcLM’s HF path — try another model</li>
+      </ul>
+
+      <h2 id="checkpoint">Checkpoint incompatible</h2>
+      <p>
+        As of 2.0, checkpoints with a missing/empty config are never treated as
+        compatible for resume/fine-tune. Re-save with ArcLM trainer APIs.
+      </p>
+
+      <h2 id="dedupe">deduplicate return value confusing</h2>
+      <p>Use <code>deduplicate(records, return_result=True)</code> and read <code>.dataset</code>, <code>.kept</code>, <code>.removed</code>.</p>
+
+      <h2 id="search-name">arclm.search is not text search</h2>
+      <p>It is hyperparameter search. For document search, use your own index or an external library.</p>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["errors.html", "Errors"];</script>
+<script>window.DOCS_NEXT = ["examples-index.html", "Examples"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

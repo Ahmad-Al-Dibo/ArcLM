@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.logics — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.logics</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>arclm.logics <span class="badge core">core</span></h1>
+          <p>
+            Educational propositional logic: symbols, connectives, model checking,
+            and knowledge bases.
+            <strong>When to use:</strong> teaching logic, small formal demos.
+            <strong>When not:</strong> production theorem proving.
+          </p>
+
+          <h2 id="api">Main types</h2>
+          <ul>
+            <li><code>Symbol</code> — propositional variable</li>
+            <li><code>Sentence</code> — formula AST</li>
+            <li><code>Not</code>, <code>And</code>, <code>Or</code>, <code>Implication</code>, <code>Biconditional</code></li>
+            <li><code>model_check</code> — brute-force entailment helper</li>
+            <li><code>KnowledgeBase</code>, <code>EntailmentResult</code></li>
+            <li><code>create_symbols</code></li>
+          </ul>
+
+          <h2 id="example">Example</h2>
+          <pre><code>from arclm.logics import Symbol, Not, And, Or, Implication, model_check
+
+p = Symbol("P")
+q = Symbol("Q")
+# Build formulas with operators; use model_check for entailment demos.
+# Full API: arclm/logics/*.py</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="exceptions.html">arclm.exceptions</a> — logic-related errors</li>
+            <li><a href="../index.html">Docs home</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["search-hp.html", "arclm.search"];</script>
+<script>window.DOCS_NEXT = ["exceptions.html", "arclm.exceptions"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

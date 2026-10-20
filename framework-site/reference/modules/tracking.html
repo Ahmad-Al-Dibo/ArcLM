@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.tracking — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.tracking</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.tracking <span class="badge core">core</span></h1>
+          <p>
+            Local experiment tracking: run manifests, metrics JSONL, environment
+            snapshots, and reproducibility seeds. No cloud required.
+            <strong>When to use:</strong> any training or search run you want to
+            list, reload, or compare later.
+          </p>
+
+          <h2 id="seed">set_reproducible_seed(seed, *, deterministic=False)</h2>
+          <div class="api">
+            <span class="sig">set_reproducible_seed(seed: int, *, deterministic: bool = False) -&gt; dict</span>
+            <div class="field"><span class="label">Purpose</span> Seed Python, NumPy (if present), and torch (if present).</div>
+            <div class="field"><span class="label">Returns</span> Dict with <code>python_seeded</code>, <code>numpy_seeded</code>, <code>torch_cpu_seeded</code>, <code>torch_cuda_seeded</code>, …</div>
+            <div class="field"><span class="label">Note</span> Without torch, torch flags are False; Python seeding still runs.</div>
+          </div>
+          <pre><code># Works on core install
+from arclm.tracking import set_reproducible_seed
+report = set_reproducible_seed(42)
+print(report["python_seeded"], report["torch_cpu_seeded"])
+# True False   (without torch)
+
+# With torch installed
+report = set_reproducible_seed(42, deterministic=False)
+print(report["torch_cpu_seeded"])  # True</code></pre>
+
+          <h2 id="create_run">create_run(config: RunConfig)</h2>
+          <div class="api">
+            <span class="sig">create_run(config: RunConfig) -&gt; RunTracker</span>
+            <div class="field"><span class="label">Purpose</span> Create a run directory under the storage root and return a tracker.</div>
+            <div class="field"><span class="label">Params</span> <code>RunConfig(name, operation, training_method, storage=RunStorageConfig(...), …)</code></div>
+          </div>
+          <pre><code>from arclm.tracking import (
+    create_run, RunConfig, RunOperation, RunStorageConfig,
+    load_run_manifest, list_runs, validate_run, compare_runs,
+    RunStatus,
+)
+from pathlib import Path
+
+tracker = create_run(RunConfig(
+    name="demo",
+    operation=RunOperation.TRAINING,
+    storage=RunStorageConfig(root_directory=Path("runs-demo"), fsync=False),
+))
+tracker.start()
+tracker.record_metric(metrics={"loss": 2.0}, step=1)
+tracker.record_metric(metrics={"loss": 1.0}, step=2)
+tracker.complete({"final_loss": 1.0})
+tracker.close()
+
+manifest = load_run_manifest(tracker.run_dir)
+print(manifest.status)  # completed
+
+runs = list_runs("runs-demo", status=RunStatus.COMPLETED)
+print(len(runs), runs[0].run_id)
+
+info = validate_run(tracker.run_dir)
+print(info.metric_count)
+
+cmp = compare_runs([tracker.run_dir], metric_name="loss")
+print(cmp.metric_summary)</code></pre>
+          <div class="note">
+            <code>record_dataset(..., private_path=...)</code> redacts path-like keys
+            in the public manifest (values become <code>&lt;path omitted&gt;</code>).
+          </div>
+
+          <h2 id="events">Events and environment</h2>
+          <pre><code>tracker.record_event("checkpoint_saved", {"step": 10})
+# Environment snapshot is included in manifests (torch optional)</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="search-hp.html">arclm.search</a> — hyperparameter search built on tracking</li>
+            <li><a href="training.html">arclm.training</a> — training callbacks can log runs</li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["agents.html", "arclm.agents"];</script>
+<script>window.DOCS_NEXT = ["search-hp.html", "arclm.search"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

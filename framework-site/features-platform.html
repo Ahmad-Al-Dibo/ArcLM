@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Platform &amp; tooling — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Platform &amp; tooling</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Platform and tooling</h1>
+
+          <h2 id="cli">Command-line interface</h2>
+          <p>
+            Entry points: <code>arclm</code> and <code>python -m arclm</code>.
+            Commands that do not need torch: <code>version</code>, <code>info</code>,
+            <code>doctor</code>, <code>config</code>, <code>data</code>,
+            <code>runs</code>, <code>cache</code>, <code>security</code>.
+            Torch-backed: <code>train</code>, <code>eval</code>, <code>generate</code>,
+            <code>chat</code>, typically <code>run</code>.
+            Web: <code>web-api</code> (extra).
+          </p>
+          <pre><code>arclm doctor
+arclm train --data data.txt --device cpu
+arclm generate --model models/m.pth --prompt "hello"
+python -m arclm web-api</code></pre>
+
+          <h2 id="tracking">Experiment tracking</h2>
+          <pre><code>from arclm.tracking import create_run, set_reproducible_seed, list_runs
+set_reproducible_seed(42)
+# create_run(...); tracker.record_metric(...); list_runs("runs")</code></pre>
+          <p>
+            Local manifests + JSONL metrics. Private paths redacted. Compare runs
+            with <code>compare_runs</code>.
+          </p>
+
+          <h2 id="hpo">Hyperparameter search</h2>
+          <p>
+            <code>arclm.search</code> is <strong>hyperparameter</strong> search
+            (grid/random), not document/BM25 search. Built on tracking.
+          </p>
+
+          <h2 id="blocks">ArcLM Blocks</h2>
+          <p>
+            Trimmed editions generated from one source: core, training, finetuning,
+            loading-inference, evaluation, agents-tools, security.
+            Install from git subdirectory or local build.
+          </p>
+          <pre><code>python tools/build_arclm_distributions.py build-all
+python tools/build_arclm_distributions.py check-drift
+pip install "git+https://github.com/Ahmad-Al-Dibo/ArcLM.git#subdirectory=distributions/core"</code></pre>
+
+          <h2 id="studio">Web Studio</h2>
+          <p>
+            FastAPI backend (<code>arclm.web</code>) + Next.js frontend
+            (<code>web/</code>). Local workspace JSON. Training endpoints need torch.
+          </p>
+
+          <h2 id="examples-lab">Examples suite and Lab</h2>
+          <ul>
+            <li><code>examples/</code> — numbered folders 00–12; <code>run_examples.py run-verified</code> (CPU, no network).</li>
+            <li><code>lab/</code> — 32 progressive challenges (beginner → expert) via <code>python -m lab.runner</code>.</li>
+          </ul>
+
+          <h2 id="releases">Releases</h2>
+          <p>
+            Version in <code>src/arclm/_version.py</code>. PyPI: <code>arclm</code>.
+            CI: light matrix (no torch) + torch unit jobs on Python 3.9–3.14.
+            Publishing: trusted publishing workflow or twine.
+          </p>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="examples.html">Examples</a></li>
+            <li><a href="reference/cli.html">CLI reference</a></li>
+            <li><a href="../docs/distributions.md">Blocks architecture</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["features-agents.html", "Agents & security"];</script>
+<script>window.DOCS_NEXT = ["examples.html", "Examples"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

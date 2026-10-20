@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ArcLM — عرض تفاعلي بالخطوات</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #121a2f;
+    --ink: #e8eefc;
+    --muted: #9db0d0;
+    --accent: #5b9dff;
+    --accent2: #3dd6c3;
+    --warn: #ffb454;
+    --danger: #ff6b7a;
+    --ok: #3ecf8e;
+    --line: rgba(255,255,255,0.08);
+    --shadow: 0 20px 60px rgba(0,0,0,0.35);
+    --radius: 18px;
+    --font: "Segoe UI", "Tahoma", "Noto Naskh Arabic", system-ui, sans-serif;
+    --mono: "Cascadia Code", "Fira Code", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: radial-gradient(1200px 800px at 90% -10%, #1a2750 0%, var(--bg) 55%);
+    color: var(--ink);
+    overflow: hidden;
+    line-height: 1.7;
+  }
+  .deck { height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+  header.bar, footer.bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 28px; color: var(--muted); font-size: 14px;
+    background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
+  }
+  header .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
+  header .brand span.logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: inline-grid; place-items: center; color: #06101f; font-weight: 800; font-size: 13px;
+  }
+  .step-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #06101f; font-weight: 800; border-radius: 999px;
+    padding: 4px 14px; font-size: 13px; margin-bottom: 14px; display: inline-block;
+  }
+  .stage { position: relative; overflow: hidden; }
+  .slide {
+    position: absolute; inset: 0;
+    padding: 28px 56px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    animation: fade .35s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: none; } }
+  h1 { font-size: clamp(32px, 4.5vw, 56px); line-height: 1.25; }
+  h2 { font-size: clamp(24px, 3vw, 38px); margin-bottom: 14px; line-height: 1.3; }
+  h3 { color: var(--accent2); margin: 12px 0 8px; font-size: 16px; font-weight: 700; }
+  p.lead { font-size: clamp(17px, 1.8vw, 22px); color: var(--muted); max-width: 60ch; margin-top: 12px; }
+  ul.clean { list-style: none; display: grid; gap: 10px; margin-top: 10px; max-width: 72ch; }
+  ul.clean li { display: flex; gap: 10px; align-items: flex-start; font-size: 17px; color: var(--ink); }
+  ul.clean li::before { content: "◂"; color: var(--accent); flex-shrink: 0; margin-top: 3px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .card h4 { color: var(--accent); margin-bottom: 8px; font-size: 15px; }
+  .card p, .card li { color: var(--muted); font-size: 14px; }
+  .card ul { list-style: none; display: grid; gap: 5px; }
+  pre.code {
+    background: #0a0f1c; border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono);
+    font-size: 14px; line-height: 1.55; color: #cfe0ff;
+    direction: ltr; text-align: left; unicode-bidi: embed;
+  }
+  pre.code .c { color: #6f84ad; }
+  pre.code .g { color: var(--accent2); }
+  pre.code .y { color: var(--warn); }
+  pre.code .r { color: var(--danger); }
+  .out {
+    background: #0d1528; border: 1px dashed rgba(62,207,142,0.35);
+    border-radius: 12px; padding: 14px 16px; font-family: var(--mono);
+    font-size: 13.5px; color: #b8f5d8; direction: ltr; text-align: left;
+  }
+  .out-label { color: var(--ok); font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .try {
+    margin-top: 14px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(91,157,255,0.1); border: 1px solid rgba(91,157,255,0.25);
+    font-size: 15px; color: var(--ink);
+  }
+  .try strong { color: var(--accent); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    background: rgba(91,157,255,0.12); color: var(--accent); border: 1px solid rgba(91,157,255,0.25);
+  }
+  .badge.ok { background: rgba(62,207,142,0.12); color: var(--ok); border-color: rgba(62,207,142,0.3); }
+  .badge.warn { background: rgba(255,180,84,0.12); color: var(--warn); border-color: rgba(255,180,84,0.3); }
+  .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
+  .kpi .n { font-size: 36px; font-weight: 800; color: var(--accent2); }
+  .kpi .l { color: var(--muted); font-size: 13px; }
+  .timeline { display: grid; gap: 12px; margin-top: 12px; }
+  .timeline .row { display: grid; grid-template-columns: 130px 1fr; gap: 14px; }
+  .timeline .t { color: var(--accent); font-weight: 700; font-size: 14px; }
+  .timeline .d { color: var(--muted); font-size: 15px; }
+  .timeline .d strong { color: var(--ink); }
+  .footer-note { margin-top: 16px; color: var(--muted); font-size: 13px; }
+  .progress { position: fixed; right: 0; top: 0; height: 3px; z-index: 50; background: linear-gradient(270deg, var(--accent), var(--accent2)); transition: width .25s ease; }
+  .kbd { font-family: var(--mono); font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; color: var(--ink); direction: ltr; display: inline-block; }
+  .center { text-align: center; align-items: center; }
+  .center p.lead { text-align: center; margin-inline: auto; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; color: var(--muted); font-size: 14px; background: rgba(255,255,255,0.03); }
+  .pill strong { color: var(--ink); }
+  .split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; margin-top: 12px; align-items: start; }
+  .small { font-size: 13px; color: var(--muted); }
+  .ok { color: var(--ok); font-weight: 700; }
+  .bad { color: var(--danger); font-weight: 700; }
+  button.nav {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 10px; padding: 8px 14px; cursor: pointer; font-size: 14px;
+  }
+  button.nav:hover { background: rgba(255,255,255,0.1); }
+  @media print {
+    .slide { display: flex !important; page-break-after: always; position: relative; min-height: 90vh; }
+    header.bar, footer.bar, .progress { display: none; }
+    body { overflow: auto; background: #fff; color: #111; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck">
+  <header class="bar">
+    <div class="brand"><span class="logo">A</span> ArcLM 2.0 — عرض بالخطوات</div>
+    <div id="slideMeta"></div>
+    <div>
+      <button class="nav" id="btnPrev">→</button>
+      <button class="nav" id="btnNext">←</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 Title -->
+    <section class="slide active center">
+      <div class="badge">عرض تقني · 25 دقيقة · تفاعلي</div>
+      <h1 style="margin-top:16px">ArcLM</h1>
+      <p class="lead">
+        مكتبة Python مدمجة لتعلّم وبناء نماذج لغوية —
+        تثبيت خفيف أولاً، ثم PyTorch فقط عندما تحتاج للتدريب أو تشغيل نموذج حقيقي.
+      </p>
+      <div class="pill-row">
+        <div class="pill"><strong>Python</strong> 3.9 – 3.14</div>
+        <div class="pill"><strong>PyPI</strong> arclm 2.0.0</div>
+        <div class="pill"><strong>النواة</strong> ~50 MB</div>
+        <div class="pill"><strong>Licence</strong> Apache-2.0</div>
+      </div>
+      <p class="footer-note">نمشي <strong>خطوة بخطوة</strong>: تثبيت ← تجربة ← ثم القدرات.<br/>
+      <span class="kbd">←</span> التالي · <span class="kbd">→</span> السابق · <span class="kbd">F</span> ملء الشاشة</p>
+    </section>
+
+    <!-- 2 Agenda steps -->
+    <section class="slide">
+      <div class="step-badge">الخطة</div>
+      <h2>خطة العرض — خطوات عملية</h2>
+      <div class="timeline">
+        <div class="row"><div class="t">1. مقدمة</div><div class="d">ما هي ArcLM ولماذا صُمّمت · لمن؟</div></div>
+        <div class="row"><div class="t">2. تثبيت النواة</div><div class="d"><code>pip install arclm</code> ← تجربة فورية (بدون GPU)</div></div>
+        <div class="row"><div class="t">3. داخل النواة</div><div class="d">الحزم · التحميل الكسول · ما داخل كل حزمة</div></div>
+        <div class="row"><div class="t">4. تدريب CPU</div><div class="d"><code>arclm[train]</code> ← نموذج صغير + خطوة تدريب</div></div>
+        <div class="row"><div class="t">5. تدريب GPU</div><div class="d">CUDA wheel ← <code>device="cuda"</code> ← <code>doctor</code></div></div>
+        <div class="row"><div class="t">6. 8 تجارب</div><div class="d">tokenizer · data · أمان · model · HF · agent · SP · eval</div></div>
+        <div class="row"><div class="t">7. أعمق</div><div class="d">SFT · مقارنة · معمارية · حدود · أسئلة</div></div>
+      </div>
+      <p class="footer-note">كل خطوة لها أمر نسخ + مخرجات حقيقية مُختبرة.</p>
+    </section>
+
+    <!-- 3 Intro -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 1 · مقدمة</div>
+      <h2>ما المشكلة التي تحلّها ArcLM؟</h2>
+      <div class="grid2">
+        <div>
+          <ul class="clean">
+            <li>التثبيت «لتجربة API» يسحب مئات الميغابايت</li>
+            <li>التوثيق يفترض GPU + تنزيلات ضخمة من اليوم الأول</li>
+            <li>صعب قراءة كيف تتناغم البيانات ← الرموز ← النموذج ← التقييم</li>
+            <li>الأكواد التعليمية و prod يعيشان في عالمين منفصلين</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>ما نريده</h4>
+          <ul>
+            <li>تثبيت في ثوانٍ على لابتوب</li>
+            <li>نتيجة مفيدة قبل أي تدريب</li>
+            <li>PyTorch اختياري وليس إلزامياً</li>
+            <li>الكود صغير بما يكفي للدراسة</li>
+            <li>نفس الحزمة للتعليم وبناء التطبيقات</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who for Arabic -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 1 · لمن؟</div>
+      <h2>لمن هذه المكتبة؟</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>التعليم</h4>
+          <p>صفوف بلا GPU وبحدود إنترنت.</p>
+          <ul>
+            <li>أمثلة تعمل على CPU بدون تنزيل</li>
+            <li>مختبر Lab: 32 تحدياً</li>
+            <li>النموذج الأصلي صغير ومقروء</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>مطوّرو التطبيقات</h4>
+          <p>ميزات LLM بدون بناء stack تدريب.</p>
+          <ul>
+            <li>تحميل نماذج HF بواجهة واحدة</li>
+            <li>وكلاء بدون torch</li>
+            <li>أدوات أمان للسجلات</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>الباحثون / فرق MENA</h4>
+          <p>ادمج مكتبة خفيفة؛ درّب عند الحاجة فقط.</p>
+          <ul>
+            <li>Blocks لتثبيت مصغّر</li>
+            <li>بذور قابلة للتكرار + tracking</li>
+            <li>حدود صريحة للنموذج الأصلي</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Install core -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 2 · التثبيت</div>
+      <h2>أولاً: تثبيت النواة الخفيفة</h2>
+      <p class="lead">بدون PyTorch — حوالي 50 MB فقط (numpy + sentencepiece).</p>
+      <div class="split">
+        <pre class="code"><span class="c"># انسخ والصق في الطرفية</span>
+python -m venv .venv
+<span class="c"># Windows:</span>
+.venv\Scripts\activate
+<span class="c"># Linux/macOS:</span>
+source .venv/bin/activate
+
+pip install arclm
+
+python -c <span class="y">"import arclm; print(arclm.get_version())"</span></pre>
+        <div>
+          <div class="out-label">المخرجات المتوقعة</div>
+          <div class="out">2.0.0</div>
+          <div class="try"><strong>جرّب الآن:</strong> افتح طرفية جديدة ونفّذ الأوامر أعلاه.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 Core try: tokenizer -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 2 · تجربة النواة</div>
+      <h2>جرّب: Tokenizer + Config (بدون GPU)</h2>
+      <div class="split">
+        <pre class="code"><span class="g">from arclm.tokenizers import Tokenizer</span>
+<span class="g">from arclm.configs import Config</span>
+
+text = "arc lm trains tiny models on local text"
+tok = Tokenizer(max_vocab=64)
+tok.build(text)
+
+print(tok.encode_text("arc lm trains"))
+print(tok.get_vocab_size())
+print(tok.decode([2, 3, 4]))
+
+cfg = Config(embed_dim=32, block_size=16, device="cpu")
+print(cfg.embed_dim, cfg.block_size, cfg.device)</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية (مُختبرة)</div>
+          <div class="out">[2, 3, 4]
+11
+['arc', 'lm', 'trains']
+32 16 cpu</div>
+          <p class="small" style="margin-top:10px">لا يوجد تحويل تلقائي لحالة الأحرف — <code>Arc</code> ≠ <code>arc</code>.</p>
+        </div>
+      </div>
+      <div class="try"><strong>انتبه:</strong> هذه النواة تعمل على أي جهاز بدون GPU.</div>
+    </section>
+
+    <!-- 6 Install train CPU -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 3 · تدريب CPU</div>
+      <h2>ثانياً: تثبيت مسار التدريب (CPU)</h2>
+      <p class="lead">يضيف PyTorch — مطلوب للنماذج الأصلية والتدريب والتقييم.</p>
+      <div class="split">
+        <pre class="code"><span class="c"># للحصول على حجم أصغر على CPU فقط:</span>
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+pip install <span class="y">"arclm[train]"</span>
+
+<span class="c"># تحقق</span>
+arclm doctor</pre>
+        <div>
+          <div class="out-label">doctor يطبع (بدون مشاكل)</div>
+          <div class="out">ArcLM version: 2.0.0
+Python version: 3.12.10
+PyTorch version: 2.14.1+cpu
+CUDA available: False
+Current device: cpu</div>
+          <div class="try"><strong>جرّب:</strong> <code>arclm doctor</code> — يعمل حتى بدون torch للتشخيص.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 Native model try -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 3 · تجربة نموذج أصلي</div>
+      <h2>أنشئ نموذجاً صغيراً وشغّل forward</h2>
+      <div class="split">
+        <pre class="code"><span class="g">import torch</span>
+<span class="g">from arclm.models import ArcLM</span>
+
+model = ArcLM(
+    vocab_size=11, embed_dim=16,
+    block_size=8, num_blocks=1,
+)
+ids = torch.tensor([[2, 3, 4]])
+logits = model(ids)
+
+print(tuple(logits.shape))
+print(model.get_num_parameters())</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية</div>
+          <div class="out">(1, 3, 11)
+3531</div>
+          <p class="small" style="margin-top:10px">
+            الشكل: (دفعة، طول التسلسل، حجم المفردات).<br/>
+            <span class="bad">هذا نموذج تعليمي</span> — لا يكتب نصاً مفيداً.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 Training smoke -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 3 · تدريب مصغّر</div>
+      <h2>خطوة تدريب واحدة (CPU — ثوانٍ)</h2>
+      <div class="split">
+        <pre class="code"><span class="c"># مثال محفوظ في المستودع:</span>
+<span class="c"># examples/04_training/01_...</span>
+
+initial_loss:     3.07
+after_one_step:   2.68
+tokens:           25
+
+<span class="c"># أو بنفسك:</span>
+<span class="g">from arclm.training import train_model</span>
+<span class="g">from arclm.configs import create_config</span>
+config = create_config(device="cpu", num_epochs=1)
+train_model(mode="pre_training",
+            data="data.txt",
+            output="m.pth",
+            config=config)</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية</div>
+          <div class="out">initial_loss: 3.07
+after_one_step: 2.68
+tokens: 25</div>
+          <p class="small" style="margin-top:10px">الخسارة نزلت في خطوة واحدة — هذا اختبار دخان ليس تجربة بحث كاملة.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 GPU install -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 4 · GPU</div>
+      <h2>ثالثاً: التدريب على GPU (إن وُجد)</h2>
+      <div class="split">
+        <pre class="code"><span class="c"># 1) ثبّت CUDA torch أولاً</span>
+pip install torch --index-url https://download.pytorch.org/whl/cu124
+pip install <span class="y">"arclm[train]"</span>
+
+<span class="c"># 2) تحقق أن ArcLM يرى البطاقة</span>
+arclm doctor
+
+<span class="c"># 3) استخدم cuda في الكود أو CLI</span>
+<span class="g">from arclm.configs import create_config</span>
+config = create_config(device=<span class="y">"cuda"</span>)  <span class="c"># أو "auto"</span>
+
+arclm train --data data.txt --device cuda</pre>
+        <div>
+          <div class="out-label">doctor عند توفر GPU</div>
+          <div class="out">CUDA available: True
+CUDA version: 12.4
+GPU count: 1
+GPU name: NVIDIA ...
+Current device: cuda:0</div>
+          <div class="card" style="margin-top:12px">
+            <h4>ملاحظات مهمة</h4>
+            <ul>
+              <li><code>auto</code> ← CUDA إن وُجد وإلا CPU</li>
+              <li><code>cuda</code> ← فشل صريح إذا لا GPU</li>
+              <li>دقّة: fp32 / fp16 / bf16</li>
+              <li>Multi-GDP: تجريبي — لا تبالغ</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="try"><strong>بدون GPU؟</strong> كل ما عرضناه يعمل على CPU — GPU تسريع وليس شرطاً.</div>
+    </section>
+
+    <!-- Inside core Arabic 1: map -->
+    <section class="slide">
+      <div class="step-badge">داخل النواة</div>
+      <h2>خريطة حزم النواة (بدون PyTorch)</h2>
+      <div class="split">
+        <pre class="code">arclm/
+├── <span class="g">configs/</span>       <span class="c"># إعدادات YAML/JSON</span>
+├── <span class="g">datasets/</span>      <span class="c"># تحميل وتحقق وتنظيف</span>
+│   ├── cleaning/
+│   ├── deduplication/
+│   └── streaming/
+├── <span class="g">tokenizers/</span>    <span class="c"># كلمة + SentencePiece</span>
+├── <span class="g">security/</span>      <span class="c"># تشفير وإخفاء وتوقيع</span>
+├── <span class="g">agents/</span>        <span class="c"># أدوات ووكلاء</span>
+├── <span class="g">tracking/</span>      <span class="c"># سجلات التجارب</span>
+├── <span class="g">search/</span>        <span class="c"># بحث معاملات</span>
+├── <span class="g">logics/</span>        <span class="c"># منطق جملي</span>
+├── <span class="g">exceptions/</span>    <span class="c"># شجرة الأخطاء</span>
+└── <span class="g">utils/</span>         <span class="c"># مساعدات صغيرة</span></pre>
+        <div>
+          <h3>كلها تعمل بدون torch</h3>
+          <ul class="clean">
+            <li>Python 3.9 – 3.14</li>
+            <li>CI يمنع <code>import torch</code> داخل هذه الحزم</li>
+            <li>مفيدة وحدها: بيانات · وكلاء · أمان</li>
+          </ul>
+          <h3 style="margin-top:18px">عند إضافة <code>[train]</code></h3>
+          <ul class="clean">
+            <li><code>models</code> · <code>training</code> · <code>inference</code></li>
+            <li><code>evaluation</code> · <code>checkpoints</code> · <code>peft</code></li>
+            <li><code>finetuning</code> · <code>inspection</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inside core Arabic 2: details -->
+    <section class="slide">
+      <div class="step-badge">داخل النواة</div>
+      <h2>ما داخل كل حزمة أساسية؟</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>configs + tokenizers</h4>
+          <ul>
+            <li><code>Config</code> كائن Python عادي</li>
+            <li>حفظ/تحميل YAML و JSON</li>
+            <li>Tokenizer على مستوى الكلمة</li>
+            <li>SentencePiece BPE</li>
+            <li>مصنع + تسجيل أنواع مخصصة</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>datasets</h4>
+          <ul>
+            <li><code>load_dataset</code> — قائمة/JSONL/CSV</li>
+            <li><code>validate_records</code> — حقول مطلوبة</li>
+            <li><code>deduplicate</code> — إزالة التكرار</li>
+            <li><code>DataPipeline</code> — خطوات تنظيف</li>
+            <li>Streaming للملفات الكبيرة</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>agents + security + tracking</h4>
+          <ul>
+            <li><code>@tool</code> → schema تلقائي</li>
+            <li>حلقة محدودة + صلاحيات</li>
+            <li>تشفير AEAD · توقيع · إخفاء</li>
+            <li>سجلات تشغيل محلية</li>
+            <li>تجربة قابلة للتكرار (seeds)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="try"><strong>مبدأ التصميم:</strong> كل حزمة مقروءة بمفردها — لا حالة عامة مخفية.</div>
+    </section>
+
+    <!-- Inside core Arabic 3: lazy -->
+    <section class="slide">
+      <div class="step-badge">داخل النواة</div>
+      <h2>كيف تبقى النواة خفيفة؟ — التحميل الكسول</h2>
+      <div class="split">
+        <pre class="code"><span class="g">import arclm</span>
+<span class="g">import sys</span>
+print(arclm.get_version())
+print(<span class="y">"torch"</span> in sys.modules)  <span class="c"># False</span>
+
+<span class="g">from arclm.tokenizers import Tokenizer</span>
+<span class="c"># لا يزال torch غير محمّل</span>
+
+<span class="g">from arclm.models import ArcLM</span>
+<span class="c"># هنا فقط يُحمَّل torch</span></pre>
+        <div>
+          <ul class="clean">
+            <li>الجذر يستخدم خريطة تصدير <strong> كسولة</strong></li>
+            <li><code>import arclm</code> لا يجلب torch</li>
+            <li>كل وحدة تُحمَّل عند أول استخدام</li>
+            <li>رسالة خطأ واضحة: <code>pip install "arclm[train]"</code></li>
+          </ul>
+          <div class="try" style="margin-top:16px"><strong>النتيجة:</strong> تثبيت ~50 MB مع سطح API واسع.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 Data -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 5 · البيانات</div>
+      <h2>تجربة: تحميل + إزالة التكرار</h2>
+      <div class="split">
+        <pre class="code"><span class="g">from arclm.datasets import load_dataset, deduplicate</span>
+
+recs = load_dataset([
+  {"text": "Hello world"},
+  {"text": "Hello world"},
+  {"text": "ArcLM is light"},
+])
+out = deduplicate(recs, return_result=True)
+print("kept", out.kept, "removed", out.removed)</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية</div>
+          <div class="out">kept 2 removed 1</div>
+          <p class="small" style="margin-top:10px">بدون GPU — جزء من النواة.</p>
+          <div class="try"><strong>قبل التدريب:</strong> نظّف البيانات أولاً — التكرار يهدر الحساب ويضلّل المقاييس.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 Security -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 5 · الأمان</div>
+      <h2>تجربة: إخفاء الأسرار قبل السجلات</h2>
+      <div class="split">
+        <pre class="code"><span class="g">from arclm.security import redact_sensitive_text</span>
+
+print(redact_sensitive_text(
+  "use api_key=sk-test-1234567890 now"
+))</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية</div>
+          <div class="out">use api_key=[REDACTED] now</div>
+          <p class="small" style="margin-top:10px">يوجد أيضاً: تشفير / فك تشفير · توقيع · <code>security_status()</code>.</p>
+        </div>
+      </div>
+      <div class="try"><strong>قاعدة عملية:</strong> أي سجل يمرّ على <code>redact_sensitive_text</code> قبل الكتابة.</div>
+    </section>
+
+    <!-- 12 HF load -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 5 · نموذج HF</div>
+      <h2>تجربة: تحميل نموذج Hugging Face حقيقي</h2>
+      <div class="split">
+        <pre class="code"><span class="c"># pip install "arclm[hf]"</span>
+<span class="g">from arclm.inference import load_any_model</span>
+
+model = load_any_model(
+  "sshleifer/tiny-gpt2",
+  device="cpu",
+  trust_remote_code=False,
+)
+print(model.predict("Hello", max_new_tokens=5))</pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية (CPU)</div>
+          <div class="out">load:  ~39s  (أول مرة — تنزيل)
+gen:   ~1.2s
+'Prob trilogyohoJD ...'</div>
+          <p class="small" style="margin-top:10px">
+            <span class="ok">نجاح الـ API</span> — النص عشوائي لأن tiny-gpt2 أوزان اختبار فقط.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 Agent -->
+    <section class="slide">
+      <div class="step-badge">الخطوة 5 · الوكلاء</div>
+      <h2>تجربة: أداة مكتوبة بنوعيات (Agent)</h2>
+      <div class="split">
+        <pre class="code"><span class="c"># pip install arclm  (بدون GPU!)</span>
+<span class="g">from arclm.agents import tool</span>
+
+@tool(category="utilities")
+def add_numbers(left: float, right: float) -> float:
+    """Add two numbers."""
+    return left + right
+
+<span class="c"># examples/10_agents_tools/01_...</span></pre>
+        <div>
+          <div class="out-label">المخرجات الفعلية</div>
+          <div class="out">{
+  "tool_calls": ["add_numbers"],
+  "output": "Done. The tool result
+             was processed safely."
+}</div>
+          <p class="small" style="margin-top:10px">الأدوات = دوال Python مع type hints → schema تلقائي.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SP + validate -->
+    <section class="slide">
+      <div class="step-badge">تجربة إضافية</div>
+      <h2>SentencePiece + التحقق من السجلات</h2>
+      <div class="split">
+        <pre class="code"><span class="g">from arclm.tokenizers import SentencePieceTokenizer</span>
+sp = SentencePieceTokenizer(
+    model_type="bpe", vocab_size=200)
+sp.build("hello world arc lm ...")
+print(sp.encode_text("hello world"))
+
+<span class="g">from arclm.datasets import validate_records</span>
+r = validate_records(
+    [{"text": "ok"}],
+    required_fields=["text"],
+)
+print("valid_count", r.valid_count)</pre>
+        <div>
+          <div class="out-label">لماذا SentencePiece؟</div>
+          <div class="card">
+            <ul>
+              <li>مقاطع فرعية تتعامل مع الأخطاء والصيغ</li>
+              <li>مفردات أصغر · UNK أقل</li>
+              <li>معيار شائع للعمل متعدد اللغات</li>
+            </ul>
+          </div>
+          <div class="out" style="margin-top:10px">valid_count 1</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checkpoints + eval -->
+    <section class="slide">
+      <div class="step-badge">تجربة إضافية</div>
+      <h2>Checkpoints + التقييم</h2>
+      <div class="split">
+        <pre class="code"><span class="g">from arclm.checkpoints import (
+  atomic_save_checkpoint,
+  safe_load_training_checkpoint,
+)</span>
+atomic_save_checkpoint(state, "m.pth")
+ckpt = safe_load_training_checkpoint("m.pth")
+
+<span class="g">from arclm.evaluation import (
+  Evaluator, Accuracy, Perplexity,
+)</span>
+ev = Evaluator(model, metrics=[Accuracy()])
+print(ev.evaluate(loader).metrics)</pre>
+        <div>
+          <div class="card">
+            <h4>ملاحظات تصميم</h4>
+            <ul>
+              <li>مسار تحميل موثوق (لا pickle RCE)</li>
+              <li>config فارغ ⇒ غير متوافق أبداً</li>
+              <li>تصدير JSON + Markdown</li>
+            </ul>
+          </div>
+          <p class="small" style="margin-top:10px">مقاييس نموذج صغير ≠ معيار تنافسي.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="slide">
+      <div class="step-badge">مقارنة صادقة</div>
+      <h2>ArcLM مقابل مكدّسات شائعة</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>مقابل Hugging Face فقط</h4>
+          <ul>
+            <li>HF = مكتبة نماذج + تبعيات ثقيلة</li>
+            <li>ArcLM يحمّل HF ويشرح المسار</li>
+            <li>مكمّل لا بديل</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>مقابل أطر التدريب الكبيرة</h4>
+          <ul>
+            <li>لا stack إنتاج multi-node</li>
+            <li>نموذج صغير عن قصد</li>
+            <li>Trainer مقروء</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>مقابل دفاتر الملاحظات فقط</h4>
+          <ul>
+            <li>حزمة حقيقية + CLI + CI</li>
+            <li>أمان + وكلاء مضمّنين</li>
+            <li>منشور على PyPI</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="slide">
+      <div class="step-badge">المستقبل</div>
+      <h2>مفتوح المصدر + خارطة الطريق</h2>
+      <div class="grid2">
+        <div>
+          <h3>اليوم (2.0.0)</h3>
+          <ul class="clean">
+            <li>نواة خفيفة + torch اختياري</li>
+            <li>HF load · SFT · LoRA</li>
+            <li>وكلاء · أمان · Studio</li>
+            <li>Blocks + Lab + أمثلة</li>
+            <li>CI: Python 3.9–3.14</li>
+          </ul>
+        </div>
+        <div>
+          <h3>الاتجاه</h3>
+          <ul class="clean">
+            <li>مكوّنات RAG / استرجاع</li>
+            <li>أمثلة صديقة للعربية أكثر</li>
+            <li>تثبيت Blocks أوضح من GitHub</li>
+            <li>مساهمات المجتمع</li>
+          </ul>
+          <p class="footer-note">Apache-2.0 · Issues و PRs مرحّب بها.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 Can / Cannot -->
+    <section class="slide">
+      <div class="step-badge">الحدود</div>
+      <h2>ما الذي يقدّمه ArcLM — وما الذي لا يدّعيه</h2>
+      <div class="grid2">
+        <div class="card" style="border-color: rgba(62,207,142,0.35)">
+          <h4 style="color:var(--ok)">✓ يقدّم</h4>
+          <ul>
+            <li>تثبيت خفيف ~50 MB</li>
+            <li>Tokenize / validate / dedupe</li>
+            <li>تحميل نماذج HF وتوليد نص</li>
+            <li>تدريب نماذج أصلية صغيرة</li>
+            <li>Fine-tune (SFT / LoRA)</li>
+            <li>وكلاء بأدوات مكتوبة</li>
+            <li>إخفاء/تشفير/توقيع</li>
+            <li>تقييم وتصدير مقاييس</li>
+            <li>CLI + Studio محلي</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color: rgba(255,107,122,0.35)">
+          <h4 style="color:var(--danger)">✗ لا يدّعي</h4>
+          <ul>
+            <li>منافسة ChatGPT / Claude</li>
+            <li>جودة نثر من النموذج الأصلي الصغير</li>
+            <li>كل نماذج Hub تعمل (اختبر كل نموذج)</li>
+            <li>إنتاج multi-GPU جاهز</li>
+            <li>استبدال Hugging Face كمكتبة نماذج</li>
+            <li>ضمانات جودة للّغة العربية تحديداً</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 Architecture -->
+    <section class="slide">
+      <div class="step-badge">المعمارية</div>
+      <h2>ثلاث مسارات استخدام — نفس الحزمة</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>مسار التعليم (Lab)</h4>
+          <p>أوامر جاهزة للصفوف والتجارب السريعة.</p>
+          <ul>
+            <li><code>train_model</code></li>
+            <li><code>load_dataset</code></li>
+            <li>CLI</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>مسار المطوّر</h4>
+          <p>بناء تطبيقات بكائنات واضحة.</p>
+          <ul>
+            <li><code>Trainer</code> + <code>Config</code></li>
+            <li>Checkpoints · Agents · Web</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>مسار الباحث</h4>
+          <p>افتح الصناديك وغيّر الداخليات.</p>
+          <ul>
+            <li>مكوّنات النموذج الأصلي</li>
+            <li>Tracking · Search · Inspection</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer-note">ليست ثلاث منتجات — بل نفس <code>arclm</code> بعمق مختلف.</p>
+    </section>
+
+    <!-- 16 Ecosystem -->
+    <section class="slide">
+      <div class="step-badge">المنظومة</div>
+      <h2>حول المكتبة</h2>
+      <div class="grid3">
+        <div class="card">
+          <h4>أمثلة مُتحقَّق منها</h4>
+          <p>13 مجلداً مرقّماً · <code>run-verified</code> بدون تنزيلات</p>
+        </div>
+        <div class="card">
+          <h4>مختبر Lab</h4>
+          <p>32 تحدياً: مبتدئ → خبير · ابنِ المعمارية بنفسك</p>
+        </div>
+        <div class="card">
+          <h4>ArcLM Blocks</h4>
+          <p>إصدارات مصغّرة من نفس المصدر للحقن في مشاريع أخرى</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h4>CLI</h4>
+        <p dir="ltr" style="text-align:left"><code>train</code> · <code>eval</code> · <code>generate</code> · <code>chat</code> · <code>doctor</code> · <code>security</code> · <code>config</code> · <code>data</code> · <code>web-api</code></p>
+      </div>
+    </section>
+
+    <!-- 17 Honesty -->
+    <section class="slide">
+      <div class="step-badge">الجودة</div>
+      <h2>كيف نحافظ على صدق الادّعاءات</h2>
+      <ul class="clean">
+        <li><strong>CI خفيف</strong> — torch محجوب عند الاستيراد على Python 3.9–3.14</li>
+        <li><strong>أمثلة مُتحقَّق منها</strong> — CPU محلي بدون شبكة</li>
+        <li><strong>اختبارات نماذج حقيقية موثّقة</strong> — بما فيها «النموذج التجريبي ينتج هراء»</li>
+        <li><strong>الأمان fail-closed</strong> — مفاتيح ناقصة = خطأ صريح</li>
+        <li><strong>النموذج الصغير ≠ LLM تنافسي</strong> — مذكور في كل مسار تعليمي</li>
+      </ul>
+    </section>
+
+    <!-- 18 Q&A -->
+    <section class="slide center">
+      <div class="badge ok">شكراً</div>
+      <h1 style="margin-top:14px;font-size:clamp(28px,4vw,44px)">أسئلة ونقاش</h1>
+      <div class="pill-row">
+        <div class="pill" dir="ltr">pip install arclm</div>
+        <div class="pill" dir="ltr">pypi.org/project/arclm</div>
+        <div class="pill" dir="ltr">github.com/Ahmad-Al-Dibo/ArcLM</div>
+      </div>
+      <p class="lead" style="margin-top:24px">
+        ابدأ خفيفاً. حمّل نموذجاً عندما تحتاج. اقرأ الكود عندما تريد الفهم.
+      </p>
+      <p class="footer-note">مرحباً بأسئلة المعمارية · التعليم · النشر الإقليمي · المساهمات.</p>
+    </section>
+
+  </main>
+
+  <footer class="bar">
+    <div>العربية · عرض تفاعلي بالخطوات</div>
+    <div><span class="kbd">←</span> التالي · <span class="kbd">F</span> ملء الشاشة · <span class="kbd">P</span> طباعة</div>
+    <div id="clock"></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const progress = document.getElementById("progress");
+  const meta = document.getElementById("slideMeta");
+  const clock = document.getElementById("clock");
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + "%";
+    meta.textContent = "شريحة " + (i + 1) + " / " + slides.length;
+    location.hash = "#/" + (i + 1);
+  }
+
+  function tick() {
+    clock.textContent = new Date().toLocaleTimeString();
+  }
+  setInterval(tick, 1000);
+  tick();
+
+  document.getElementById("btnNext").onclick = () => show(i - 1);
+  document.getElementById("btnPrev").onclick = () => show(i + 1);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft" || e.key === "PageDown" || e.key === " ") {
+      e.preventDefault(); show(i - 1);
+    } else if (e.key === "ArrowRight" || e.key === "PageUp") {
+      e.preventDefault(); show(i + 1);
+    } else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+    else if (e.key === "f" || e.key === "F") {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    } else if (e.key === "p" || e.key === "P") window.print();
+  });
+
+  const m = location.hash.match(/^#\/(\d+)/);
+  show(m ? parseInt(m[1], 10) - 1 : 0);
+})();
+</script>
+</body>
+</html>

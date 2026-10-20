@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.training — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › arclm.training</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.training <span class="badge torch">needs [train]</span></h1>
+          <p>
+            Native training loop, unified pipeline, regularization, and checkpoint helpers.
+          </p>
+
+          <h2 id="TrainingConfig">class TrainingConfig</h2>
+          <div class="api">
+            <span class="sig">TrainingConfig(**dataclass fields)</span>
+            <div class="field"><span class="label">Purpose</span> Small validated config for the modern <code>Trainer</code> API (separate from <code>arclm.configs.Config</code>).</div>
+            <div class="field"><span class="label">Key fields</span> <code>epochs=3</code>, <code>batch_size=8</code>, <code>learning_rate</code>, <code>weight_decay</code>, <code>precision="fp32"</code> (fp16|bf16), <code>optimizer="adamw"</code>, <code>scheduler="cosine"</code>, <code>max_grad_norm</code>, <code>output_dir</code>, …</div>
+            <div class="field"><span class="label">Errors</span> <code>TrainingConfigError</code> on invalid values (epochs &lt; 1, bad precision, …).</div>
+          </div>
+          <pre><code>from arclm.training import TrainingConfig
+from arclm.exceptions import TrainingConfigError
+
+cfg = TrainingConfig(epochs=5, batch_size=4, precision="fp32")
+print(cfg.to_dict())
+restored = TrainingConfig.from_dict(cfg.to_dict())
+assert restored == cfg
+
+# TrainingConfig(epochs=0)  -> TrainingConfigError</code></pre>
+
+          <h2 id="Trainer">class Trainer</h2>
+          <div class="api">
+            <span class="sig">Trainer(model, config=None, callbacks=None)</span>
+            <div class="field"><span class="label">Purpose</span> Train an ArcLM-style model on token loaders; save/load checkpoints.</div>
+            <div class="field"><span class="label">Methods</span> <code>train_dataset(train_loader, val_loader=None)</code>, <code>save(...)</code>, <code>load(...)</code>, <code>add_callback</code></div>
+          </div>
+
+          <h2 id="train_model">train_model(...)</h2>
+          <div class="api">
+            <span class="sig">train_model(mode, data, output, checkpoint=None, config=None, …)</span>
+            <div class="field"><span class="label">Purpose</span> One-call high-level training (pre_training / fine_tuning / instruction_tuning).</div>
+            <div class="field"><span class="label">Returns</span> Result object with <code>history</code> (e.g. <code>train_losses</code>) and <code>model_path</code>.</div>
+          </div>
+          <pre><code># Smoke-scale path used in examples/04_training
+from arclm.configs import create_config
+from arclm.training import train_model
+
+config = create_config(embed_dim=32, block_size=16, num_epochs=1, device="cpu")
+result = train_model(
+    mode="pre_training",
+    data="data.txt",
+    output="models/tiny.pth",
+    config=config,
+)
+print(result.history.get("train_losses", [])[-1])</code></pre>
+
+          <h2 id="compat">Checkpoint compatibility helpers</h2>
+          <div class="api">
+            <span class="sig">checkpoint_is_compatible_for_continue_training(checkpoint, config, vocab_size, tokenizer=None) -&gt; bool</span>
+            <div class="field"><span class="label">Purpose</span> Strict resume check: vocab, shape, tokenizer, and training hyperparameters must match. Empty/missing config → False.</div>
+          </div>
+          <div class="api">
+            <span class="sig">checkpoint_is_compatible_for_tuning(checkpoint, config, vocab_size, tokenizer=None) -&gt; bool</span>
+            <div class="field"><span class="label">Purpose</span> Fine-tune check: shape + tokenizer (learning rate may differ). Empty config → False.</div>
+          </div>
+          <div class="api">
+            <span class="sig">load_compatible_checkpoint(trainer, config, vocab_size, tokenizer=None) -&gt; bool</span>
+          </div>
+
+          <h2 id="regularization">Regularization utilities</h2>
+          <p>
+            <code>L1Regularization</code>, <code>L2Regularization</code>,
+            <code>EarlyStopping</code>, <code>LearningRateScheduler</code>,
+            <code>LabelSmoothing</code>, <code>MixupAugmentation</code>,
+            <code>GeneralizationMonitor</code> — see
+            <code>arclm.training.regularization</code>.
+          </p>
+
+          <h2 id="gpu">GPU</h2>
+          <pre><code># device via Config or TrainingConfig
+config = create_config(device="cuda")   # fails loud if no CUDA
+# or "auto" where supported by resolve helpers
+arclm train --data data.txt --device cuda</code></pre>
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="models.html">arclm.models</a></li>
+            <li><a href="datasets.html">arclm.datasets</a></li>
+            <li><a href="configs.html">arclm.configs</a></li>
+            <li><a href="checkpoints.html">arclm.checkpoints</a></li>
+            <li><a href="evaluation.html">arclm.evaluation</a></li>
+            <li><a href="tracking.html">arclm.tracking</a></li>
+            <li><a href="../cli.html">CLI train</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["models.html", "arclm.models"];</script>
+<script>window.DOCS_NEXT = ["inference.html", "arclm.inference"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

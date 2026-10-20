@@ -90,6 +90,7 @@ def test_run_create_manifest_validate_list_and_compare(tmp_path):
     assert info.metric_count == 2
     assert info.checkpoint_count == 1
     try:
+    # Het werkt local maar op github faild!
         assert list_runs(tmp_path / "runs", status=RunStatus.COMPLETED)[0].run_id == info.run_id
     except IndexError:
         # pytest.fail("list_runs did not return the expected run")
@@ -102,6 +103,19 @@ def test_run_create_manifest_validate_list_and_compare(tmp_path):
     comparison = compare_runs([tracker.run_dir], metric_name="loss")
     assert comparison.metric_summary[info.run_id]["first"] == 2.0
     assert comparison.metric_summary[info.run_id]["best"] == 1.0
+
+
+def test_run_manifest_redacts_absolute_paths_in_unclassified_metadata(tmp_path):
+    tracker = create_run(RunConfig(name="path-redaction", storage=_storage(tmp_path)))
+    try:
+        tracker.manifest.summaries["source"] = str(tmp_path / "private-data")
+
+        serialized = json.dumps(tracker.manifest.to_dict())
+
+        assert str(tmp_path) not in serialized
+        assert "<path omitted>" in serialized
+    finally:
+        tracker.close()
 
 
 def test_run_status_resume_lock_and_failure(tmp_path):

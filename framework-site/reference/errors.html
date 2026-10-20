@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Errors &amp; exceptions — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Errors</div>
+    <article id="doc-content">
+      <h1>Errors &amp; exceptions</h1>
+      <p>All domain errors inherit from <code>arclm.exceptions.ArcLMError</code>.</p>
+
+      <h2 id="optional">OptionalDependencyError</h2>
+      <p>Raised when a feature needs an extra that is not installed. The message names the package and the pip extra.</p>
+      <pre><code>from arclm.exceptions import OptionalDependencyError
+try:
+    from arclm.models import ArcLM
+except OptionalDependencyError as e:
+    print(e)
+# arclm.models requires optional dependency 'torch'.
+# pip install "arclm[train]"</code></pre>
+
+      <h2 id="handling">Handling patterns</h2>
+      <pre><code>from arclm.exceptions import ArcLMError, DatasetLoadError
+
+try:
+    records = load_dataset("missing.jsonl")
+except DatasetLoadError as e:
+    print("Dataset problem:", e)
+except ArcLMError as e:
+    print("ArcLM error:", e)</code></pre>
+
+      <h2 id="map">Exception map</h2>
+      <p>See <a href="modules/logics.html#exceptions">arclm.exceptions</a> for the full table of subclasses by domain.</p>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["cli.html", "CLI"];</script>
+<script>window.DOCS_NEXT = ["troubleshooting.html", "Troubleshooting"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

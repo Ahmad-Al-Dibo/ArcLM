@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.configs — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › <a href="../index.html">Modules</a> › arclm.configs</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>arclm.configs <span class="badge core">core</span></h1>
+          <p>
+            Configuration objects and YAML/JSON persistence.
+            <strong>When to use:</strong> any workflow that stores model size,
+            data paths, device, tokenizer type, or training hyperparameters.
+            <strong>When not to use:</strong> for the small <code>TrainingConfig</code>
+            used by <code>arclm.training.Trainer</code> (that is a separate dataclass
+            in <code>arclm.training.config</code>).
+          </p>
+
+          <h2 id="config">class Config</h2>
+          <div class="api">
+            <span class="sig">class Config(**kwargs)</span>
+            <div class="field"><span class="label">Purpose</span> Broad configuration bag for ArcLM workflows.</div>
+            <div class="field"><span class="label">Params</span> <code>**kwargs</code> — optional overrides for known attribute names.</div>
+            <div class="field"><span class="label">Returns</span> A <code>Config</code> instance.</div>
+            <div class="field"><span class="label">Errors</span> Unknown keys passed to <code>create_config</code> raise <code>ValueError</code>; <code>set_safe</code> ignores unknown keys with a warning.</div>
+          </div>
+
+          <h3>Important attributes (defaults from source)</h3>
+          <table>
+            <tr><th>Attribute</th><th>Default</th><th>Role</th></tr>
+            <tr><td><code>embed_dim</code></td><td>64</td><td>Model embedding size</td></tr>
+            <tr><td><code>block_size</code></td><td>8</td><td>Context length</td></tr>
+            <tr><td><code>batch_size</code></td><td>64</td><td>Training batch size</td></tr>
+            <tr><td><code>num_epochs</code></td><td>100</td><td>Epochs for high-level train paths</td></tr>
+            <tr><td><code>vocab_size</code></td><td><code>None</code></td><td>Set after tokenizer build</td></tr>
+            <tr><td><code>learning_rate</code></td><td>1e-3</td><td>Optimizer LR</td></tr>
+            <tr><td><code>device</code></td><td><code>"cpu"</code></td><td>Compute device string</td></tr>
+            <tr><td><code>seed</code></td><td>42</td><td>Reproducibility seed value</td></tr>
+            <tr><td><code>tokenizer_type</code></td><td><code>"word"</code></td><td><code>"word"</code> or SentencePiece settings</td></tr>
+            <tr><td><code>model_path</code></td><td><code>"output/model.pth"</code></td><td>Checkpoint path</td></tr>
+            <tr><td><code>data_path</code></td><td><code>"data/data.txt"</code></td><td>Training data path</td></tr>
+          </table>
+          <div class="note">
+            <code>create_config()</code> does <strong>not</strong> call
+            <code>torch.manual_seed</code>. Seed with
+            <code>arclm.tracking.set_reproducible_seed</code> if needed.
+            Device defaults to <code>"cpu"</code>, not auto-CUDA.
+          </div>
+
+          <h3>Methods</h3>
+          <div class="api">
+            <span class="sig">Config.get_device() -&gt; torch.device</span>
+            <div class="field"><span class="label">Purpose</span> Convert <code>self.device</code> to a <code>torch.device</code>.</div>
+            <div class="field"><span class="label">Requires</span> <code>arclm[train]</code> (imports torch).</div>
+            <div class="field"><span class="label">When not</span> On a core-only install, use the string <code>config.device</code> instead.</div>
+          </div>
+          <div class="api">
+            <span class="sig">Config.set_safe(**kwargs) -&gt; None</span>
+            <div class="field"><span class="label">Purpose</span> Set attributes; ignore unknown keys with a printed warning; clamp <code>vocab_size</code> to <code>max_vocab</code>.</div>
+          </div>
+          <div class="api">
+            <span class="sig">Config.to_dict() -&gt; dict</span>
+            <div class="field"><span class="label">Purpose</span> JSON-serializable snapshot of configured fields.</div>
+          </div>
+          <div class="api">
+            <span class="sig">Config.load_config_from_model(model_path) -&gt; Config</span>
+            <div class="field"><span class="label">Purpose</span> Merge values from a model artifact via <code>arclm.lifecycle.load_model_config</code>.</div>
+            <div class="field"><span class="label">Requires</span> Training stack / lifecycle (torch for tensor checkpoints).</div>
+          </div>
+
+          <h2 id="create_config">create_config(**kwargs) -&gt; Config</h2>
+          <div class="api">
+            <span class="sig">create_config(**kwargs) -&gt; Config</span>
+            <div class="field"><span class="label">Purpose</span> Build a <code>Config</code> from the full default set plus overrides.</div>
+            <div class="field"><span class="label">When to use</span> Prefer over raw <code>Config()</code> when you want the documented default surface.</div>
+            <div class="field"><span class="label">Errors</span> <code>ValueError</code> if any kwarg is not a known default key.</div>
+          </div>
+
+          <h3>Examples</h3>
+          <pre><code>from arclm.configs import create_config, Config
+
+# 1. Defaults + overrides
+config = create_config(embed_dim=32, block_size=16, num_epochs=3, device="cpu")
+print(config.embed_dim, config.block_size, config.device)
+
+# 2. Direct construction
+config = Config(embed_dim=64, block_size=32)
+
+# 3. Inspect
+print(config.to_dict()["learning_rate"])
+
+# 4. Safe set (unknown keys ignored)
+config.set_safe(device="cpu", not_a_real_key=1)
+
+# 5. YAML round-trip (core install)
+from arclm.configs import save_config_yaml, load_config_yaml
+save_config_yaml(config, "arclm-config.yaml")
+loaded = load_config_yaml("arclm-config.yaml")
+assert loaded.embed_dim == config.embed_dim</code></pre>
+
+          <h3>When not to use Config</h3>
+          <ul>
+            <li>Use <code>arclm.training.TrainingConfig</code> for the modern <code>Trainer</code> API.</li>
+            <li>Use <code>arclm.datasets.DatasetConfig</code> for <code>load_dataset</code> options.</li>
+          </ul>
+
+          <h2 id="serialization">YAML / JSON helpers</h2>
+          <div class="api">
+            <span class="sig">load_config_yaml(filepath: str) -&gt; Config</span>
+            <div class="field"><span class="label">Purpose</span> Load YAML (nested keys flattened) into a <code>Config</code>.</div>
+            <div class="field"><span class="label">Errors</span> <code>FileNotFoundError</code>, <code>ValueError</code> if not a mapping.</div>
+            <div class="field"><span class="label">Requires</span> PyYAML (included with ArcLM core via serialization path; verify in your env).</div>
+          </div>
+          <div class="api">
+            <span class="sig">load_config_json(filepath: str) -&gt; Config</span>
+          </div>
+          <div class="api">
+            <span class="sig">save_config_yaml(config: Config, filepath: str) -&gt; None</span>
+          </div>
+          <div class="api">
+            <span class="sig">save_config_json(config: Config, filepath: str) -&gt; None</span>
+          </div>
+          <div class="api">
+            <span class="sig">load_config(filepath: str) -&gt; Config</span>
+            <div class="field"><span class="label">Purpose</span> Dispatch by extension (.yaml/.yml/.json).</div>
+          </div>
+
+          <pre><code># JSON save/load
+from arclm.configs import save_config_json, load_config_json
+save_config_json(config, "cfg.json")
+config2 = load_config_json("cfg.json")
+
+# Factory helpers
+from arclm.configs import get_finetuning_config, get_instruction_tuning_config
+ft = get_finetuning_config()
+it = get_instruction_tuning_config()</code></pre>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="training.html">arclm.training</a> — <code>TrainingConfig</code></li>
+            <li><a href="datasets.html">arclm.datasets</a> — <code>DatasetConfig</code></li>
+            <li><a href="tokenizers.html">arclm.tokenizers</a></li>
+            <li><a href="tracking.html">arclm.tracking</a> — <code>set_reproducible_seed</code></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["../architecture.html", "Architecture"];</script>
+<script>window.DOCS_NEXT = ["tokenizers.html", "arclm.tokenizers"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

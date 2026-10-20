@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Installation — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search">
+      <input type="search" id="docs-search" placeholder="Search documentation…" aria-label="Search" />
+    </form>
+  </header>
+  <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Installation</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results" aria-live="polite"></div>
+        <article id="doc-content">
+          <h1>Installation</h1>
+
+          <h2 id="core">Core install (light)</h2>
+          <p>
+            Required dependencies: <code>numpy</code> and <code>sentencepiece</code> only.
+            Typical size on the order of tens of megabytes. No PyTorch.
+          </p>
+          <pre><code>python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install arclm
+
+python -c "import arclm; print(arclm.get_version())"
+# 2.0.0</code></pre>
+
+          <h2 id="extras">Optional extras</h2>
+          <table>
+            <tr><th>Extra</th><th>Installs</th><th>Unlocks</th></tr>
+            <tr><td><code>train</code></td><td>torch</td><td>models, training, inference, evaluation, checkpoints</td></tr>
+            <tr><td><code>hf</code></td><td>torch + transformers + accelerate + datasets + peft</td><td>Hugging Face loading, SFT stack</td></tr>
+            <tr><td><code>hf-inference</code></td><td>torch + transformers + accelerate + safetensors</td><td>HF inference without full training extras</td></tr>
+            <tr><td><code>web</code></td><td>torch + flask + fastapi + uvicorn</td><td>Simple Flask UI extras + FastAPI Studio</td></tr>
+            <tr><td><code>peft</code></td><td>torch + peft</td><td>LoRA adapters</td></tr>
+            <tr><td><code>qlora</code></td><td>torch + transformers + bitsandbytes</td><td>QLoRA (Python ≥3.10)</td></tr>
+            <tr><td><code>security</code></td><td>cryptography</td><td>Full crypto (AEAD, signing)</td></tr>
+            <tr><td><code>security-keyring</code></td><td>cryptography + keyring</td><td>OS keyring key provider</td></tr>
+            <tr><td><code>agents-audio</code></td><td>openai-whisper</td><td>Whisper STT backend</td></tr>
+            <tr><td><code>all</code></td><td>broad optional set</td><td>Convenience; large download</td></tr>
+            <tr><td><code>dev</code></td><td>pytest, build, twine</td><td>Contributing / CI</td></tr>
+          </table>
+
+          <h2 id="cpu-torch">CPU-only PyTorch</h2>
+          <p>
+            Install the CPU wheel first if you do not want a CUDA build:
+          </p>
+          <pre><code>pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "arclm[train]"</code></pre>
+
+          <h2 id="cuda-torch">CUDA PyTorch</h2>
+          <p>
+            Match the wheel to your CUDA toolkit (example for CUDA 12.4):
+          </p>
+          <pre><code>pip install torch --index-url https://download.pytorch.org/whl/cu124
+pip install "arclm[train]"
+arclm doctor   # verify CUDA available</code></pre>
+
+          <h2 id="from-source">From source</h2>
+          <pre><code>git clone https://github.com/Ahmad-Al-Dibo/ArcLM.git
+cd ArcLM
+pip install -e ".[dev,train]"</code></pre>
+
+          <h2 id="blocks">ArcLM Blocks (trimmed editions)</h2>
+          <p>
+            Alternative installs that ship only a subset of packages
+            (core, training, agents, security, …). Generated from the same source.
+            See <code>distributions/README.md</code> in the repository.
+          </p>
+          <pre><code>pip install "git+https://github.com/Ahmad-Al-Dibo/ArcLM.git#subdirectory=distributions/core"</code></pre>
+
+          <h2 id="verify">Verify the install</h2>
+          <pre><code>arclm --version
+arclm doctor
+python -c "from arclm.tokenizers import Tokenizer; print(Tokenizer)"</code></pre>
+
+          <h2 id="next">Next</h2>
+          <p><a href="quickstart.html">Quick start →</a></p>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["index.html", "Introduction"];</script>
+<script>window.DOCS_NEXT = ["quickstart.html", "Quick start"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Positioning — ArcLM Framework</title>
+<link rel="stylesheet" href="css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Framework</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Home</a> › Positioning</div>
+    <div class="with-toc">
+      <div>
+        <div id="search-results"></div>
+        <article id="doc-content">
+          <h1>Positioning and comparison</h1>
+          <p>
+            ArcLM occupies a narrow, honest niche: a <strong>readable local
+            toolkit</strong> for learning and light application work around language
+            models, with optional heavy compute. The comparisons below are
+            qualitative, based on architecture — not benchmark claims.
+          </p>
+
+          <h2 id="matrix">Capability matrix (qualitative)</h2>
+          <table>
+            <tr><th>Concern</th><th>ArcLM</th><th>HF transformers alone</th><th>Large training frameworks</th></tr>
+            <tr><td>Light core install (no torch)</td><td>Yes</td><td>Typically pulls torch stack</td><td>No</td></tr>
+            <tr><td>Model zoo / Hub client</td><td>Load path only</td><td>Primary strength</td><td>Varies</td></tr>
+            <tr><td>Native tiny model to read</td><td>Yes</td><td>No (examples only)</td><td>Sometimes</td></tr>
+            <tr><td>Agent tools + permissions</td><td>Built-in</td><td>No</td><td>Rarely</td></tr>
+            <tr><td>Security redaction/crypto helpers</td><td>Built-in</td><td>No</td><td>Rarely</td></tr>
+            <tr><td>Production multi-GPU training</td><td>Experimental contracts only</td><td>Via Accelerate/DeepSpeed ecosystems</td><td>Primary focus</td></tr>
+            <tr><td>Teaching-oriented examples</td><td>Verified CPU suite + Lab</td><td>Community tutorials</td><td>Varies</td></tr>
+          </table>
+
+          <h2 id="hf">vs using Hugging Face only</h2>
+          <ul>
+            <li><strong>Use HF when:</strong> you need the Hub, production tokenizers, or ecosystem integrations as the main product.</li>
+            <li><strong>Add ArcLM when:</strong> you want a light local layer, data/agent/security tools, or a tiny model to study alongside HF.</li>
+            <li><strong>Do not claim:</strong> ArcLM is faster or “better” than transformers.</li>
+          </ul>
+
+          <h2 id="frameworks">vs large training frameworks</h2>
+          <ul>
+            <li><strong>Use large frameworks when:</strong> multi-node training, serving, or mature distributed optimizers are requirements.</li>
+            <li><strong>Use ArcLM when:</strong> single-machine education, prototypes, embedded agents, or constrained environments.</li>
+          </ul>
+
+          <h2 id="verified">What is verified vs aspirational</h2>
+          <ul>
+            <li><strong>Verified:</strong> light install, tokenizer/data/security/agent examples, tiny native train smoke, tiny-gpt2 HF load on CPU, CI light+torch jobs, Blocks builder checks, PyPI 2.0.0.</li>
+            <li><strong>Experimental:</strong> multi-GPU distributed contracts, QLoRA paths needing bitsandbytes.</li>
+            <li><strong>Aspirational:</strong> broader retrieval/RAG components, richer Arabic examples (see <a href="roadmap.html">roadmap</a> — labeled Proposed/Planned as appropriate).</li>
+          </ul>
+
+          <h2 id="related">Related</h2>
+          <ul>
+            <li><a href="status.html">Status &amp; limits</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+          </ul>
+        </article>
+        <nav class="pager" id="pager"></nav>
+      </div>
+      <aside class="toc" id="toc"></aside>
+    </div>
+  </div>
+  <footer class="site">ArcLM 2.0 framework presentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["audiences.html", "Developer workflows"];</script>
+<script>window.DOCS_NEXT = ["status.html", "Status & limits"];</script>
+<script src="js/site.js"></script>
+</body>
+</html>

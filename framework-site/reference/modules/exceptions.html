@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>arclm.exceptions — ArcLM Documentation</title>
+<link rel="stylesheet" href="../../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="../index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="../index.html">Reference</a> › <a href="../../index.html">Framework</a> › <a href="logics.html">arclm.logics</a> › arclm.exceptions</div>
+    <article id="doc-content">
+      <h1>arclm.exceptions <span class="badge core">core</span></h1>
+      <p>
+        Central error hierarchy. Root class: <code>ArcLMError</code>.
+        Catch broad ArcLM failures with <code>except ArcLMError</code>, or narrow
+        to domain errors when you can recover differently.
+      </p>
+
+      <h2 id="hierarchy">Hierarchy (major classes)</h2>
+      <table>
+        <tr><th>Class</th><th>Domain</th><th>Typical cause</th></tr>
+        <tr><td><code>ArcLMError</code></td><td>Root</td><td>Any ArcLM failure</td></tr>
+        <tr><td><code>ConfigurationError</code></td><td>Config</td><td>Invalid configuration values</td></tr>
+        <tr><td><code>OptionalDependencyError</code></td><td>Extras</td><td>Missing torch / transformers / cryptography</td></tr>
+        <tr><td><code>TokenizerError</code></td><td>Tokenizers</td><td>Build/encode failures</td></tr>
+        <tr><td><code>DatasetError</code></td><td>Data</td><td>Base for dataset issues</td></tr>
+        <tr><td><code>DatasetLoadError</code></td><td>Data</td><td>Bad path / format</td></tr>
+        <tr><td><code>DatasetValidationError</code></td><td>Data</td><td>Schema / required fields</td></tr>
+        <tr><td><code>DatasetFormatError</code></td><td>Data</td><td>Unparseable rows</td></tr>
+        <tr><td><code>PipelineError</code>, <code>CleaningError</code>, <code>DeduplicationError</code></td><td>Data steps</td><td>Transform failures</td></tr>
+        <tr><td><code>StreamingError</code></td><td>Data</td><td>Streaming dataset errors</td></tr>
+        <tr><td><code>TrainingError</code></td><td>Training</td><td>Loop / optimizer failures</td></tr>
+        <tr><td><code>TrainingConfigError</code></td><td>Training</td><td>Invalid TrainingConfig fields</td></tr>
+        <tr><td><code>PrecisionError</code></td><td>Training</td><td>fp16/bf16 misconfiguration</td></tr>
+        <tr><td><code>CheckpointError</code></td><td>Checkpoints</td><td>Save/load failures</td></tr>
+        <tr><td><code>ModelError</code>, <code>ModelLoadError</code>, <code>UnsupportedModelError</code></td><td>Models</td><td>Construction / load</td></tr>
+        <tr><td><code>EvaluationError</code>, <code>EvaluationConfigError</code>, <code>MetricError</code></td><td>Evaluation</td><td>Metrics / loader issues</td></tr>
+        <tr><td><code>FineTuningError</code>, <code>SFTConfigError</code>, <code>FormattingError</code></td><td>SFT</td><td>Record format / config</td></tr>
+        <tr><td><code>InferenceError</code></td><td>Inference</td><td>Generation failures</td></tr>
+      </table>
+
+      <h2 id="optional">OptionalDependencyError</h2>
+      <div class="api">
+        <span class="sig">OptionalDependencyError(message)</span>
+        <div class="field"><span class="label">Purpose</span> Raised by <code>require_torch()</code> / <code>require_optional_dependency()</code> when an extra is missing.</div>
+        <div class="field"><span class="label">Message</span> Names the feature, the PyPI package, and the pip extra (e.g. <code>arclm[train]</code>).</div>
+      </div>
+      <pre><code>from arclm.exceptions import OptionalDependencyError, ArcLMError
+
+try:
+    from arclm.models import ArcLM
+except OptionalDependencyError as e:
+    print(e)
+    # arclm.models requires optional dependency 'torch'.
+    # pip install "arclm[train]"
+
+# Catch-all pattern
+try:
+    from arclm.training import train_model
+    train_model(...)
+except ArcLMError as e:
+    print("ArcLM failed:", e)</code></pre>
+
+      <h2 id="usage">When to use which</h2>
+      <ul>
+        <li><strong>Library code:</strong> raise the most specific subclass.</li>
+        <li><strong>Applications:</strong> catch <code>OptionalDependencyError</code> for install hints; catch domain errors for UX messages.</li>
+        <li><strong>Do not</strong> catch bare <code>Exception</code> around training if you want CI to fail loudly.</li>
+      </ul>
+
+      <h2 id="related">Related</h2>
+      <ul>
+        <li><a href="logics.html">arclm.logics</a></li>
+        <li><a href="../errors.html">Errors &amp; handling guide</a></li>
+        <li><a href="../troubleshooting.html">Troubleshooting</a></li>
+        <li><a href="security.html">arclm.security</a> — security-specific errors</li>
+        <li><a href="training.html">arclm.training</a> — TrainingConfigError</li>
+      </ul>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "../";</script>
+<script>window.DOCS_PREV = ["logics.html", "arclm.logics"];</script>
+<script>window.DOCS_NEXT = ["models.html", "arclm.models"];</script>
+<script src="../../js/ref-nav.js"></script>
+</body>
+</html>

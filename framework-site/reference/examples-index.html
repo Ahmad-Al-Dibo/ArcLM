@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Example catalogue — ArcLM Documentation</title>
+<link rel="stylesheet" href="../css/site.css" />
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <a class="brand" href="index.html">ArcLM Documentation</a>
+    <span class="ver">2.0.0</span>
+    <form action="#" role="search"><input type="search" id="docs-search" placeholder="Search…" aria-label="Search" /></form>
+  </header>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="crumbs"><a href="index.html">Reference</a> › Examples</div>
+    <article id="doc-content">
+      <h1>Example catalogue</h1>
+      <p>
+        Maintained examples live in the repository under <code>examples/</code>
+        (numbered folders 00–12). Run the verified suite:
+      </p>
+      <pre><code>python examples/run_examples.py list
+python examples/run_examples.py run-verified</code></pre>
+
+      <h2 id="map">Folders</h2>
+      <table>
+        <tr><th>Folder</th><th>Topic</th><th>Torch?</th></tr>
+        <tr><td>00_quick_start</td><td>First workflow + inspection</td><td>yes (native model)</td></tr>
+        <tr><td>01_data</td><td>Load, validate, HTML fixtures</td><td>core</td></tr>
+        <tr><td>02_tokenizers</td><td>Word + SentencePiece</td><td>core</td></tr>
+        <tr><td>03_models</td><td>Native model + state dict</td><td>yes</td></tr>
+        <tr><td>04_training</td><td>Tiny pretraining step</td><td>yes</td></tr>
+        <tr><td>05_finetuning</td><td>SFT preview + tiny step</td><td>yes</td></tr>
+        <tr><td>06_checkpoints</td><td>Checkpoint lifecycle</td><td>yes</td></tr>
+        <tr><td>07_evaluation_benchmarks</td><td>Metrics</td><td>yes</td></tr>
+        <tr><td>08_inference_local_models</td><td>Generation, HF policy, chat</td><td>yes / [hf]</td></tr>
+        <tr><td>09_pipelines_inspection</td><td>Data pipeline + inspect_text</td><td>yes</td></tr>
+        <tr><td>10_agents_tools</td><td>Tools, documents, fake voice</td><td>core</td></tr>
+        <tr><td>11_security</td><td>Encrypt, sign, redact</td><td>[security]</td></tr>
+        <tr><td>12_complete_projects</td><td>Six end-to-end projects</td><td>mixed</td></tr>
+      </table>
+
+      <h2 id="run-one">Run one example</h2>
+      <pre><code>python examples/00_quick_start/01_first_arclm_workflow.py
+python examples/10_agents_tools/01_custom_tool_agent.py
+python examples/11_security/02_encrypt_hash_sign_redact.py</code></pre>
+
+      <h2 id="status">Status rules</h2>
+      <ul>
+        <li><code>verified</code> — runs locally without network/GPU</li>
+        <li><code>verified_with_fake_backend</code> — deterministic fakes</li>
+        <li><code>manual_optional</code> — needs model download, GPU, or optional deps</li>
+      </ul>
+      <p>Machine-readable list: <code>examples/manifest.json</code>.</p>
+    </article>
+    <nav class="pager" id="pager"></nav>
+  </div>
+  <footer class="site">ArcLM 2.0 documentation</footer>
+</div>
+<script>window.DOCS_ROOT = "";</script>
+<script>window.DOCS_PREV = ["troubleshooting.html", "Troubleshooting"];</script>
+<script src="../js/ref-nav.js"></script>
+</body>
+</html>
