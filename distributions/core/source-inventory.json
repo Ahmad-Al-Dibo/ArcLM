@@ -184,17 +184,17 @@
       "source": "src\\arclm\\datasets\\validation.py"
     },
     {
-      "bytes": 1624,
+      "bytes": 1765,
       "module": "arclm.exceptions",
       "path": "src\\arclm\\exceptions\\__init__.py",
-      "sha256": "47e8438ebbf718db57faeb2b6e5ddbe72bb403bde3a743033db58bf3a701f8c9",
+      "sha256": "6f0e2e05da91d2608c8ce0a44c148ea74bc189985f7794b297df1a7200eab5fc",
       "source": "src\\arclm\\exceptions\\__init__.py"
     },
     {
-      "bytes": 3161,
+      "bytes": 3594,
       "module": "arclm.exceptions.base",
       "path": "src\\arclm\\exceptions\\base.py",
-      "sha256": "66a7d61625cd18bd3833204bc7a7c7facaa1de3108604fdd4eeb697fe7585833",
+      "sha256": "d0df0809a4d046dbbbcda87a943f1c66919d51ec4e940b3bfdd1d09eb05027d6",
       "source": "src\\arclm\\exceptions\\base.py"
     },
     {
@@ -261,7 +261,7 @@
       "source": "src\\arclm\\utils\\imports.py"
     }
   ],
-  "generated_at": "2026-10-17T09:47:09.276876+00:00",
+  "generated_at": "2026-10-26T22:19:58.430075+00:00",
   "notice": "This directory is generated from canonical ArcLM source. Do not edit generated source files directly.",
   "source_version": "2.0.0"
 }

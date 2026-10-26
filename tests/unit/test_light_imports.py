@@ -22,6 +22,8 @@ _LIGHT_MODULES = [
     "arclm.exceptions",
     "arclm.utils",
     "arclm.search",
+    "arclm.retrieval",
+    "arclm.evalharness",
     "arclm.cli",
 ]
 

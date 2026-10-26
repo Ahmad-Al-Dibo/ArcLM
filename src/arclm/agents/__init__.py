@@ -22,6 +22,7 @@ from .session import AgentSession
 from .stt import FakeSpeechToTextBackend, SpeechToTextBackend, TranscriptionRequest, TranscriptionResult
 from .tool import Tool, ToolSpec, tool
 from .tracing import AgentTrace, AgentTraceEvent
+from .mcp import MCPServer, create_mcp_server
 
 __all__ = [
     "Agent",
@@ -46,6 +47,7 @@ __all__ = [
     "FinalResponse",
     "InMemoryResourceProvider",
     "JSONToolCallingAdapter",
+    "MCPServer",
     "ModelResponse",
     "OptionalAgentDependencyError",
     "ResourceProvider",
@@ -72,6 +74,7 @@ __all__ = [
     "AgentConfig",
     "AgentRunnerConfig",
     "SessionConfig",
+    "create_mcp_server",
     "get_agent_capabilities",
     "tool",
 ]

@@ -52,6 +52,44 @@ set_reproducible_seed(42)
             (grid/random), not document/BM25 search. Built on tracking.
           </p>
 
+          <h2 id="retrieval">Retrieval &amp; local RAG <span class="badge ok">core</span></h2>
+          <p>
+            <code>arclm.retrieval</code> — chunking, analyzer, BM25 / TF-IDF,
+            in-memory vector store with pluggable embedders, hybrid (RRF) fusion,
+            and <code>RAGPipeline</code> (chunk → retrieve → prompt). Torch-free
+            for the lexical path.
+          </p>
+          <pre><code>from arclm.retrieval import BM25Index, chunk_text, RAGPipeline
+
+index = BM25Index()
+index.build(chunk_text(doc, size=512, overlap=64))
+hits = index.search("your query", k=5)
+
+rag = RAGPipeline.from_documents(records)
+prompt = rag.build_prompt("question", k=5)</code></pre>
+
+          <h2 id="evalharness">EvalSet harness <span class="badge ok">core</span></h2>
+          <p>
+            <code>arclm.evalharness</code> — JSONL cases, match modes
+            (exact/contains/icontains/callable), callable runner, JSON report.
+            Export-friendly for CI or external eval tools.
+          </p>
+          <pre><code>from arclm.evalharness import Case, run_evalset
+
+report = run_evalset(
+    [Case(input="2+2", expected="4")],
+    fn=my_model_fn,
+)
+report.save("eval_report.json")</code></pre>
+
+          <h2 id="mcp">MCP server for tools <span class="badge ok">core</span></h2>
+          <p>
+            <code>arclm.agents.create_mcp_server</code> — expose
+            <code>@tool</code> functions over JSON-RPC (initialize, tools/list,
+            tools/call) for MCP-compatible hosts. Minimal stdio adapter, no
+            third-party MCP SDK required.
+          </p>
+
           <h2 id="blocks">ArcLM Blocks</h2>
           <p>
             Trimmed editions generated from one source: core, training, finetuning,

@@ -125,5 +125,21 @@ class InferenceError(ArcLMError):
     """Raised for inference errors."""
 
 
+class RetrievalError(ArcLMError):
+    """Raised for retrieval / RAG index errors."""
+
+
+class IndexBuildError(RetrievalError):
+    """Raised when an index cannot be built from the input."""
+
+
+class EvalHarnessError(ArcLMError):
+    """Raised for evaluation-set / eval-runner errors."""
+
+    def __init__(self, code: str, message: str = "") -> None:
+        self.code = code
+        super().__init__(message or code)
+
+
 class OptionalDependencyError(ArcLMError):
     """Raised when an optional dependency is required but not installed."""

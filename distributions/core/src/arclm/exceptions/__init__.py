@@ -1,4 +1,4 @@
-"""ArcLM exception hierarchy."""
+﻿"""ArcLM exception hierarchy."""
 
 from .base import (
     ArcLMError,
@@ -13,8 +13,10 @@ from .base import (
     EvaluationConfigError,
     EvaluationError,
     DataCollatorError,
+    EvalHarnessError,
     FineTuningError,
     FormattingError,
+    IndexBuildError,
     InferenceError,
     MetricError,
     DatasetFormatError,
@@ -25,6 +27,7 @@ from .base import (
     OptionalDependencyError,
     PipelineError,
     PrecisionError,
+    RetrievalError,
     SFTConfigError,
     StreamingError,
     SyntheticDataError,
@@ -46,11 +49,13 @@ __all__ = [
     "DatasetValidationError",
     "DatasetVersionError",
     "DeduplicationError",
+    "EvalHarnessError",
     "EvaluationConfigError",
     "EvaluationError",
     "DataCollatorError",
     "FineTuningError",
     "FormattingError",
+    "IndexBuildError",
     "InferenceError",
     "MetricError",
     "ModelCompatibilityError",
@@ -60,6 +65,7 @@ __all__ = [
     "OptionalDependencyError",
     "PipelineError",
     "PrecisionError",
+    "RetrievalError",
     "SFTConfigError",
     "StreamingError",
     "SyntheticDataError",

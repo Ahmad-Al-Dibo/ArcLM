@@ -42,6 +42,9 @@ Follow the folders in order — each builds on the previous:
 | 12 | [`12_complete_projects`](12_complete_projects/) | Six end-to-end local projects (arclm APIs, no raw torch in app code) | mixed |
 | 13 | [`13_research_extension`](13_research_extension/) | Subclass Trainer / Pipeline / Callback / DataStep / Tokenizer for research | `[train]` / core |
 | 14 | [`14_translator_from_scratch`](14_translator_from_scratch/) + [`14_translator_open_source`](14_translator_open_source/) | Real projects: EN→NL translator from zero vs open-source instruct model | `[train]` / `[hf]` |
+| 15 | [`15_retrieval_rag`](15_retrieval_rag/) | BM25 keyword search + local RAG prompt pipeline | core |
+| 16 | [`16_mcp_tools`](16_mcp_tools/) | Expose ArcLM tools as an MCP JSON-RPC server | core |
+| 17 | [`17_evalharness`](17_evalharness/) | EvalSet scoring harness (JSONL cases → report) | core |
 
 Each example file starts with a standard header:
 

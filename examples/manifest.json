@@ -570,7 +570,7 @@
     {
       "id": "14-01",
       "category": "real_projects",
-      "title": "Translator from zero (tiny native ArcLM EN→NL)",
+      "title": "Translator from zero (tiny native ArcLM EN to NL)",
       "path": "14_translator_from_scratch/main.py",
       "status": "verified",
       "requires_network": false,
@@ -595,6 +595,62 @@
         "hf"
       ],
       "estimated_seconds": 180,
+      "artifacts": []
+    },
+    {
+      "id": "15-01",
+      "category": "retrieval_rag",
+      "title": "BM25 keyword search (no torch)",
+      "path": "15_retrieval_rag/01_keyword_search.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
+    },
+    {
+      "id": "15-02",
+      "category": "retrieval_rag",
+      "title": "Local RAG prompt pipeline",
+      "path": "15_retrieval_rag/02_rag_prompt.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
+    },
+    {
+      "id": "16-01",
+      "category": "mcp",
+      "title": "Expose tools via MCP JSON-RPC server",
+      "path": "16_mcp_tools/01_mcp_server.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
+    },
+    {
+      "id": "17-01",
+      "category": "evalharness",
+      "title": "Local EvalSet scoring harness",
+      "path": "17_evalharness/01_evalset.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
       "artifacts": []
     }
   ]
