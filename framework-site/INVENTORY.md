@@ -1,6 +1,6 @@
 # Content inventory — framework presentation site
 
-**Date:** 2026-10-16 Â· **ArcLM:** 2.0.0
+**Date:** 2026-10-16 · **ArcLM:** 2.0.0
 
 ## Section coverage
 

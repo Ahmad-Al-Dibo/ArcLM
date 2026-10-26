@@ -38,6 +38,7 @@ output/
 examples/qwen3_0_6b_sft/output/
 examples/runs/
 examples/_outputs/
+examples/**/artifacts/
 reports/
 workspace/
 .env

@@ -1,108 +1,184 @@
-# Speaker notes — ArcLM presentation
+# Presentatiescript — ArcLM (Nederlands)
 
-## Files
+Gebruik **`presentation/ArcLM-Nederlands.pptx`** als dia-deck, of de website
+`framework-site/` als levende presentatie. Dit script is de spreektekst.
 
-| File | Language | Structure |
-|---|---|---|
-| `presentation/index.html` | English | Topic-based deck (~18 slides) |
-| `presentation/arabic.html` | **Arabic (RTL)** | **Step-by-step live walkthrough** (18 slides) |
-
-Open in a browser → **F** fullscreen. English: **← →**. Arabic deck: **←** = next (RTL).
-
-## Timing plan (~40 minutes)
-
-| Block | Min | Slides |
-|---|---|---|
-| Intro + problem + who | 0–5 | Title, agenda, problem, audience, can/cannot |
-| Inside the core | 5–12 | Package map, deep dives, lazy loading |
-| Live examples (8) | 12–28 | Tokenizer, data+security, model+doctor, HF, training, agent, SentencePiece, checkpoints/eval |
-| Deeper topics | 28–34 | SFT overview, architecture paths, comparison, roadmap |
-| GPU + Blocks + honesty | 34–38 | GPU training, Blocks, ecosystem, CI honesty |
-| Q&A | 38–40 | Links up; discussion |
-
-### Demo options
-
-| Demo | Time | Needs |
-|---|---|---|
-| A. Tokenizer + redact (light) | ~10s | `pip install arclm` |
-| B. Agent calculator | ~5s | light |
-| C. tiny-gpt2 HF load | ~40s | `[hf]` + network |
-| D. Training smoke | ~30s | `[train]` |
-
-Prefer **A** always; add **C** only if network is reliable.
-
-### Arabic deck
-
-`presentation/arabic.html` — same content, RTL, step badges (الخطوة N).
-Keyboard: **←** next, **→** prev (mirrored for RTL).
-
-### Demo option for examples 1–2 (light, no network)
+Open de PowerPoint of:
 
 ```bash
-pip install arclm
-python -c "
-from arclm.tokenizers import Tokenizer
-from arclm.security import redact_sensitive_text
-t=Tokenizer(max_vocab=64); t.build('arc lm trains tiny models on local text')
-print(t.encode_text('arc lm trains'), t.get_vocab_size())
-print(redact_sensitive_text('api_key=sk-test-123'))
-"
+cd framework-site
+python -m http.server 8000
+# http://127.0.0.1:8000/
 ```
 
-Expected: `[2, 3, 4] 11` and `api_key=[REDACTED]`.
+**Taal:** uitsluitend Nederlands spreken. Code en package-namen blijven Engels.
 
-### GPU slide talking points
+---
 
-1. Install CUDA torch wheel **first**, then `arclm[train]`.
-2. `arclm doctor` is the shared health check.
-3. `device="auto"` friendly; `"cuda"` fails loud if missing.
-4. Multi-GPU = experimental contracts — do not oversell.
-5. No GPU in the room? Everything demoed runs on CPU.
+## Voorbereiding (2 min)
 
-## Demo checklist (pick ONE for slide 9)
+| Stap | Actie |
+|---|---|
+| 1 | Open `presentation/ArcLM-Nederlands.pptx` of de website |
+| 2 | Terminal klaar met venv: `arclm` + `[train]` |
+| 3 | Eventueel: `python examples/14_translator_from_scratch/main.py` warmdraaien |
+| 4 | Zeg tegen het publiek: “We lopen de toolkit door zoals een lezer dat zou doen” |
 
-### A. HF model (needs network + `arclm[hf]`)
+---
+
+## Dia 1 — Titel (~1 min)
+
+> Dit is ArcLM: een compacte Python-toolkit voor lokaal taalmodel-werk.
+> Data, tokenizers, optionele training, Hugging Face, agents en beveiliging.
+>
+> Te vinden als `pip install arclm` op PyPI — versie 2.0.0, Apache-2.0.
+
+---
+
+## Dia 2 — Wat doet ArcLM? (~1,5 min)
+
+> Negen concrete dingen, geen marketing.
+> De belangrijkste: datasets opschonen, tokenizen, een mini-model trainen, een HF-model laden, SFT, evalueren, agents met tools, beveiliging, en lokale experiment-tracking.
+>
+> Alles werkt lokaal; niets verplicht naar de cloud.
+
+---
+
+## Dia 3 — Problemen (~1,5 min)
+
+> Vier pijnpunten die we expliciet aanpakken.
+> Ten eerste: “even een API proberen” mag niet honderden megabytes kosten.
+> Ten tweede: documentatie mag geen GPU veronderstellen op dag één.
+> Ten derde: je moet kunnen zien hoe data, tokens, model en eval aan elkaar hangen.
+> Ten vierde: onderwijs en app-ontwikkeling in dezelfde toolkit.
+
+---
+
+## Dia 4 — Doelgroep (~1 min)
+
+> Drie groepen: docenten en studenten op een laptop, app-ontwikkelaars die agents of HF willen gebruiken, en onderzoekers die een lichte toolkit willen inbedden.
+>
+> En wat we **niet** zijn: geen ChatGPT-concurrent.
+
+---
+
+## Dia 5 — Ontwerpprincipes (~1,5 min)
+
+> Vijf regels.
+> Eén: `import arclm` laadt geen torch.
+> Twee: bron is leesbaar — geen black-box trainer van tienduizend regels.
+> Drie: eerlijke grenzen — het native model is educatief, dat staat erbij.
+> Vier: security faalt gesloten — ontbreekt iets? Een duidelijke fout, geen stille overslaan.
+> Vijf: de voorbeeldsuite draait offline op CPU.
+
+---
+
+## Dia 6 — Installatie (~1,5 min)
+
+> Drie niveaus.
+> Eén: `pip install arclm` — alleen numpy en sentencepiece, ongeveer 50 MB.
+> Twee: `arclm[train]` — voegt PyTorch toe voor training en native modellen.
+> Drie: `arclm[hf]` — voor Hugging Face modellen.
+>
+> Let op: de package-naam is **arclm** met één L. Er bestaat een ander package `arclm` met twee L’s — dat is een ander project.
+
+---
+
+## Dia 7 — Eerste resultaat (~2 min, optioneel live)
+
+> Dit is de snelste succeservaring: een tokenizer en geheimen-verbergen, zonder GPU.
+>
+> (Terminal, als voorbereid:)
+
 ```bash
-pip install "arclm[hf]"
-python -c "from arclm.inference import load_any_model; m=load_any_model('sshleifer/tiny-gpt2', device='cpu'); print(m.predict('Hello', max_new_tokens=8))"
-```
-Say: fixture model → nonsense text on purpose; proves the API path.
-
-### B. Agent tool (no network, light install)
-```bash
-python examples/10_agents_tools/01_custom_tool_agent.py
+python -c "import arclm; print(arclm.get_version())"
 ```
 
-### C. Security redaction (no network)
-```python
-from arclm.security import redact_sensitive_text
-print(redact_sensitive_text("api_key=sk-test-1234567890"))
-```
+> Verwacht `2.0.0`. Daarna kun je doorgaan met de voorbeelden.
 
-## Likely questions from senior engineers
+---
 
-**Why not just use Hugging Face?**  
-HF is the ecosystem for pretrained models. ArcLM complements it: light teaching toolkit + optional HF loading. Not a replacement for transformers as a model zoo.
+## Dia 8 — Echte projecten (~2,5 min)
 
-**Is the native model competitive?**  
-No. It is a teaching GPT (~thousands of params). Production quality comes from loading real models or training with real data/compute.
+> Twee vertaalprojecten in `examples/`.
+>
+> Links: **van nul** — een mini vertaler getraind op twintig zinnenparen. Alleen publieke ArcLM-API’s. De loss daalt van 3,9 naar 1,4 in seconden. De vertalingen zijn zwak — dat is eerlijk gelabeld; het is een lespipeline.
+>
+> Rechts: **open source model** — een instruct-model laden via `load_any_model` en `.chat()`. Eerste run downloadt gewichten. ArcLM laadt causale modellen, geen MarianMT-seq2seq — dat staat in de README.
 
-**Production readiness?**  
-Apache-2.0, CI on 3.9–3.14, security helpers fail-closed. Still Beta (4) on PyPI — honest status.
+---
 
-**Multi-GB models / Arabic NLP?**  
-ArcLM loads standard HF causal LMs. Arabic-specific models depend on tokenizer/chat-template compatibility — test per model. Contribution welcome.
+## Dia 9 — Wat het niet is (~1 min)
 
-**Windows + Linux?**  
-Developed and CI-tested on both (GitHub Actions Linux + local Windows).
+> Vier grenzen, hardop.
+> Geen competitieve chat-LLM. Geen HF-vervanging. Geen multi-node productieplatform. Geen kwaliteitsgarantie per Hub-model.
+>
+> Dit soort eerlijkheid is waarom engineers een toolkit vertrouwen.
 
-## Etiquette for the room
+---
 
-- English slides are normal for engineering talks in the region; keep tone humble and technical.
-- Offer to share the repo link and PyPI name on a slide or chat.
-- If bandwidth is limited, emphasize: light install works offline after download; verified examples need no GPU.
+## Dia 10 — Positionering (~1 min)
 
-## Backup
+> ArcLM is geen concurrent van Hugging Face of grote trainingsframeworks.
+> Het is een **lichte lokale laag**: data, agents, security, en een klein leesbaar model.
+> We beloven geen benchmarks die we niet gemeten hebben.
 
-- Print to PDF: press **P** in the deck.
-- If browser fails: open `presentation/index.html` from a USB stick (single file, no server).
+---
+
+## Dia 11 — Realistisch resultaat (~1 min)
+
+> Wat kun je na deze talk?
+> Installeren in seconden. Data valideren. Een HF-model laden op CPU. Een smoketest trainen. Een agent met tools. Redactie in je logging.
+
+---
+
+## Dia 12 — Vragen (~1–5 min)
+
+> Samenvatting in één zin: licht installeren, eerlijk over grenzen, uitbreidbaar via publieke contracts.
+>
+> Links: `pip install arclm` · `pypi.org/project/arclm` · `github.com/Ahmad-Al-Dibo/ArcLM`.
+>
+> Vragen?
+
+---
+
+## Timingsoverzicht (~22–28 min)
+
+| Dia | Onderwerp | Minuten |
+|---|---|---|
+| 1 | Titel | 1 |
+| 2 | Wat doet het | 1,5 |
+| 3 | Problemen | 1,5 |
+| 4 | Doelgroep | 1 |
+| 5 | Principes | 1,5 |
+| 6 | Installatie | 1,5 |
+| 7 | Eerste resultaat | 2 |
+| 8 | Echte projecten | 2,5 |
+| 9 | Grenzen | 1 |
+| 10 | Positionering | 1 |
+| 11 | Realistisch | 1 |
+| 12 | Vragen | 1–5 |
+
+---
+
+## Demo-checklist (kies er maximaal 1–2)
+
+| Demo | Tijd | Nodig | Commando |
+|---|---|---|---|
+| Versie + doctor | 10s | kern | `python -c "import arclm; print(arclm.get_version())"` |
+| Redactie | 5s | kern | `redact_sensitive_text(...)` |
+| Agent-tool | 5s | kern | `python examples/10_agents_tools/01_custom_tool_agent.py` |
+| Vertaler van nul | 15s | `[train]` | `python examples/14_translator_from_scratch/main.py` |
+| HF vertaler | 40s+ | `[hf]` + net | alleen bij stabiel netwerk |
+
+**Aanbeveling:** redactie + agent-tool (altijd). HF alleen als het netwerk zeker is.
+
+---
+
+## Spreek-tips
+
+1. **Vertel, lees niet voor** — de dia’s zijn de hand-out.
+2. **Eén live demo** is genoeg.
+3. Package-namen blijven Engels: ArcLM, tokenizer, checkpoint.
+4. Verwarrende package-naam: **arclm** (één L) vs **arclm** (twee L’s = ander project).
+5. Bij twijgel over een feature: verwijs naar **Wat het niet is** — dat bouwt vertrouwen.

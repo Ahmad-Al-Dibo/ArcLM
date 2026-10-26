@@ -39,7 +39,9 @@ Follow the folders in order — each builds on the previous:
 | 09 | [`09_pipelines_inspection`](09_pipelines_inspection/) | Compose data pipelines; inspect one native generation step | `[train]` |
 | 10 | [`10_agents_tools`](10_agents_tools/) | Custom tools, document agents, fake voice backend | core |
 | 11 | [`11_security`](11_security/) | Security status, encrypt/hash/sign/redact | `[security]` |
-| 12 | [`12_complete_projects`](12_complete_projects/) | Six end-to-end local projects | mixed |
+| 12 | [`12_complete_projects`](12_complete_projects/) | Six end-to-end local projects (arclm APIs, no raw torch in app code) | mixed |
+| 13 | [`13_research_extension`](13_research_extension/) | Subclass Trainer / Pipeline / Callback / DataStep / Tokenizer for research | `[train]` / core |
+| 14 | [`14_translator_from_scratch`](14_translator_from_scratch/) + [`14_translator_open_source`](14_translator_open_source/) | Real projects: EN→NL translator from zero vs open-source instruct model | `[train]` / `[hf]` |
 
 Each example file starts with a standard header:
 

@@ -482,6 +482,120 @@
       "artifacts": [
         "temporary encrypted artifact"
       ]
+    },
+    {
+      "id": "13-01",
+      "category": "research_extension",
+      "title": "Custom Trainer subclass (BaseTrainer)",
+      "path": "13_research_extension/01_custom_trainer.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "13-02",
+      "category": "research_extension",
+      "title": "Custom Training Pipeline (BaseTrainingPipeline)",
+      "path": "13_research_extension/02_custom_pipeline.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "13-03",
+      "category": "research_extension",
+      "title": "Custom callback (BaseCallback)",
+      "path": "13_research_extension/03_custom_callback.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 10,
+      "artifacts": []
+    },
+    {
+      "id": "13-04",
+      "category": "research_extension",
+      "title": "Custom data pipeline step (BaseDataStep)",
+      "path": "13_research_extension/04_custom_data_step.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
+    },
+    {
+      "id": "13-05",
+      "category": "research_extension",
+      "title": "Custom tokenizer subclass + factory",
+      "path": "13_research_extension/05_custom_tokenizer.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
+    },
+    {
+      "id": "13-06",
+      "category": "research_extension",
+      "title": "End-to-end research workflow (public APIs only)",
+      "path": "13_research_extension/06_research_workflow.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 15,
+      "artifacts": []
+    },
+    {
+      "id": "14-01",
+      "category": "real_projects",
+      "title": "Translator from zero (tiny native ArcLM EN→NL)",
+      "path": "14_translator_from_scratch/main.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 30,
+      "artifacts": ["translator_tiny.pt"]
+    },
+    {
+      "id": "14-02",
+      "category": "real_projects",
+      "title": "Translator with open-source instruct model",
+      "path": "14_translator_open_source/main.py",
+      "status": "manual_optional",
+      "requires_network": true,
+      "requires_download": true,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [
+        "hf"
+      ],
+      "estimated_seconds": 180,
+      "artifacts": []
     }
   ]
 }

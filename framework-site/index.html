@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ArcLM — Framework Presentation</title>
+<title>ArcLM — Frameworkpresentatie</title>
 <link rel="stylesheet" href="css/site.css" />
 </head>
 <body>
@@ -12,124 +12,125 @@
     <a class="brand" href="index.html">ArcLM Framework</a>
     <span class="ver">2.0.0</span>
     <form action="#" role="search">
-      <input type="search" id="docs-search" placeholder="Search this site…" aria-label="Search" />
+      <input type="search" id="docs-search" placeholder="Zoek op deze site…" aria-label="Zoeken" />
     </form>
   </header>
-  <nav class="sidebar" id="sidebar" aria-label="Site"></nav>
+  <nav class="sidebar" id="sidebar" aria-label="Navigatie"></nav>
   <div class="main">
-    <div class="crumbs"><a href="index.html">Home</a></div>
+    <div class="crumbs"><a href="index.html">Start</a></div>
     <div class="with-toc">
       <div>
         <div id="search-results" aria-live="polite"></div>
         <article id="doc-content">
           <h1>ArcLM</h1>
           <p class="lead">
-            ArcLM is a compact Python toolkit for language-model
-            <strong>data workflows, tokenizers, optional PyTorch training,
-            Hugging Face inference, agents, and security</strong>.
-            The core install is light; PyTorch is an extra, not a requirement.
+            ArcLM is een compacte Python-toolkit voor taalmodel-workflows:
+            <strong>data, tokenizers, optionele PyTorch-training,
+            Hugging Face-inferentie, agents en beveiliging</strong>.
+            De kerninstallatie is licht; PyTorch is een extra, geen vereiste.
           </p>
 
-          <h2 id="what">What ArcLM does</h2>
+          <h2 id="what">Wat ArcLM doet</h2>
           <ul>
-            <li>Load, validate, clean, and deduplicate local text datasets.</li>
-            <li>Tokenize with word-level or SentencePiece models.</li>
-            <li>Train a <em>native</em> tiny GPT-style model (optional torch).</li>
-            <li>Load Hugging Face causal LMs behind one interface and generate text.</li>
-            <li>Fine-tune with supervised fine-tuning (SFT), including optional LoRA.</li>
-            <li>Evaluate with accuracy / loss / perplexity and export reports.</li>
-            <li>Run bounded tool-calling agents without a GPU.</li>
-            <li>Redact secrets, encrypt/sign artifacts, and audit security status.</li>
-            <li>Track local experiments (runs, metrics, seeds) without a cloud service.</li>
+            <li>Lokale tekst-datasets laden, valideren, opschonen en dedupliceren.</li>
+            <li>Tokenizen met word-level of SentencePiece-modellen.</li>
+            <li>Trainen van een native mini-GPT (optioneel torch).</li>
+            <li>Hugging Face causale modellen laden achter één interface en tekst genereren.</li>
+            <li>Fine-tuning met supervised fine-tuning (SFT), inclusief optionele LoRA.</li>
+            <li>Evalueren met accuracy / loss / perplexity en rapportages exporteren.</li>
+            <li>Gebonden tool-calling agents draaien zonder GPU.</li>
+            <li>Geheimen verbergen, artefacten versleutelen/ondertekenen en security-status auditen.</li>
+            <li>Lokale experiment-run tracking (runs, metrics, seeds) zonder clouddienst.</li>
           </ul>
 
-          <h2 id="problems">Problems it was designed to solve</h2>
+          <h2 id="problems">Problemen die het oplost</h2>
           <table>
-            <tr><th>Problem</th><th>ArcLM response</th></tr>
+            <tr><th>Probleem</th><th>Antwoord van ArcLM</th></tr>
             <tr>
-              <td>Installing “just to try an API“ pulls hundreds of megabytes</td>
-              <td>Core install is NumPy + SentencePiece only; torch behind <code>[train]</code></td>
+              <td>Installeren “om even een API te proberen” trekt honderden megabytes</td>
+              <td>Kerninstallatie is alleen NumPy + SentencePiece; torch achter <code>[train]</code></td>
             </tr>
             <tr>
-              <td>Docs assume GPU + multi-GB downloads on day one</td>
-              <td>CPU-first examples; verified suite needs no network or GPU</td>
+              <td>Documentatie gaat uit van GPU + multi-GB downloads op dag één</td>
+              <td>CPU-first voorbeelden; verified suite heeft geen netwerk of GPU nodig</td>
             </tr>
             <tr>
-              <td>Hard to see how data → tokens → model → eval fit together</td>
-              <td>Small readable packages; <code>inspect_text</code> pipeline traces</td>
+              <td>Onduidelijk hoe data → tokens → model → eval in elkaar zit</td>
+              <td>Kleine leesbare pakketten; <code>inspect_text</code> pipeline-traces</td>
             </tr>
             <tr>
-              <td>Educational code and application code live in different worlds</td>
-              <td>Same package for Lab-style scripts and developer apps</td>
+              <td>Educatiecode en applicatiecode leven in werelden</td>
+              <td>Zelfde package voor Lab-scripts en app-ontwikkeling</td>
             </tr>
           </table>
 
-          <h2 id="audience">Intended audience</h2>
+          <h2 id="audience">Doelgroep</h2>
           <ul>
-            <li><strong>Educators and students</strong> — laptop, limited bandwidth, no GPU cluster.</li>
-            <li><strong>Application developers</strong> — HF loading, agents, data pipelines, security helpers.</li>
-            <li><strong>Researchers</strong> — embed a light toolkit; train only when the experiment needs it.</li>
+            <li><strong>Docenten en studenten</strong> — laptop, beperkte bandbreedte, geen GPU-cluster.</li>
+            <li><strong>App-ontwikkelaars</strong> — HF-laden, agents, data-pipelines, security-helpers.</li>
+            <li><strong>Onderzoekers</strong> — lichte toolkit inembedden; alleen trainen als het experiment dat vraagt.</li>
           </ul>
 
-          <h2 id="principles">Design principles</h2>
+          <h2 id="principles">Ontwerpprincipes</h2>
           <ol>
-            <li><strong>Light by default.</strong> <code>import arclm</code> must not import torch.</li>
-            <li><strong>Readable source.</strong> Packages small enough to study; no 10k-line trainer as the only path.</li>
-            <li><strong>Honest limits.</strong> The native model is educational; docs and examples say so.</li>
-            <li><strong>Fail closed</strong> in security paths; clear <code>OptionalDependencyError</code> for missing extras.</li>
-            <li><strong>Verified examples.</strong> The maintained suite runs offline on CPU.</li>
+            <li><strong>Licht als default.</strong> <code>import arclm</code> mag geen torch importeren.</li>
+            <li><strong>Leesbare bron.</strong> Pakketten klein genoeg om te studeren; geen 10k-regels trainer als enige pad.</li>
+            <li><strong>Eerlijke grenzen.</strong> Het native model is educatief; docs en voorbeelden zeggen dat ook.</li>
+            <li><strong>Fail closed</strong> in beveiligingspaden; duidelijke <code>OptionalDependencyError</code> bij ontbrekende extras.</li>
+            <li><strong>Geverifieerde voorbeelden.</strong> De maintained suite draait offline op CPU.</li>
           </ol>
 
-          <h2 id="distinguish">How it differs (carefully)</h2>
+          <h2 id="distinguish">Hoe het zich onderscheidt (voorzichtig)</h2>
           <ul>
-            <li>vs <strong>Hugging Face transformers alone</strong>: ArcLM loads HF models but also ships tokenizers, data tools, a tiny native model, agents, and security with a light core. It is not a replacement for the HF model zoo.</li>
-            <li>vs <strong>large training frameworks</strong>: no production multi-GPU serving stack; the native trainer is intentionally small and readable.</li>
-            <li>vs <strong>notebook-only tutorials</strong>: versioned PyPI package, CLI, tests, CI, security layer.</li>
+            <li>vs <strong>Hugging Face transformers alleen</strong>: ArcLM laadt HF-modellen maar levert ook tokenizers, data-tools, een tiny native model, agents en security met een lichte kern. Het is geen vervanging voor de HF-modelbibliotheek.</li>
+            <li>vs <strong>grote trainingsframeworks</strong>: geen productie multi-GPU serving-stack; de native trainer is bewust klein en leesbaar.</li>
+            <li>vs <strong>alleen notebooks</strong>: versieerd PyPI-pakket, CLI, tests, CI, security-laag.</li>
           </ul>
 
-          <h2 id="realistic">What you can realistically accomplish</h2>
+          <h2 id="realistic">Wat je realistisch kunt bereiken</h2>
           <ul>
-            <li>Install in seconds and tokenize/validate data immediately.</li>
-            <li>Load a small public HF model and generate text on CPU.</li>
-            <li>Run a tiny native training smoke test in seconds.</li>
-            <li>Build a local agent with typed tools and no API key (example adapter).</li>
-            <li>Integrate redaction and signed manifests into your own logging/artifacts.</li>
+            <li>In seconden installeren en meteen data valideren en tokenizen.</li>
+            <li>Een klein publiek HF-model laden en op CPU tekst genereren.</li>
+            <li>Een tiny native trainings-smoketest draaien in seconden.</li>
+            <li>Een lokale agent bouwen met getypeerde tools en zonder API-key (voorbeeldadapter).</li>
+            <li>Redactie en ondertekende manifests integreren in je eigen logging/artefacten.</li>
           </ul>
 
-          <h2 id="not">What it is not</h2>
+          <h2 id="not">Wat het niet is</h2>
           <ul>
-            <li>Not a competitive general-purpose chat LLM by itself.</li>
-            <li>Not a replacement for Hugging Face as a model hub client.</li>
-            <li>Not a production multi-node training or serving platform.</li>
-            <li>Not a guarantee of quality for any specific Hub model — compatibility is per model.</li>
+            <li>Geen competitieve algemene chat-LLM op zichzelf.</li>
+            <li>Geen vervanging van Hugging Face als model-hub-client.</li>
+            <li>Geen productie multi-node trainings- of servingplatform.</li>
+            <li>Geen kwaliteitsgarantie voor een specifiek Hub-model — compatibiliteit is per model.</li>
           </ul>
 
-          <h2 id="site">How to use this site</h2>
+          <h2 id="site">Hoe je deze site gebruikt</h2>
           <p>
-            Start with <a href="getting-started.html">Getting started</a> if you want a working install.
-            Read <a href="architecture.html">Architecture</a> before extending the code.
-            Browse <a href="examples.html">Examples</a> for runnable patterns.
-            Check <a href="status.html">Status &amp; limits</a> before production decisions.
-            The <a href="roadmap.html">roadmap</a> separates implemented work from proposals.
+            Begin bij <a href="getting-started.html">Aan de slag</a> voor een werkende installatie.
+            Lees <a href="architecture.html">Architectuur</a> voordat je de code uitbreidt.
+            Blader door <a href="examples.html">Voorbeelden</a> voor uitvoerbare patronen.
+            Controleer <a href="status.html">Status &amp; beperkingen</a> vóór productiebeslissingen.
+            De <a href="roadmap.html">roadmap</a> scheidt geïmplementeerd werk van voorstellen.
           </p>
 
-          <h2 id="links">Related resources</h2>
+          <h2 id="links">Gerelateerde bronnen</h2>
           <ul>
-            <li><a href="reference/index.html">API reference</a> — function-level reference</li>
-            <li><a href="../README.md">Repository README</a></li>
-            <li>PyPI: <code>pip install arclm</code> (not <code>arcllm</code>)</li>
+            <li><a href="reference/index.html">API-referentie</a> — functieniveau</li>
+            <li><a href="../README.md">Repository-README</a></li>
+            <li>PyPI: <code>pip install arclm</code> (niet <code>arclm</code> met twee L’s)</li>
             <li>GitHub: <code>Ahmad-Al-Dibo/ArcLM</code></li>
           </ul>
         </article>
         <nav class="pager" id="pager"></nav>
       </div>
-      <aside class="toc" id="toc" aria-label="Table of contents"></aside>
+      <aside class="toc" id="toc" aria-label="Inhoudsopgave"></aside>
     </div>
   </div>
-  <footer class="site">ArcLM 2.0 framework presentation Â· Apache-2.0</footer>
+  <footer class="site">ArcLM 2.0 frameworkpresentatie · Apache-2.0</footer>
 </div>
 <script>window.DOCS_ROOT = "";</script>
-<script>window.DOCS_NEXT = ["philosophy.html", "Motivation & design"];</script>
+<script>window.DOCS_NEXT = ["philosophy.html", "Motivatie & ontwerp"];</script>
 <script src="js/site.js"></script>
+<script src="js/i18n.js"></script>
 </body>
 </html>

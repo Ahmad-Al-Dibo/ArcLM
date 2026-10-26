@@ -1,0 +1,20 @@
+{"src": "hello", "tgt": "hallo"}
+{"src": "world", "tgt": "wereld"}
+{"src": "good morning", "tgt": "goedemorgen"}
+{"src": "good night", "tgt": "goedenacht"}
+{"src": "thank you", "tgt": "dank je"}
+{"src": "please", "tgt": "alsjeblieft"}
+{"src": "yes", "tgt": "ja"}
+{"src": "no", "tgt": "nee"}
+{"src": "water", "tgt": "water"}
+{"src": "bread", "tgt": "brood"}
+{"src": "cat", "tgt": "kat"}
+{"src": "dog", "tgt": "hond"}
+{"src": "house", "tgt": "huis"}
+{"src": "book", "tgt": "boek"}
+{"src": "friend", "tgt": "vriend"}
+{"src": "hello world", "tgt": "hallo wereld"}
+{"src": "thank you very much", "tgt": "dank je wel"}
+{"src": "good morning friend", "tgt": "goedemorgen vriend"}
+{"src": "the cat and the dog", "tgt": "de kat en de hond"}
+{"src": "I read a book", "tgt": "ik lees een boek"}

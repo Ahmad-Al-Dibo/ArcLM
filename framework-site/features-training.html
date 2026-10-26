@@ -50,7 +50,7 @@ tcfg = TrainingConfig(epochs=5, batch_size=8, precision="fp32", optimizer="adamw
 trainer = Trainer(model=model, config=tcfg)
 # history = trainer.train_dataset(train_loader, val_loader=val_loader)</code></pre>
           <p>
-            <strong>Why TrainingConfig ≠  Config:</strong> trainer fields are validated
+            <strong>Why TrainingConfig ≠   Config:</strong> trainer fields are validated
             (precision, optimizer names, positive epochs). Use
             <code>arclm.configs.Config</code> for data paths and model shape in the
             high-level <code>train_model</code> path.
@@ -125,5 +125,6 @@ arclm train --data data.txt --device cuda</code></pre>
 <script>window.DOCS_PREV = ["features-data.html", "Data & tokenizers"];</script>
 <script>window.DOCS_NEXT = ["features-inference.html", "Inference & eval"];</script>
 <script src="js/site.js"></script>
+<script src="js/i18n.js"></script>
 </body>
 </html>
