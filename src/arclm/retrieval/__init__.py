@@ -37,6 +37,12 @@ _EXPORTS = {
     "RetrievalResult": "arclm.retrieval.rag",
     "DEFAULT_PROMPT_TEMPLATE": "arclm.retrieval.rag",
     "load_index": "arclm.retrieval.rag",
+    "context_coverage": "arclm.retrieval.rag_metrics",
+    "citation_grounding": "arclm.retrieval.rag_metrics",
+    "context_utilization": "arclm.retrieval.rag_metrics",
+    "RAGQualityReport": "arclm.retrieval.rag_metrics",
+    "score_rag": "arclm.retrieval.rag_metrics",
+    "score_rag_batch": "arclm.retrieval.rag_metrics",
 }
 
 __all__ = sorted(_EXPORTS)

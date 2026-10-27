@@ -21,8 +21,9 @@ from .runner import AgentRunner
 from .session import AgentSession
 from .stt import FakeSpeechToTextBackend, SpeechToTextBackend, TranscriptionRequest, TranscriptionResult
 from .tool import Tool, ToolSpec, tool
-from .tracing import AgentTrace, AgentTraceEvent
+from .tracing import AgentTrace, AgentTraceEvent, to_otel_spans, trace_to_jsonl_lines
 from .mcp import MCPServer, create_mcp_server
+from .memory import MemoryHit, SessionStore
 
 __all__ = [
     "Agent",
@@ -48,9 +49,11 @@ __all__ = [
     "InMemoryResourceProvider",
     "JSONToolCallingAdapter",
     "MCPServer",
+    "MemoryHit",
     "ModelResponse",
     "OptionalAgentDependencyError",
     "ResourceProvider",
+    "SessionStore",
     "SideEffectLevel",
     "SpeechToTextBackend",
     "Tool",
@@ -76,5 +79,7 @@ __all__ = [
     "SessionConfig",
     "create_mcp_server",
     "get_agent_capabilities",
+    "to_otel_spans",
+    "trace_to_jsonl_lines",
     "tool",
 ]

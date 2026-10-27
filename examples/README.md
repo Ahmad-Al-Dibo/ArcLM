@@ -45,6 +45,7 @@ Follow the folders in order — each builds on the previous:
 | 15 | [`15_retrieval_rag`](15_retrieval_rag/) | BM25 keyword search + local RAG prompt pipeline | core |
 | 16 | [`16_mcp_tools`](16_mcp_tools/) | Expose ArcLM tools as an MCP JSON-RPC server | core |
 | 17 | [`17_evalharness`](17_evalharness/) | EvalSet scoring harness (JSONL cases → report) | core |
+| 18 | [`18_phase2_rag_memory`](18_phase2_rag_memory/) | RAG heuristic metrics, session memory recall, OTel span export | core |
 
 Each example file starts with a standard header:
 

@@ -652,6 +652,20 @@
       "optional_dependencies": [],
       "estimated_seconds": 5,
       "artifacts": []
+    },
+    {
+      "id": "18-01",
+      "category": "phase2",
+      "title": "RAG heuristic metrics + session memory + OTel spans",
+      "path": "18_phase2_rag_memory/01_rag_memory.py",
+      "status": "verified",
+      "requires_network": false,
+      "requires_download": false,
+      "requires_gpu": false,
+      "requires_local_model": false,
+      "optional_dependencies": [],
+      "estimated_seconds": 5,
+      "artifacts": []
     }
   ]
 }

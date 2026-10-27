@@ -106,3 +106,15 @@ report.save("eval_report.json")
 - LLM-as-judge / DeepEval-kloon
 - MCP-client (Fase 2)
 - Persistente agent-memory (Fase 2)
+
+---
+
+## Fase 2 — status (2026-10-16)
+
+| Stap | Status |
+|---|---|
+| D8: rclm.agents.memory.SessionStore — persistente sessies + recall | In uitvoering |
+| D9: RAG-heuristiek in rclm.retrieval.rag_metrics | In uitvoering |
+| D10: Chat-template verificatietest | In uitvoering |
+| D11: OTel-lite span hooks (optioneel, geen SDK-dep) | In uitvoering |
+| Fase 2 non-goals | Volledige MCP-client, cloud memory, LLM-as-judge |
